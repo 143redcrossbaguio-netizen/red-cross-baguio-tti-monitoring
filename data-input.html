@@ -1,175 +1,535 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Data Input</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TTI Monitoring - Data Input</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
 
-<!-- HEADER -->
-<header class="top-header">
-  <div class="top-header-inner centered-header">
-    <img src="logo.png" class="header-logo">
-    <div class="header-text">
-      <h1>PHILIPPINE RED CROSS BAGUIO CITY CHAPTER</h1>
-      <h2>TTI MONITORING</h2>
+  <header class="top-header">
+    <div class="top-header-inner centered-header">
+      <img src="logo.png" alt="PRC Logo" class="header-logo" />
+      <div class="header-text">
+        <h1>PHILIPPINE RED CROSS BAGUIO CITY CHAPTER</h1>
+        <h2>TTI MONITORING</h2>
+      </div>
     </div>
+  </header>
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <img src="logo.png" alt="PRC Logo" class="sidebar-logo" />
+        <div>
+          <div class="brand-title">TTI System</div>
+          <div class="brand-subtitle">Hospital Dashboard</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="data-input.html" class="nav-link active">Data Input</a>
+        <a href="tracking.html" class="nav-link">Tracking</a>
+        <a href="statistics.html" class="nav-link">Statistics</a>
+      </nav>
+
+      <div class="sidebar-user-box">
+        <div><strong>User:</strong> <span id="sidebarEmail">-</span></div>
+        <div><strong>Role:</strong> <span id="sidebarRole">-</span></div>
+      </div>
+
+      <button id="logoutBtn" class="logout-btn">Logout</button>
+    </aside>
+
+    <main class="main-content">
+      <section class="page-banner">
+        <div>
+          <h3>Data Input</h3>
+          <p>Enter donor profile and TTI screening details</p>
+        </div>
+      </section>
+
+      <!-- PATIENT INFORMATION -->
+      <section class="content-card">
+        <div class="card-title-row">
+          <h4>Patient Information</h4>
+        </div>
+
+        <label class="section-label">Name</label>
+        <div class="grid-4">
+          <input type="text" id="surname" placeholder="Surname" />
+          <input type="text" id="firstname" placeholder="First Name" />
+          <input type="text" id="middlename" placeholder="Middle Name" />
+          <input type="text" id="suffix" placeholder="Suffix" />
+        </div>
+
+        <input type="text" id="serialNumber" placeholder="Serial Number" />
+
+        <div class="grid-2">
+          <input type="text" id="bloodType" placeholder="Blood Type" />
+          <select id="civilStatus">
+            <option value="">Civil Status</option>
+            <option value="Single">Single</option>
+            <option value="Married">Married</option>
+            <option value="Separated">Separated</option>
+            <option value="Widow">Widow</option>
+            <option value="Divorced">Divorced</option>
+          </select>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <label class="field-label">Birthday</label>
+            <input type="date" id="birthday" />
+          </div>
+          <div>
+            <label class="field-label">Age</label>
+            <input type="text" id="age" placeholder="Age" readonly />
+          </div>
+        </div>
+
+        <select id="sex">
+          <option value="">Sex</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+
+        <input type="text" id="contactInfo" placeholder="Contact Info" />
+        <input type="text" id="address" placeholder="Address" />
+        <input type="text" id="occupation" placeholder="Occupation" />
+
+        <div>
+          <label class="field-label">Collection Date</label>
+          <input type="date" id="collectionDate" />
+        </div>
+
+        <label class="section-label">Type of Donor</label>
+        <div class="check-row">
+          <label class="check-item"><input type="radio" name="donorType" value="Patient Directed" /> Patient Directed</label>
+          <label class="check-item"><input type="radio" name="donorType" value="Walk-in" /> Walk-in</label>
+          <label class="check-item"><input type="radio" name="donorType" value="MBD" /> MBD</label>
+        </div>
+
+        <label class="section-label">Frequency of Donation</label>
+        <div class="check-row">
+          <label class="check-item"><input type="radio" name="donationFrequency" id="newDonor" value="New" /> New</label>
+          <label class="check-item"><input type="radio" name="donationFrequency" id="repeatDonor" value="Repeat" /> Repeat</label>
+        </div>
+
+        <div id="repeatDateWrap" class="hidden">
+          <label class="field-label">Previous Donation Date</label>
+          <input type="date" id="repeatDate" />
+        </div>
+      </section>
+
+      <!-- TTI SCREENING RESULTS -->
+      <section class="content-card">
+        <div class="card-title-row">
+          <h4>TTI Screening Results</h4>
+        </div>
+
+        <div class="cutoff-wrap">
+          <label class="field-label">Cutoff Value</label>
+          <input type="number" id="cutoff" step="0.01" placeholder="Enter cutoff value (e.g. 1.00)" />
+        </div>
+
+        <div class="summary-box">
+          Donor Overall Status:
+          <span id="overallStatus" class="overall-neutral">--</span>
+        </div>
+
+        <div class="tti-grid">
+
+          <!-- HIV -->
+          <div class="tti-item">
+            <button type="button" class="tti-header-btn" onclick="togglePanel('hivPanel')">
+              <span>HIV</span>
+              <span id="hivBadge" class="test-badge neutral-badge">--</span>
+            </button>
+
+            <div id="hivPanel" class="tti-panel hidden">
+              <div class="tti-row-label">Row 1</div>
+              <div class="tti-row">
+                <input type="number" step="0.01" id="hiv_od" placeholder="OD" oninput="compute('hiv')" />
+                <input type="number" step="0.01" id="hiv_repeat1" placeholder="Repeat 1" />
+                <input type="number" step="0.01" id="hiv_repeat2" placeholder="Repeat 2" />
+              </div>
+
+              <div class="tti-row-label">Row 2</div>
+              <div class="tti-row">
+                <input type="text" id="hiv_lot" placeholder="Lot Number" />
+                <input type="date" id="hiv_expiration" />
+                <input type="date" id="hiv_tested" />
+              </div>
+
+              <div id="hiv_result" class="result-box">--</div>
+            </div>
+          </div>
+
+          <!-- HBsAg -->
+          <div class="tti-item">
+            <button type="button" class="tti-header-btn" onclick="togglePanel('hbsagPanel')">
+              <span>HBsAg</span>
+              <span id="hbsagBadge" class="test-badge neutral-badge">--</span>
+            </button>
+
+            <div id="hbsagPanel" class="tti-panel hidden">
+              <div class="tti-row-label">Row 1</div>
+              <div class="tti-row">
+                <input type="number" step="0.01" id="hbsag_od" placeholder="OD" oninput="compute('hbsag')" />
+                <input type="number" step="0.01" id="hbsag_repeat1" placeholder="Repeat 1" />
+                <input type="number" step="0.01" id="hbsag_repeat2" placeholder="Repeat 2" />
+              </div>
+
+              <div class="tti-row-label">Row 2</div>
+              <div class="tti-row">
+                <input type="text" id="hbsag_lot" placeholder="Lot Number" />
+                <input type="date" id="hbsag_expiration" />
+                <input type="date" id="hbsag_tested" />
+              </div>
+
+              <div id="hbsag_result" class="result-box">--</div>
+            </div>
+          </div>
+
+          <!-- HCV -->
+          <div class="tti-item">
+            <button type="button" class="tti-header-btn" onclick="togglePanel('hcvPanel')">
+              <span>HCV</span>
+              <span id="hcvBadge" class="test-badge neutral-badge">--</span>
+            </button>
+
+            <div id="hcvPanel" class="tti-panel hidden">
+              <div class="tti-row-label">Row 1</div>
+              <div class="tti-row">
+                <input type="number" step="0.01" id="hcv_od" placeholder="OD" oninput="compute('hcv')" />
+                <input type="number" step="0.01" id="hcv_repeat1" placeholder="Repeat 1" />
+                <input type="number" step="0.01" id="hcv_repeat2" placeholder="Repeat 2" />
+              </div>
+
+              <div class="tti-row-label">Row 2</div>
+              <div class="tti-row">
+                <input type="text" id="hcv_lot" placeholder="Lot Number" />
+                <input type="date" id="hcv_expiration" />
+                <input type="date" id="hcv_tested" />
+              </div>
+
+              <div id="hcv_result" class="result-box">--</div>
+            </div>
+          </div>
+
+          <!-- Syphilis -->
+          <div class="tti-item">
+            <button type="button" class="tti-header-btn" onclick="togglePanel('syphilisPanel')">
+              <span>Syphilis</span>
+              <span id="syphilisBadge" class="test-badge neutral-badge">--</span>
+            </button>
+
+            <div id="syphilisPanel" class="tti-panel hidden">
+              <div class="tti-row-label">Row 1</div>
+              <div class="tti-row">
+                <input type="number" step="0.01" id="syphilis_od" placeholder="OD" oninput="compute('syphilis')" />
+                <input type="number" step="0.01" id="syphilis_repeat1" placeholder="Repeat 1" />
+                <input type="number" step="0.01" id="syphilis_repeat2" placeholder="Repeat 2" />
+              </div>
+
+              <div class="tti-row-label">Row 2</div>
+              <div class="tti-row">
+                <input type="text" id="syphilis_lot" placeholder="Lot Number" />
+                <input type="date" id="syphilis_expiration" />
+                <input type="date" id="syphilis_tested" />
+              </div>
+
+              <div id="syphilis_result" class="result-box">--</div>
+            </div>
+          </div>
+
+          <!-- Malaria -->
+          <div class="tti-item">
+            <button type="button" class="tti-header-btn" onclick="togglePanel('malariaPanel')">
+              <span>Malaria</span>
+              <span id="malariaBadge" class="test-badge neutral-badge">--</span>
+            </button>
+
+            <div id="malariaPanel" class="tti-panel hidden">
+              <div class="tti-row-label">Row 1</div>
+              <div class="tti-row">
+                <input type="number" step="0.01" id="malaria_od" placeholder="OD" oninput="compute('malaria')" />
+                <input type="number" step="0.01" id="malaria_repeat1" placeholder="Repeat 1" />
+                <input type="number" step="0.01" id="malaria_repeat2" placeholder="Repeat 2" />
+              </div>
+
+              <div class="tti-row-label">Row 2</div>
+              <div class="tti-row">
+                <input type="text" id="malaria_lot" placeholder="Lot Number" />
+                <input type="date" id="malaria_expiration" />
+                <input type="date" id="malaria_tested" />
+              </div>
+
+              <div id="malaria_result" class="result-box">--</div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <section class="content-card">
+        <div class="action-row">
+          <button id="saveBtn" class="primary-btn" type="button">Save Record</button>
+        </div>
+        <p id="msg" class="message"></p>
+      </section>
+    </main>
   </div>
-</header>
 
-<div class="app-shell">
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      addDoc,
+      collection,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-<!-- SIDEBAR -->
-<aside class="sidebar">
-  <a href="data-input.html" class="nav-link active">Data Input</a>
-  <a href="tracking.html" class="nav-link">Tracking</a>
-  <a href="statistics.html" class="nav-link">Statistics</a>
-  <button onclick="logout()" class="logout-btn">Logout</button>
-</aside>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
+      authDomain: "red-cross-baguio-tti-monitor.firebaseapp.com",
+      projectId: "red-cross-baguio-tti-monitor",
+      storageBucket: "red-cross-baguio-tti-monitor.firebasestorage.app",
+      messagingSenderId: "361015244463",
+      appId: "1:361015244463:web:076f8802942ca904f5065a"
+    };
 
-<!-- MAIN -->
-<main class="main-content">
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-<h3>DATA INPUT</h3>
+    let currentRole = "";
+    let currentUser = null;
 
-<!-- PATIENT INFO -->
-<div class="content-card">
+    const sidebarEmail = document.getElementById("sidebarEmail");
+    const sidebarRole = document.getElementById("sidebarRole");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const saveBtn = document.getElementById("saveBtn");
+    const msg = document.getElementById("msg");
 
-<h4>Patient Information</h4>
+    const birthdayInput = document.getElementById("birthday");
+    const ageInput = document.getElementById("age");
+    const repeatDonorRadio = document.getElementById("repeatDonor");
+    const newDonorRadio = document.getElementById("newDonor");
+    const repeatDateWrap = document.getElementById("repeatDateWrap");
+    const cutoffInput = document.getElementById("cutoff");
+    const overallStatus = document.getElementById("overallStatus");
 
-<!-- NAME -->
-<div class="grid-4">
-  <input id="surname" placeholder="Surname">
-  <input id="firstname" placeholder="First Name">
-  <input id="middlename" placeholder="Middle Name">
-  <input id="suffix" placeholder="Suffix">
-</div>
+    const tests = ["hiv", "hbsag", "hcv", "syphilis", "malaria"];
 
-<input id="serial" placeholder="Serial Number">
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "index.html";
+        return;
+      }
 
-<div class="grid-2">
-  <input id="bloodType" placeholder="Blood Type">
-  <select id="civil">
-    <option>Civil Status</option>
-    <option>Single</option>
-    <option>Married</option>
-    <option>Separated</option>
-    <option>Widow</option>
-    <option>Divorced</option>
-  </select>
-</div>
+      currentUser = user;
+      sidebarEmail.textContent = user.email;
 
-<div class="grid-2">
-  <input type="date" id="birthday">
-  <input id="age" placeholder="Age" readonly>
-</div>
+      const snap = await getDoc(doc(db, "users", user.uid));
+      if (snap.exists()) {
+        currentRole = snap.data().role || "";
+        sidebarRole.textContent = currentRole || "-";
+      } else {
+        currentRole = "";
+        sidebarRole.textContent = "no role";
+      }
+    });
 
-<input id="sex" placeholder="Sex">
-<input id="contact" placeholder="Contact Info">
-<input id="address" placeholder="Address">
-<input id="occupation" placeholder="Occupation">
+    logoutBtn.onclick = async () => {
+      await signOut(auth);
+      window.location.href = "index.html";
+    };
 
-<input type="date" id="collectionDate">
+    birthdayInput.addEventListener("change", () => {
+      if (!birthdayInput.value) {
+        ageInput.value = "";
+        return;
+      }
 
-<!-- DONOR TYPE -->
-<label>Type of Donor:</label>
-<div class="inline">
-  <label><input type="checkbox"> Patient Directed</label>
-  <label><input type="checkbox"> Walk-in</label>
-  <label><input type="checkbox"> MBD</label>
-</div>
+      const birthDate = new Date(birthdayInput.value);
+      const today = new Date();
 
-<!-- FREQUENCY -->
-<label>Frequency:</label>
-<div class="inline">
-  <label><input type="checkbox" id="newDonor"> New</label>
-  <label><input type="checkbox" id="repeatDonor"> Repeat</label>
-</div>
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
 
-<input type="date" id="repeatDate" class="hidden" placeholder="Last Donation">
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
 
-</div>
+      ageInput.value = age >= 0 ? age : "";
+    });
 
-<!-- TTI RESULTS -->
-<div class="content-card">
+    function updateRepeatDateVisibility() {
+      repeatDateWrap.classList.toggle("hidden", !repeatDonorRadio.checked);
+    }
 
-<h4>TTI Screening Results</h4>
+    repeatDonorRadio.addEventListener("change", updateRepeatDateVisibility);
+    newDonorRadio.addEventListener("change", updateRepeatDateVisibility);
 
-<!-- TEST -->
-<div>
-  <label><input type="checkbox" onclick="toggleTest('hivBox')"> HIV</label>
-  <div id="hivBox" class="hidden">
-    <input placeholder="OD">
-    <input placeholder="Repeat 1">
-    <input placeholder="Repeat 2">
-  </div>
-</div>
+    function setResultUI(test, text, type) {
+      const resultBox = document.getElementById(`${test}_result`);
+      const badge = document.getElementById(`${test}Badge`);
 
-<div>
-  <label><input type="checkbox" onclick="toggleTest('hbsagBox')"> HBsAg</label>
-  <div id="hbsagBox" class="hidden">
-    <input placeholder="OD">
-    <input placeholder="Repeat 1">
-    <input placeholder="Repeat 2">
-  </div>
-</div>
+      resultBox.textContent = text;
+      resultBox.className = "result-box";
 
-<!-- COMMON FIELDS -->
-<input placeholder="Lot Number">
-<input type="date" placeholder="Expiration Date">
-<input type="date" placeholder="Date Tested">
+      badge.textContent = text;
+      badge.className = "test-badge";
 
-</div>
+      if (type === "reactive") {
+        resultBox.classList.add("reactive");
+        badge.classList.add("reactive-badge");
+      } else if (type === "nonreactive") {
+        resultBox.classList.add("nonreactive");
+        badge.classList.add("nonreactive-badge");
+      } else {
+        resultBox.classList.add("neutral");
+        badge.classList.add("neutral-badge");
+      }
+    }
 
-<button onclick="save()">SAVE</button>
-<p id="msg"></p>
+    function updateSummary() {
+      let hasReactive = false;
+      let hasValue = false;
 
-</main>
-</div>
+      for (const test of tests) {
+        const txt = document.getElementById(`${test}_result`).textContent;
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        if (txt === "🔴 Reactive") {
+          hasReactive = true;
+          hasValue = true;
+        } else if (txt === "🟢 Non-Reactive") {
+          hasValue = true;
+        }
+      }
 
-const app = initializeApp({
-  apiKey:"AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
-  projectId:"red-cross-baguio-tti-monitor"
-});
+      if (!hasValue) {
+        overallStatus.textContent = "--";
+        overallStatus.className = "overall-neutral";
+        return;
+      }
 
-const db = getFirestore(app);
+      if (hasReactive) {
+        overallStatus.textContent = "🔴 Reactive";
+        overallStatus.className = "overall-reactive";
+      } else {
+        overallStatus.textContent = "🟢 Non-Reactive";
+        overallStatus.className = "overall-nonreactive";
+      }
+    }
 
-// AUTO AGE
-birthday.onchange = () => {
-  const b = new Date(birthday.value);
-  const today = new Date();
-  let ageVal = today.getFullYear() - b.getFullYear();
-  age.value = ageVal;
-};
+    window.compute = (test) => {
+      const cutoff = parseFloat(cutoffInput.value);
+      const odValue = parseFloat(document.getElementById(`${test}_od`).value);
 
-// REPEAT TOGGLE
-repeatDonor.onchange = () => {
-  repeatDate.classList.toggle("hidden", !repeatDonor.checked);
-};
+      if (isNaN(odValue) || isNaN(cutoff)) {
+        setResultUI(test, "--", "neutral");
+        updateSummary();
+        return;
+      }
 
-// TEST TOGGLE
-window.toggleTest = (id) => {
-  document.getElementById(id).classList.toggle("hidden");
-};
+      if (odValue > cutoff) {
+        setResultUI(test, "🔴 Reactive", "reactive");
+      } else {
+        setResultUI(test, "🟢 Non-Reactive", "nonreactive");
+      }
 
-// SAVE
-window.save = async () => {
-  await addDoc(collection(db,"tti_records"),{
-    name: surname.value + " " + firstname.value,
-    serial: serial.value
-  });
-  msg.textContent="Saved!";
-};
+      updateSummary();
+    };
 
-// LOGOUT
-window.logout = () => location.href="index.html";
-</script>
+    cutoffInput.addEventListener("input", () => {
+      for (const test of tests) {
+        window.compute(test);
+      }
+    });
 
+    window.togglePanel = (id) => {
+      document.getElementById(id).classList.toggle("hidden");
+    };
+
+    function getCheckedRadioValue(name) {
+      const el = document.querySelector(`input[name="${name}"]:checked`);
+      return el ? el.value : "";
+    }
+
+    function getTestData(test) {
+      return {
+        od: document.getElementById(`${test}_od`).value.trim(),
+        repeat1: document.getElementById(`${test}_repeat1`).value.trim(),
+        repeat2: document.getElementById(`${test}_repeat2`).value.trim(),
+        lotNumber: document.getElementById(`${test}_lot`).value.trim(),
+        expirationDate: document.getElementById(`${test}_expiration`).value,
+        dateTested: document.getElementById(`${test}_tested`).value,
+        interpretation: document.getElementById(`${test}_result`).textContent
+      };
+    }
+
+    saveBtn.onclick = async () => {
+      msg.textContent = "";
+
+      if (!currentUser) {
+        msg.textContent = "Please login first.";
+        return;
+      }
+
+      try {
+        const record = {
+          patientInfo: {
+            surname: document.getElementById("surname").value.trim(),
+            firstName: document.getElementById("firstname").value.trim(),
+            middleName: document.getElementById("middlename").value.trim(),
+            suffix: document.getElementById("suffix").value.trim(),
+            serialNumber: document.getElementById("serialNumber").value.trim(),
+            bloodType: document.getElementById("bloodType").value.trim(),
+            civilStatus: document.getElementById("civilStatus").value,
+            birthday: document.getElementById("birthday").value,
+            age: document.getElementById("age").value.trim(),
+            sex: document.getElementById("sex").value,
+            contactInfo: document.getElementById("contactInfo").value.trim(),
+            address: document.getElementById("address").value.trim(),
+            occupation: document.getElementById("occupation").value.trim(),
+            collectionDate: document.getElementById("collectionDate").value,
+            donorType: getCheckedRadioValue("donorType"),
+            donationFrequency: getCheckedRadioValue("donationFrequency"),
+            repeatDate: document.getElementById("repeatDate").value
+          },
+          screening: {
+            cutoff: cutoffInput.value.trim(),
+            hiv: getTestData("hiv"),
+            hbsag: getTestData("hbsag"),
+            hcv: getTestData("hcv"),
+            syphilis: getTestData("syphilis"),
+            malaria: getTestData("malaria"),
+            overallStatus: overallStatus.textContent
+          },
+          createdBy: currentUser.email,
+          createdByUid: currentUser.uid,
+          role: currentRole,
+          createdAt: serverTimestamp()
+        };
+
+        await addDoc(collection(db, "tti_records"), record);
+
+        msg.textContent = "Record saved successfully.";
+      } catch (error) {
+        msg.textContent = error.message;
+      }
+    };
+  </script>
 </body>
 </html>
