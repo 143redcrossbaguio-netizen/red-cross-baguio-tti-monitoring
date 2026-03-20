@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
   <header class="top-header">
     <div class="top-header-inner centered-header">
       <img src="logo.png" alt="PRC Logo" class="header-logo" />
@@ -84,19 +83,17 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getAuth,
-      onAuthStateChanged,
-      signOut
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import {
       getFirestore,
       collection,
       onSnapshot,
       deleteDoc,
+      updateDoc,
       doc,
       getDoc,
-      updateDoc
+      query,
+      orderBy
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -137,30 +134,30 @@
       return record.screening || {};
     }
 
+    function getOverallStatus(record) {
+      return safe(getScreening(record).overallStatus);
+    }
+
     function getReferralStatus(record) {
       return safe(record.referralStatus) || "No";
     }
 
     function fullName(record) {
       const p = getPatientInfo(record);
-      return [
-        safe(p.surname),
-        safe(p.firstName),
-        safe(p.middleName),
-        safe(p.suffix)
-      ].filter(Boolean).join(" ");
+      return [safe(p.surname), safe(p.firstName), safe(p.middleName), safe(p.suffix)]
+        .filter(Boolean)
+        .join(" ");
     }
 
-    function getOverallStatus(record) {
-      const s = getScreening(record);
-      return safe(s.overallStatus);
-    }
-
-    function overallClass(overall) {
-      if (overall === "🔴 Reactive") return "overall-reactive";
-      if (overall === "🟠 Initially Reactive") return "overall-initially-reactive";
-      if (overall === "🟢 Non-Reactive") return "overall-nonreactive";
+    function overallClass(value) {
+      if (value === "🔴 Reactive") return "overall-reactive";
+      if (value === "🟠 Initially Reactive") return "overall-initially-reactive";
+      if (value === "🟢 Non-Reactive") return "overall-nonreactive";
       return "overall-neutral";
+    }
+
+    function referralClass(value) {
+      return value === "Yes" ? "referral-yes" : "referral-no";
     }
 
     function interpretationBadge(text) {
@@ -169,10 +166,6 @@
       if (text === "🟠 Initially Reactive") cls = "table-badge-initially-reactive";
       if (text === "🟢 Non-Reactive") cls = "table-badge-nonreactive";
       return `<span class="table-result-badge ${cls}">${text || "--"}</span>`;
-    }
-
-    function referralClass(value) {
-      return value === "Yes" ? "referral-yes" : "referral-no";
     }
 
     function searchBlob(record) {
@@ -347,10 +340,58 @@
     }
 
     async function setReferralStatus(id, value) {
-      await updateDoc(doc(db, "tti_records", id), {
-        referralStatus: value
-      });
+      await updateDoc(doc(db, "tti_records", id), { referralStatus: value });
     }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "index.html";
+        return;
+      }
+
+      sidebarEmail.textContent = user.email;
+
+      const userSnap = await getDoc(doc(db, "users", user.uid));
+      if (userSnap.exists()) {
+        currentRole = userSnap.data().role || "";
+        sidebarRole.textContent = currentRole || "-";
+      } else {
+        currentRole = "";
+        sidebarRole.textContent = "no role";
+      }
+
+      const q = query(collection(db, "tti_records"), orderBy("createdAt", "desc"));
+      onSnapshot(q, (snapshot) => {
+        allRecords = snapshot.docs.map((d) => ({
+          id: d.id,
+          ...d.data()
+        }));
+        renderRecords();
+      }, (error) => {
+        console.error("Tracking snapshot error:", error);
+        recordsContainer.innerHTML = `
+          <section class="content-card">
+            <div class="empty-state">Failed to load tracking data: ${error.message}</div>
+          </section>
+        `;
+      });
+    });
+
+    logoutBtn.onclick = async () => {
+      await signOut(auth);
+      window.location.href = "index.html";
+    };
+
+    searchInput.addEventListener("input", renderRecords);
+    statusFilter.addEventListener("change", renderRecords);
+    collectionDateFilter.addEventListener("change", renderRecords);
+
+    clearFilterBtn.addEventListener("click", () => {
+      searchInput.value = "";
+      statusFilter.value = "";
+      collectionDateFilter.value = "";
+      renderRecords();
+    });
 
     document.addEventListener("click", async (e) => {
       const toggleId = e.target.getAttribute("data-toggle");
@@ -395,13 +436,6 @@
         else if (v === "no") await setReferralStatus(id, "No");
         else alert("Please enter Yes or No.");
       }
-    });
-
-    clearFilterBtn.addEventListener("click", () => {
-      searchInput.value = "";
-      statusFilter.value = "";
-      collectionDateFilter.value = "";
-      renderRecords();
     });
   </script>
 </body>
