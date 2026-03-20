@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Data Input</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header class="main-header">
+  <img src="logo.png" class="logo-small">
+  <h2>DATA INPUT</h2>
+</header>
+
+<div class="container card">
+
+<input id="donorName" placeholder="Donor Name">
+<input id="donorId" placeholder="Donor ID">
+<input type="date" id="date">
+
+<select id="hiv"><option>HIV</option><option>Non-Reactive</option><option>Reactive</option></select>
+<select id="hbsag"><option>HBsAg</option><option>Non-Reactive</option><option>Reactive</option></select>
+<select id="hcv"><option>HCV</option><option>Non-Reactive</option><option>Reactive</option></select>
+
+<button id="saveBtn">Save</button>
+<p id="msg"></p>
+
+<button onclick="back()">⬅ Back</button>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, addDoc, collection }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const app = initializeApp({ apiKey:"AIza...", authDomain:"...", projectId:"..."});
+const db = getFirestore(app);
+
+saveBtn.onclick = async () => {
+  await addDoc(collection(db,"tti_records"),{
+    donorName: donorName.value,
+    donorId: donorId.value,
+    date: date.value,
+    hiv: hiv.value
+  });
+  msg.textContent="Saved!";
+};
+
+window.back = () => window.location.href="index.html";
+</script>
+
+</body>
+</html>
