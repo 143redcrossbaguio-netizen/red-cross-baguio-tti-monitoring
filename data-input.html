@@ -133,7 +133,7 @@
           <input type="number" id="cutoff" step="0.01" placeholder="Enter cutoff value (e.g. 1.00)" />
         </div>
 
-        <div class="malaria-cov-box">
+        <div id="malariaCovBox" class="malaria-cov-box hidden">
           <div class="screening-box-title">Malaria COV Range</div>
           <div class="grid-2">
             <input type="number" id="malariaLowerLimit" step="0.01" placeholder="Lower Limit" />
@@ -149,7 +149,7 @@
         <div class="tti-grid">
 
           <div class="tti-item">
-            <button type="button" class="tti-header-btn" onclick="togglePanel('hivPanel')">
+            <button type="button" class="tti-header-btn" onclick="togglePanel('hivPanel', 'hiv')">
               <span>HIV</span>
               <span id="hivBadge" class="test-badge neutral-badge">--</span>
             </button>
@@ -171,7 +171,7 @@
           </div>
 
           <div class="tti-item">
-            <button type="button" class="tti-header-btn" onclick="togglePanel('hbsagPanel')">
+            <button type="button" class="tti-header-btn" onclick="togglePanel('hbsagPanel', 'hbsag')">
               <span>HBsAg</span>
               <span id="hbsagBadge" class="test-badge neutral-badge">--</span>
             </button>
@@ -193,7 +193,7 @@
           </div>
 
           <div class="tti-item">
-            <button type="button" class="tti-header-btn" onclick="togglePanel('hcvPanel')">
+            <button type="button" class="tti-header-btn" onclick="togglePanel('hcvPanel', 'hcv')">
               <span>HCV</span>
               <span id="hcvBadge" class="test-badge neutral-badge">--</span>
             </button>
@@ -215,7 +215,7 @@
           </div>
 
           <div class="tti-item">
-            <button type="button" class="tti-header-btn" onclick="togglePanel('syphilisPanel')">
+            <button type="button" class="tti-header-btn" onclick="togglePanel('syphilisPanel', 'syphilis')">
               <span>Syphilis</span>
               <span id="syphilisBadge" class="test-badge neutral-badge">--</span>
             </button>
@@ -237,7 +237,7 @@
           </div>
 
           <div class="tti-item">
-            <button type="button" class="tti-header-btn" onclick="togglePanel('malariaPanel')">
+            <button type="button" class="tti-header-btn" onclick="togglePanel('malariaPanel', 'malaria')">
               <span>Malaria</span>
               <span id="malariaBadge" class="test-badge neutral-badge">--</span>
             </button>
@@ -303,6 +303,7 @@
     const newDonorRadio = document.getElementById("newDonor");
     const repeatDateWrap = document.getElementById("repeatDateWrap");
     const cutoffInput = document.getElementById("cutoff");
+    const malariaCovBox = document.getElementById("malariaCovBox");
     const malariaLowerLimit = document.getElementById("malariaLowerLimit");
     const malariaUpperLimit = document.getElementById("malariaUpperLimit");
     const overallStatus = document.getElementById("overallStatus");
@@ -363,6 +364,12 @@
 
     repeatDonorRadio.addEventListener("change", updateRepeatDateVisibility);
     newDonorRadio.addEventListener("change", updateRepeatDateVisibility);
+
+    function updateMalariaCovVisibility() {
+      const malariaPanel = document.getElementById("malariaPanel");
+      const isOpen = !malariaPanel.classList.contains("hidden");
+      malariaCovBox.classList.toggle("hidden", !isOpen);
+    }
 
     function setResultUI(test, text, type) {
       const resultBox = document.getElementById(`${test}_result`);
@@ -509,8 +516,9 @@
     malariaLowerLimit.addEventListener("input", computeMalaria);
     malariaUpperLimit.addEventListener("input", computeMalaria);
 
-    window.togglePanel = (id) => {
+    window.togglePanel = (id, testName) => {
       document.getElementById(id).classList.toggle("hidden");
+      if (testName === "malaria") updateMalariaCovVisibility();
     };
 
     function getCheckedRadioValue(name) {
@@ -545,6 +553,7 @@
       document.getElementById(`${test}_expiration`).value = data?.expirationDate || "";
       document.getElementById(`${test}_tested`).value = data?.dateTested || "";
       document.getElementById(`${test}Panel`).classList.remove("hidden");
+      if (test === "malaria") updateMalariaCovVisibility();
       window.compute(test);
     }
 
