@@ -388,3 +388,23 @@ textarea {
     border-bottom: 1px solid #e4e7ec;
   }
 }
+.grid-4 {
+  display:grid;
+  grid-template-columns: repeat(4,1fr);
+  gap:8px;
+}
+
+.grid-2 {
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:8px;
+}
+
+.inline {
+  display:flex;
+  gap:10px;
+}
+
+.hidden {
+  display:none;
+}
