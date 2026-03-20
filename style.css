@@ -774,3 +774,22 @@ textarea {
   background: #fff4e5;
   color: #b54708;
 }
+.table-badge-reactive {
+  background: #ffe5e5;
+  color: #b30000;
+}
+
+.table-badge-initially-reactive {
+  background: #fff4e5;
+  color: #b54708;
+}
+
+.table-badge-nonreactive {
+  background: #e6f4ea;
+  color: #1e7e34;
+}
+
+.table-badge-neutral {
+  background: #f2f4f7;
+  color: #667085;
+}
