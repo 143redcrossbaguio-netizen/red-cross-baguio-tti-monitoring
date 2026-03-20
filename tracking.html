@@ -91,9 +91,7 @@
       deleteDoc,
       updateDoc,
       doc,
-      getDoc,
-      query,
-      orderBy
+      getDoc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -268,6 +266,198 @@
       `;
     }
 
+    function sortRecords(records) {
+      return records.sort((a, b) => {
+        const aSec = a.createdAt?.seconds || 0;
+        const bSec = b.createdAt?.seconds || 0;
+        return bSec - aSec;
+      });
+    }
+
+    function csvEscape(value) {
+      const str = safe(value);
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+
+    function createDonorCSV(record) {
+      const p = getPatientInfo(record);
+      const s = getScreening(record);
+
+      const lines = [];
+
+      lines.push(["Field", "Value"]);
+      lines.push(["Surname", safe(p.surname)]);
+      lines.push(["First Name", safe(p.firstName)]);
+      lines.push(["Middle Name", safe(p.middleName)]);
+      lines.push(["Suffix", safe(p.suffix)]);
+      lines.push(["Serial Number", safe(p.serialNumber)]);
+      lines.push(["Blood Type", safe(p.bloodType)]);
+      lines.push(["Civil Status", safe(p.civilStatus)]);
+      lines.push(["Birthday", safe(p.birthday)]);
+      lines.push(["Age", safe(p.age)]);
+      lines.push(["Sex", safe(p.sex)]);
+      lines.push(["Contact Info", safe(p.contactInfo)]);
+      lines.push(["Address", safe(p.address)]);
+      lines.push(["Occupation", safe(p.occupation)]);
+      lines.push(["Collection Date", safe(p.collectionDate)]);
+      lines.push(["Donor Type", safe(p.donorType)]);
+      lines.push(["Donation Frequency", safe(p.donationFrequency)]);
+      lines.push(["Repeat Date", safe(p.repeatDate)]);
+      lines.push(["Overall Status", safe(s.overallStatus)]);
+      lines.push(["Referral Status", getReferralStatus(record)]);
+      lines.push(["Encoded By", safe(record.createdBy)]);
+      lines.push([]);
+      lines.push(["Test", "OD", "Repeat 1", "Repeat 2", "Lot Number", "Expiration Date", "Date Tested", "Interpretation"]);
+
+      const tests = [
+        ["HIV", s.hiv || {}],
+        ["HBsAg", s.hbsag || {}],
+        ["HCV", s.hcv || {}],
+        ["Syphilis", s.syphilis || {}],
+        ["Malaria", s.malaria || {}]
+      ];
+
+      tests.forEach(([label, d]) => {
+        lines.push([
+          label,
+          safe(d.od),
+          safe(d.repeat1),
+          safe(d.repeat2),
+          safe(d.lotNumber),
+          safe(d.expirationDate),
+          safe(d.dateTested),
+          safe(d.interpretation)
+        ]);
+      });
+
+      return lines
+        .map(row => row.map(csvEscape).join(","))
+        .join("\n");
+    }
+
+    function downloadCSV(record) {
+      const p = getPatientInfo(record);
+      const serial = safe(p.serialNumber) || "record";
+      const donor = (fullName(record) || "donor").replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "_");
+      const filename = `${serial}_${donor}_tracking.csv`;
+
+      const csv = createDonorCSV(record);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function printDonor(record) {
+      const p = getPatientInfo(record);
+      const s = getScreening(record);
+      const donorName = fullName(record) || "Unnamed Record";
+
+      const tests = [
+        ["HIV", s.hiv || {}],
+        ["HBsAg", s.hbsag || {}],
+        ["HCV", s.hcv || {}],
+        ["Syphilis", s.syphilis || {}],
+        ["Malaria", s.malaria || {}]
+      ];
+
+      const testRows = tests.map(([label, d]) => `
+        <tr>
+          <td>${label}</td>
+          <td>${safe(d.od) || "--"}</td>
+          <td>${safe(d.repeat1) || "--"}</td>
+          <td>${safe(d.repeat2) || "--"}</td>
+          <td>${safe(d.lotNumber) || "--"}</td>
+          <td>${safe(d.expirationDate) || "--"}</td>
+          <td>${safe(d.dateTested) || "--"}</td>
+          <td>${safe(d.interpretation) || "--"}</td>
+        </tr>
+      `).join("");
+
+      const html = `
+        <html>
+          <head>
+            <title>Print Donor Record</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 24px; color: #111; }
+              h1, h2, h3 { margin: 0 0 10px; }
+              .header { text-align: center; margin-bottom: 20px; }
+              .section { margin-top: 24px; }
+              .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+              .item { border: 1px solid #ccc; padding: 8px 10px; border-radius: 6px; }
+              .label { font-size: 12px; color: #555; display: block; margin-bottom: 4px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+              th, td { border: 1px solid #999; padding: 8px; font-size: 12px; text-align: center; }
+              th { background: #eee; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h2>PHILIPPINE RED CROSS BAGUIO CITY CHAPTER</h2>
+              <h3>TTI MONITORING</h3>
+              <h1>Donor Record</h1>
+            </div>
+
+            <div class="section">
+              <h3>${donorName}</h3>
+              <div class="grid">
+                <div class="item"><span class="label">Serial Number</span>${safe(p.serialNumber) || "--"}</div>
+                <div class="item"><span class="label">Blood Type</span>${safe(p.bloodType) || "--"}</div>
+                <div class="item"><span class="label">Civil Status</span>${safe(p.civilStatus) || "--"}</div>
+                <div class="item"><span class="label">Birthday</span>${safe(p.birthday) || "--"}</div>
+                <div class="item"><span class="label">Age</span>${safe(p.age) || "--"}</div>
+                <div class="item"><span class="label">Sex</span>${safe(p.sex) || "--"}</div>
+                <div class="item"><span class="label">Contact Info</span>${safe(p.contactInfo) || "--"}</div>
+                <div class="item"><span class="label">Address</span>${safe(p.address) || "--"}</div>
+                <div class="item"><span class="label">Occupation</span>${safe(p.occupation) || "--"}</div>
+                <div class="item"><span class="label">Collection Date</span>${safe(p.collectionDate) || "--"}</div>
+                <div class="item"><span class="label">Donor Type</span>${safe(p.donorType) || "--"}</div>
+                <div class="item"><span class="label">Donation Frequency</span>${safe(p.donationFrequency) || "--"}</div>
+                <div class="item"><span class="label">Repeat Date</span>${safe(p.repeatDate) || "--"}</div>
+                <div class="item"><span class="label">Overall Status</span>${safe(s.overallStatus) || "--"}</div>
+                <div class="item"><span class="label">Referral Status</span>${getReferralStatus(record)}</div>
+                <div class="item"><span class="label">Encoded By</span>${safe(record.createdBy) || "--"}</div>
+              </div>
+            </div>
+
+            <div class="section">
+              <h3>TTI Screening Results</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Test</th>
+                    <th>OD</th>
+                    <th>Repeat 1</th>
+                    <th>Repeat 2</th>
+                    <th>Lot Number</th>
+                    <th>Expiration Date</th>
+                    <th>Date Tested</th>
+                    <th>Interpretation</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${testRows}
+                </tbody>
+              </table>
+            </div>
+          </body>
+        </html>
+      `;
+
+      const printWindow = window.open("", "_blank", "width=1000,height=800");
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+    }
+
     function renderRecords() {
       const searchTerm = searchInput.value.trim().toLowerCase();
       const statusValue = statusFilter.value;
@@ -320,6 +510,8 @@
               <span class="tracking-overall-badge ${overallClass(overall)}">${overall}</span>
               <button type="button" class="referral-btn" data-id="${record.id}">Referral</button>
               <span class="referral-status-badge ${referralClass(referral)}">${referral}</span>
+              <button class="secondary-btn printRecordBtn" data-id="${record.id}">Print</button>
+              <button class="secondary-btn exportCsvBtn" data-id="${record.id}">Export CSV</button>
               ${
                 currentRole === "master"
                   ? `<button class="secondary-btn editRecordBtn" data-id="${record.id}">Edit</button>
@@ -360,12 +552,12 @@
         sidebarRole.textContent = "no role";
       }
 
-      const q = query(collection(db, "tti_records"), orderBy("createdAt", "desc"));
-      onSnapshot(q, (snapshot) => {
+      onSnapshot(collection(db, "tti_records"), (snapshot) => {
         allRecords = snapshot.docs.map((d) => ({
           id: d.id,
           ...d.data()
         }));
+        sortRecords(allRecords);
         renderRecords();
       }, (error) => {
         console.error("Tracking snapshot error:", error);
@@ -403,6 +595,20 @@
           details.classList.toggle("hidden");
           if (btn) btn.textContent = hidden ? "−" : "+";
         }
+        return;
+      }
+
+      if (e.target.classList.contains("printRecordBtn")) {
+        const id = e.target.getAttribute("data-id");
+        const record = allRecords.find(r => r.id === id);
+        if (record) printDonor(record);
+        return;
+      }
+
+      if (e.target.classList.contains("exportCsvBtn")) {
+        const id = e.target.getAttribute("data-id");
+        const record = allRecords.find(r => r.id === id);
+        if (record) downloadCSV(record);
         return;
       }
 
