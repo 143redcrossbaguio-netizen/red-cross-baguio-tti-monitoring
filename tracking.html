@@ -61,6 +61,7 @@
           <select id="statusFilter">
             <option value="">All Overall Status</option>
             <option value="🔴 Reactive">Reactive</option>
+            <option value="🟠 Initially Reactive">Initially Reactive</option>
             <option value="🟢 Non-Reactive">Non-Reactive</option>
           </select>
         </div>
@@ -83,20 +84,8 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getAuth,
-      onAuthStateChanged,
-      signOut
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import {
-      getFirestore,
-      collection,
-      onSnapshot,
-      deleteDoc,
-      doc,
-      getDoc,
-      updateDoc
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, deleteDoc, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
@@ -206,6 +195,7 @@
     function renderInterpretationBadge(text) {
       let cls = "table-badge-neutral";
       if (text === "🔴 Reactive") cls = "table-badge-reactive";
+      if (text === "🟠 Initially Reactive") cls = "table-badge-initially-reactive";
       if (text === "🟢 Non-Reactive") cls = "table-badge-nonreactive";
       return `<span class="table-result-badge ${cls}">${text || "--"}</span>`;
     }
@@ -325,12 +315,13 @@
         const overallClass =
           overall === "🔴 Reactive"
             ? "overall-reactive"
+            : overall === "🟠 Initially Reactive"
+            ? "overall-initially-reactive"
             : overall === "🟢 Non-Reactive"
             ? "overall-nonreactive"
             : "overall-neutral";
 
-        const referralClass =
-          referral === "Yes" ? "referral-yes" : "referral-no";
+        const referralClass = referral === "Yes" ? "referral-yes" : "referral-no";
 
         const item = document.createElement("section");
         item.className = "content-card tracking-list-card";
@@ -347,11 +338,8 @@
 
             <div class="tracking-list-right">
               <span class="tracking-overall-badge ${overallClass}">${overall || "--"}</span>
-
               <button type="button" class="referral-btn" data-id="${record.id}">Referral</button>
-
               <span class="referral-status-badge ${referralClass}">${referral}</span>
-
               ${
                 currentRole === "master"
                   ? `<button class="secondary-btn editRecordBtn" data-id="${record.id}">Edit</button>
@@ -373,9 +361,7 @@
 
     async function setReferralStatus(id, value) {
       try {
-        await updateDoc(doc(db, "tti_records", id), {
-          referralStatus: value
-        });
+        await updateDoc(doc(db, "tti_records", id), { referralStatus: value });
       } catch (error) {
         alert(error.message);
       }
@@ -396,14 +382,11 @@
 
       if (e.target.classList.contains("deleteRecordBtn")) {
         const id = e.target.getAttribute("data-id");
-
         if (currentRole !== "master") {
           alert("No permission.");
           return;
         }
-
         if (!confirm("Delete this record?")) return;
-
         try {
           await deleteDoc(doc(db, "tti_records", id));
         } catch (error) {
@@ -419,18 +402,11 @@
       if (e.target.classList.contains("referral-btn")) {
         const id = e.target.getAttribute("data-id");
         const answer = prompt("Set referral status: Yes or No", "No");
-
         if (!answer) return;
-
         const normalized = answer.trim().toLowerCase();
-
-        if (normalized === "yes") {
-          await setReferralStatus(id, "Yes");
-        } else if (normalized === "no") {
-          await setReferralStatus(id, "No");
-        } else {
-          alert("Please enter Yes or No.");
-        }
+        if (normalized === "yes") await setReferralStatus(id, "Yes");
+        else if (normalized === "no") await setReferralStatus(id, "No");
+        else alert("Please enter Yes or No.");
       }
     });
   </script>
