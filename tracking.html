@@ -30,6 +30,7 @@
 
       <nav class="sidebar-nav">
         <a href="data-input.html" class="nav-link">Data Input</a>
+        <a href="hubing-results.html" class="nav-link">Hubbing Data</a>
         <a href="tracking.html" class="nav-link active">Tracking</a>
         <a href="statistics.html" class="nav-link">Statistics</a>
       </nav>
@@ -46,36 +47,40 @@
       <section class="page-banner">
         <div>
           <h3>Tracking</h3>
-          <p>View submitted records in real time</p>
+          <p>View all donor records from Data Input</p>
         </div>
       </section>
 
+      <!-- SEARCH / FILTER -->
       <section class="content-card">
         <div class="card-title-row">
-          <h4>TTI Records</h4>
+          <h4>Search Filter</h4>
         </div>
 
-        <div class="table-wrap">
-          <table class="records-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Donor</th>
-                <th>ID</th>
-                <th>HIV</th>
-                <th>HBsAg</th>
-                <th>HCV</th>
-                <th>Syphilis</th>
-                <th>Malaria</th>
-                <th>Remarks</th>
-                <th>By</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="body"></tbody>
-          </table>
+        <div class="tracking-filter-grid">
+          <input type="text" id="searchInput" placeholder="Search surname, first name, serial number, blood type, address, contact, occupation, status..." />
+          <select id="statusFilter">
+            <option value="">All Overall Status</option>
+            <option value="🔴 Reactive">Reactive</option>
+            <option value="🟢 Non-Reactive">Non-Reactive</option>
+          </select>
+        </div>
+
+        <div class="tracking-filter-grid">
+          <input type="date" id="collectionDateFilter" />
+          <button type="button" id="clearFilterBtn" class="secondary-btn">Clear Filters</button>
         </div>
       </section>
+
+      <!-- RECORD COUNT -->
+      <section class="content-card compact-card">
+        <div class="tracking-count-row">
+          <div><strong>Total Records Shown:</strong> <span id="recordCount">0</span></div>
+        </div>
+      </section>
+
+      <!-- RECORDS -->
+      <div id="recordsContainer"></div>
     </main>
   </div>
 
@@ -109,11 +114,18 @@
     const db = getFirestore(app);
 
     let currentRole = "";
+    let allRecords = [];
 
-    const body = document.getElementById("body");
     const sidebarEmail = document.getElementById("sidebarEmail");
     const sidebarRole = document.getElementById("sidebarRole");
     const logoutBtn = document.getElementById("logoutBtn");
+
+    const searchInput = document.getElementById("searchInput");
+    const statusFilter = document.getElementById("statusFilter");
+    const collectionDateFilter = document.getElementById("collectionDateFilter");
+    const clearFilterBtn = document.getElementById("clearFilterBtn");
+    const recordsContainer = document.getElementById("recordsContainer");
+    const recordCount = document.getElementById("recordCount");
 
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -132,37 +144,215 @@
         sidebarRole.textContent = "no role";
       }
 
-      onSnapshot(collection(db, "tti_records"), (snapShot) => {
-        body.innerHTML = "";
-
-        snapShot.forEach((d) => {
-          const data = d.data();
-
-          body.innerHTML += `
-            <tr>
-              <td>${data.date || ""}</td>
-              <td>${data.donorName || ""}</td>
-              <td>${data.donorId || ""}</td>
-              <td>${data.hiv || ""}</td>
-              <td>${data.hbsag || ""}</td>
-              <td>${data.hcv || ""}</td>
-              <td>${data.syphilis || ""}</td>
-              <td>${data.malaria || ""}</td>
-              <td>${data.remarks || ""}</td>
-              <td>${data.createdBy || ""}</td>
-              <td>
-                ${currentRole === "master"
-                  ? `<button class="table-action-btn" data-id="${d.id}">Delete</button>`
-                  : ""}
-              </td>
-            </tr>
-          `;
+      onSnapshot(collection(db, "tti_records"), (snapshot) => {
+        allRecords = [];
+        snapshot.forEach((docSnap) => {
+          allRecords.push({
+            id: docSnap.id,
+            ...docSnap.data()
+          });
         });
+
+        renderRecords();
       });
     });
 
+    logoutBtn.onclick = async () => {
+      await signOut(auth);
+      window.location.href = "index.html";
+    };
+
+    searchInput.addEventListener("input", renderRecords);
+    statusFilter.addEventListener("change", renderRecords);
+    collectionDateFilter.addEventListener("change", renderRecords);
+
+    clearFilterBtn.addEventListener("click", () => {
+      searchInput.value = "";
+      statusFilter.value = "";
+      collectionDateFilter.value = "";
+      renderRecords();
+    });
+
+    function safe(val) {
+      return val ?? "";
+    }
+
+    function formatName(patientInfo) {
+      const surname = safe(patientInfo?.surname);
+      const firstName = safe(patientInfo?.firstName);
+      const middleName = safe(patientInfo?.middleName);
+      const suffix = safe(patientInfo?.suffix);
+
+      return [surname, firstName, middleName, suffix]
+        .filter(Boolean)
+        .join(", ")
+        .replace(", ,", ",");
+    }
+
+    function getSearchableText(record) {
+      const p = record.patientInfo || {};
+      const s = record.screening || {};
+
+      return [
+        safe(p.surname),
+        safe(p.firstName),
+        safe(p.middleName),
+        safe(p.suffix),
+        safe(p.serialNumber),
+        safe(p.bloodType),
+        safe(p.civilStatus),
+        safe(p.birthday),
+        safe(p.age),
+        safe(p.sex),
+        safe(p.contactInfo),
+        safe(p.address),
+        safe(p.occupation),
+        safe(p.collectionDate),
+        safe(p.donorType),
+        safe(p.donationFrequency),
+        safe(p.repeatDate),
+        safe(s.overallStatus),
+        safe(record.createdBy)
+      ].join(" ").toLowerCase();
+    }
+
+    function renderRecords() {
+      const searchTerm = searchInput.value.trim().toLowerCase();
+      const statusValue = statusFilter.value;
+      const collectionDateValue = collectionDateFilter.value;
+
+      const filtered = allRecords.filter((record) => {
+        const p = record.patientInfo || {};
+        const s = record.screening || {};
+
+        const matchesSearch = !searchTerm || getSearchableText(record).includes(searchTerm);
+        const matchesStatus = !statusValue || safe(s.overallStatus) === statusValue;
+        const matchesDate = !collectionDateValue || safe(p.collectionDate) === collectionDateValue;
+
+        return matchesSearch && matchesStatus && matchesDate;
+      });
+
+      recordCount.textContent = filtered.length;
+      recordsContainer.innerHTML = "";
+
+      if (filtered.length === 0) {
+        recordsContainer.innerHTML = `
+          <section class="content-card">
+            <div class="empty-state">No records found.</div>
+          </section>
+        `;
+        return;
+      }
+
+      filtered.forEach((record) => {
+        const p = record.patientInfo || {};
+        const s = record.screening || {};
+        const overall = safe(s.overallStatus);
+
+        const overallClass =
+          overall === "🔴 Reactive"
+            ? "overall-reactive"
+            : overall === "🟢 Non-Reactive"
+            ? "overall-nonreactive"
+            : "overall-neutral";
+
+        const card = document.createElement("section");
+        card.className = "content-card tracking-record-card";
+
+        card.innerHTML = `
+          <div class="card-title-row">
+            <h4>${formatName(p) || "Unnamed Record"}</h4>
+            <div class="tracking-top-actions">
+              <span class="tracking-overall-badge ${overallClass}">${overall || "--"}</span>
+              ${
+                currentRole === "master"
+                  ? `<button class="table-action-btn deleteRecordBtn" data-id="${record.id}">Delete</button>`
+                  : ""
+              }
+            </div>
+          </div>
+
+          <div class="tracking-section-title">Patient Information</div>
+          <div class="tracking-info-grid">
+            <div class="tracking-info-item"><span class="label">Surname</span><span class="value">${safe(p.surname)}</span></div>
+            <div class="tracking-info-item"><span class="label">First Name</span><span class="value">${safe(p.firstName)}</span></div>
+            <div class="tracking-info-item"><span class="label">Middle Name</span><span class="value">${safe(p.middleName)}</span></div>
+            <div class="tracking-info-item"><span class="label">Suffix</span><span class="value">${safe(p.suffix)}</span></div>
+
+            <div class="tracking-info-item"><span class="label">Serial Number</span><span class="value">${safe(p.serialNumber)}</span></div>
+            <div class="tracking-info-item"><span class="label">Blood Type</span><span class="value">${safe(p.bloodType)}</span></div>
+            <div class="tracking-info-item"><span class="label">Civil Status</span><span class="value">${safe(p.civilStatus)}</span></div>
+            <div class="tracking-info-item"><span class="label">Birthday</span><span class="value">${safe(p.birthday)}</span></div>
+
+            <div class="tracking-info-item"><span class="label">Age</span><span class="value">${safe(p.age)}</span></div>
+            <div class="tracking-info-item"><span class="label">Sex</span><span class="value">${safe(p.sex)}</span></div>
+            <div class="tracking-info-item"><span class="label">Contact Info</span><span class="value">${safe(p.contactInfo)}</span></div>
+            <div class="tracking-info-item"><span class="label">Address</span><span class="value">${safe(p.address)}</span></div>
+
+            <div class="tracking-info-item"><span class="label">Occupation</span><span class="value">${safe(p.occupation)}</span></div>
+            <div class="tracking-info-item"><span class="label">Collection Date</span><span class="value">${safe(p.collectionDate)}</span></div>
+            <div class="tracking-info-item"><span class="label">Donor Type</span><span class="value">${safe(p.donorType)}</span></div>
+            <div class="tracking-info-item"><span class="label">Donation Frequency</span><span class="value">${safe(p.donationFrequency)}</span></div>
+
+            <div class="tracking-info-item"><span class="label">Repeat Date</span><span class="value">${safe(p.repeatDate)}</span></div>
+            <div class="tracking-info-item"><span class="label">Encoded By</span><span class="value">${safe(record.createdBy)}</span></div>
+          </div>
+
+          <div class="tracking-section-title">TTI Screening Results</div>
+          <div class="table-wrap">
+            <table class="records-table tracking-results-table">
+              <thead>
+                <tr>
+                  <th>Test</th>
+                  <th>OD</th>
+                  <th>Repeat 1</th>
+                  <th>Repeat 2</th>
+                  <th>Lot Number</th>
+                  <th>Expiration Date</th>
+                  <th>Date Tested</th>
+                  <th>Interpretation</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${renderTestRow("HIV", s.hiv)}
+                ${renderTestRow("HBsAg", s.hbsag)}
+                ${renderTestRow("HCV", s.hcv)}
+                ${renderTestRow("Syphilis", s.syphilis)}
+                ${renderTestRow("Malaria", s.malaria)}
+              </tbody>
+            </table>
+          </div>
+        `;
+
+        recordsContainer.appendChild(card);
+      });
+    }
+
+    function renderTestRow(label, data) {
+      const interpretation = safe(data?.interpretation);
+      const badgeClass =
+        interpretation === "🔴 Reactive"
+          ? "table-badge-reactive"
+          : interpretation === "🟢 Non-Reactive"
+          ? "table-badge-nonreactive"
+          : "table-badge-neutral";
+
+      return `
+        <tr>
+          <td>${label}</td>
+          <td>${safe(data?.od)}</td>
+          <td>${safe(data?.repeat1)}</td>
+          <td>${safe(data?.repeat2)}</td>
+          <td>${safe(data?.lotNumber)}</td>
+          <td>${safe(data?.expirationDate)}</td>
+          <td>${safe(data?.dateTested)}</td>
+          <td><span class="table-result-badge ${badgeClass}">${interpretation || "--"}</span></td>
+        </tr>
+      `;
+    }
+
     document.addEventListener("click", async (e) => {
-      if (e.target.classList.contains("table-action-btn")) {
+      if (e.target.classList.contains("deleteRecordBtn")) {
         const id = e.target.getAttribute("data-id");
 
         if (currentRole !== "master") {
@@ -179,11 +369,6 @@
         }
       }
     });
-
-    logoutBtn.onclick = async () => {
-      await signOut(auth);
-      window.location.href = "index.html";
-    };
   </script>
 </body>
 </html>
