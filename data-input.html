@@ -133,14 +133,6 @@
           <input type="number" id="cutoff" step="0.01" placeholder="Enter cutoff value (e.g. 1.00)" />
         </div>
 
-        <div id="malariaCovBox" class="malaria-cov-box hidden">
-          <div class="screening-box-title">Malaria COV Range</div>
-          <div class="grid-2">
-            <input type="number" id="malariaLowerLimit" step="0.01" placeholder="Lower Limit" />
-            <input type="number" id="malariaUpperLimit" step="0.01" placeholder="Upper Limit" />
-          </div>
-        </div>
-
         <div class="summary-box">
           Donor Overall Status:
           <span id="overallStatus" class="overall-neutral">--</span>
@@ -241,6 +233,15 @@
               <span>Malaria</span>
               <span id="malariaBadge" class="test-badge neutral-badge">--</span>
             </button>
+
+            <div id="malariaCovBox" class="malaria-cov-box hidden">
+              <div class="screening-box-title">Malaria COV Range</div>
+              <div class="grid-2">
+                <input type="number" id="malariaLowerLimit" step="0.01" placeholder="LL (Lower Limit)" oninput="compute('malaria')" />
+                <input type="number" id="malariaUpperLimit" step="0.01" placeholder="UL (Upper Limit)" oninput="compute('malaria')" />
+              </div>
+            </div>
+
             <div id="malariaPanel" class="tti-panel hidden">
               <div class="tti-row-label">Row 1</div>
               <div class="tti-row">
@@ -517,8 +518,12 @@
     malariaUpperLimit.addEventListener("input", computeMalaria);
 
     window.togglePanel = (id, testName) => {
-      document.getElementById(id).classList.toggle("hidden");
-      if (testName === "malaria") updateMalariaCovVisibility();
+      const panel = document.getElementById(id);
+      panel.classList.toggle("hidden");
+
+      if (testName === "malaria") {
+        updateMalariaCovVisibility();
+      }
     };
 
     function getCheckedRadioValue(name) {
@@ -552,8 +557,13 @@
       document.getElementById(`${test}_lot`).value = data?.lotNumber || "";
       document.getElementById(`${test}_expiration`).value = data?.expirationDate || "";
       document.getElementById(`${test}_tested`).value = data?.dateTested || "";
+
       document.getElementById(`${test}Panel`).classList.remove("hidden");
-      if (test === "malaria") updateMalariaCovVisibility();
+
+      if (test === "malaria") {
+        updateMalariaCovVisibility();
+      }
+
       window.compute(test);
     }
 
