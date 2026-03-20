@@ -129,8 +129,16 @@
         </div>
 
         <div class="cutoff-wrap">
-          <label class="field-label">Cutoff Value</label>
+          <label class="field-label">Common Cutoff Value (for HIV / HBsAg / HCV / Syphilis)</label>
           <input type="number" id="cutoff" step="0.01" placeholder="Enter cutoff value (e.g. 1.00)" />
+        </div>
+
+        <div class="malaria-cov-box">
+          <div class="screening-box-title">Malaria COV Range</div>
+          <div class="grid-2">
+            <input type="number" id="malariaLowerLimit" step="0.01" placeholder="Lower Limit" />
+            <input type="number" id="malariaUpperLimit" step="0.01" placeholder="Upper Limit" />
+          </div>
         </div>
 
         <div class="summary-box">
@@ -140,6 +148,7 @@
 
         <div class="tti-grid">
 
+          <!-- HIV -->
           <div class="tti-item">
             <button type="button" class="tti-header-btn" onclick="togglePanel('hivPanel')">
               <span>HIV</span>
@@ -149,8 +158,8 @@
               <div class="tti-row-label">Row 1</div>
               <div class="tti-row">
                 <input type="number" step="0.01" id="hiv_od" placeholder="OD" oninput="compute('hiv')" />
-                <input type="number" step="0.01" id="hiv_repeat1" placeholder="Repeat 1" />
-                <input type="number" step="0.01" id="hiv_repeat2" placeholder="Repeat 2" />
+                <input type="number" step="0.01" id="hiv_repeat1" placeholder="Repeat 1" oninput="compute('hiv')" />
+                <input type="number" step="0.01" id="hiv_repeat2" placeholder="Repeat 2" oninput="compute('hiv')" />
               </div>
               <div class="tti-row-label">Row 2</div>
               <div class="tti-row">
@@ -162,6 +171,7 @@
             </div>
           </div>
 
+          <!-- HBsAg -->
           <div class="tti-item">
             <button type="button" class="tti-header-btn" onclick="togglePanel('hbsagPanel')">
               <span>HBsAg</span>
@@ -171,8 +181,8 @@
               <div class="tti-row-label">Row 1</div>
               <div class="tti-row">
                 <input type="number" step="0.01" id="hbsag_od" placeholder="OD" oninput="compute('hbsag')" />
-                <input type="number" step="0.01" id="hbsag_repeat1" placeholder="Repeat 1" />
-                <input type="number" step="0.01" id="hbsag_repeat2" placeholder="Repeat 2" />
+                <input type="number" step="0.01" id="hbsag_repeat1" placeholder="Repeat 1" oninput="compute('hbsag')" />
+                <input type="number" step="0.01" id="hbsag_repeat2" placeholder="Repeat 2" oninput="compute('hbsag')" />
               </div>
               <div class="tti-row-label">Row 2</div>
               <div class="tti-row">
@@ -184,6 +194,7 @@
             </div>
           </div>
 
+          <!-- HCV -->
           <div class="tti-item">
             <button type="button" class="tti-header-btn" onclick="togglePanel('hcvPanel')">
               <span>HCV</span>
@@ -193,8 +204,8 @@
               <div class="tti-row-label">Row 1</div>
               <div class="tti-row">
                 <input type="number" step="0.01" id="hcv_od" placeholder="OD" oninput="compute('hcv')" />
-                <input type="number" step="0.01" id="hcv_repeat1" placeholder="Repeat 1" />
-                <input type="number" step="0.01" id="hcv_repeat2" placeholder="Repeat 2" />
+                <input type="number" step="0.01" id="hcv_repeat1" placeholder="Repeat 1" oninput="compute('hcv')" />
+                <input type="number" step="0.01" id="hcv_repeat2" placeholder="Repeat 2" oninput="compute('hcv')" />
               </div>
               <div class="tti-row-label">Row 2</div>
               <div class="tti-row">
@@ -206,6 +217,7 @@
             </div>
           </div>
 
+          <!-- Syphilis -->
           <div class="tti-item">
             <button type="button" class="tti-header-btn" onclick="togglePanel('syphilisPanel')">
               <span>Syphilis</span>
@@ -215,8 +227,8 @@
               <div class="tti-row-label">Row 1</div>
               <div class="tti-row">
                 <input type="number" step="0.01" id="syphilis_od" placeholder="OD" oninput="compute('syphilis')" />
-                <input type="number" step="0.01" id="syphilis_repeat1" placeholder="Repeat 1" />
-                <input type="number" step="0.01" id="syphilis_repeat2" placeholder="Repeat 2" />
+                <input type="number" step="0.01" id="syphilis_repeat1" placeholder="Repeat 1" oninput="compute('syphilis')" />
+                <input type="number" step="0.01" id="syphilis_repeat2" placeholder="Repeat 2" oninput="compute('syphilis')" />
               </div>
               <div class="tti-row-label">Row 2</div>
               <div class="tti-row">
@@ -228,6 +240,7 @@
             </div>
           </div>
 
+          <!-- Malaria -->
           <div class="tti-item">
             <button type="button" class="tti-header-btn" onclick="togglePanel('malariaPanel')">
               <span>Malaria</span>
@@ -237,8 +250,8 @@
               <div class="tti-row-label">Row 1</div>
               <div class="tti-row">
                 <input type="number" step="0.01" id="malaria_od" placeholder="OD" oninput="compute('malaria')" />
-                <input type="number" step="0.01" id="malaria_repeat1" placeholder="Repeat 1" />
-                <input type="number" step="0.01" id="malaria_repeat2" placeholder="Repeat 2" />
+                <input type="number" step="0.01" id="malaria_repeat1" placeholder="Repeat 1" oninput="compute('malaria')" />
+                <input type="number" step="0.01" id="malaria_repeat2" placeholder="Repeat 2" oninput="compute('malaria')" />
               </div>
               <div class="tti-row-label">Row 2</div>
               <div class="tti-row">
@@ -307,6 +320,8 @@
     const newDonorRadio = document.getElementById("newDonor");
     const repeatDateWrap = document.getElementById("repeatDateWrap");
     const cutoffInput = document.getElementById("cutoff");
+    const malariaLowerLimit = document.getElementById("malariaLowerLimit");
+    const malariaUpperLimit = document.getElementById("malariaUpperLimit");
     const overallStatus = document.getElementById("overallStatus");
     const pageTitle = document.getElementById("pageTitle");
     const pageSubtitle = document.getElementById("pageSubtitle");
@@ -380,6 +395,9 @@
       if (type === "reactive") {
         resultBox.classList.add("reactive");
         badge.classList.add("reactive-badge");
+      } else if (type === "initiallyReactive") {
+        resultBox.classList.add("initially-reactive");
+        badge.classList.add("initially-reactive-badge");
       } else if (type === "nonreactive") {
         resultBox.classList.add("nonreactive");
         badge.classList.add("nonreactive-badge");
@@ -389,14 +407,94 @@
       }
     }
 
+    function isWithinMalariaRange(value, low, high) {
+      return value >= low && value <= high;
+    }
+
+    function computeRegularTest(test) {
+      const cutoff = parseFloat(cutoffInput.value);
+      const od = parseFloat(document.getElementById(`${test}_od`).value);
+      const repeat1 = parseFloat(document.getElementById(`${test}_repeat1`).value);
+      const repeat2 = parseFloat(document.getElementById(`${test}_repeat2`).value);
+
+      if (isNaN(cutoff) || isNaN(od)) {
+        setResultUI(test, "--", "neutral");
+        updateSummary();
+        return;
+      }
+
+      if (od <= cutoff) {
+        setResultUI(test, "🟢 Non-Reactive", "nonreactive");
+        updateSummary();
+        return;
+      }
+
+      const r1NonReactive = !isNaN(repeat1) && repeat1 <= cutoff;
+      const r2NonReactive = !isNaN(repeat2) && repeat2 <= cutoff;
+
+      const r1Reactive = !isNaN(repeat1) && repeat1 > cutoff;
+      const r2Reactive = !isNaN(repeat2) && repeat2 > cutoff;
+
+      if (r1NonReactive && r2NonReactive) {
+        setResultUI(test, "🟠 Initially Reactive", "initiallyReactive");
+      } else if (r1Reactive || r2Reactive) {
+        setResultUI(test, "🔴 Reactive", "reactive");
+      } else {
+        setResultUI(test, "🔴 Reactive", "reactive");
+      }
+
+      updateSummary();
+    }
+
+    function computeMalaria() {
+      const low = parseFloat(malariaLowerLimit.value);
+      const high = parseFloat(malariaUpperLimit.value);
+      const od = parseFloat(document.getElementById("malaria_od").value);
+      const repeat1 = parseFloat(document.getElementById("malaria_repeat1").value);
+      const repeat2 = parseFloat(document.getElementById("malaria_repeat2").value);
+
+      if (isNaN(low) || isNaN(high) || isNaN(od)) {
+        setResultUI("malaria", "--", "neutral");
+        updateSummary();
+        return;
+      }
+
+      if (isWithinMalariaRange(od, low, high)) {
+        setResultUI("malaria", "🟢 Non-Reactive", "nonreactive");
+        updateSummary();
+        return;
+      }
+
+      const r1Normal = !isNaN(repeat1) && isWithinMalariaRange(repeat1, low, high);
+      const r2Normal = !isNaN(repeat2) && isWithinMalariaRange(repeat2, low, high);
+
+      const r1Abnormal = !isNaN(repeat1) && !isWithinMalariaRange(repeat1, low, high);
+      const r2Abnormal = !isNaN(repeat2) && !isWithinMalariaRange(repeat2, low, high);
+
+      if (r1Normal && r2Normal) {
+        setResultUI("malaria", "🟠 Initially Reactive", "initiallyReactive");
+      } else if (r1Abnormal || r2Abnormal) {
+        setResultUI("malaria", "🔴 Reactive", "reactive");
+      } else {
+        setResultUI("malaria", "🔴 Reactive", "reactive");
+      }
+
+      updateSummary();
+    }
+
     function updateSummary() {
       let hasReactive = false;
+      let hasInitiallyReactive = false;
       let hasValue = false;
 
       for (const test of tests) {
         const txt = document.getElementById(`${test}_result`).textContent;
+
         if (txt === "🔴 Reactive") {
           hasReactive = true;
+          hasValue = true;
+        } else if (txt === "🟠 Initially Reactive") {
+          hasInitiallyReactive = true;
           hasValue = true;
         } else if (txt === "🟢 Non-Reactive") {
           hasValue = true;
@@ -412,6 +510,9 @@
       if (hasReactive) {
         overallStatus.textContent = "🔴 Reactive";
         overallStatus.className = "overall-reactive";
+      } else if (hasInitiallyReactive) {
+        overallStatus.textContent = "🟠 Initially Reactive";
+        overallStatus.className = "overall-initially-reactive";
       } else {
         overallStatus.textContent = "🟢 Non-Reactive";
         overallStatus.className = "overall-nonreactive";
@@ -419,29 +520,19 @@
     }
 
     window.compute = (test) => {
-      const cutoff = parseFloat(cutoffInput.value);
-      const odValue = parseFloat(document.getElementById(`${test}_od`).value);
-
-      if (isNaN(odValue) || isNaN(cutoff)) {
-        setResultUI(test, "--", "neutral");
-        updateSummary();
-        return;
-      }
-
-      if (odValue > cutoff) {
-        setResultUI(test, "🔴 Reactive", "reactive");
+      if (test === "malaria") {
+        computeMalaria();
       } else {
-        setResultUI(test, "🟢 Non-Reactive", "nonreactive");
+        computeRegularTest(test);
       }
-
-      updateSummary();
     };
 
     cutoffInput.addEventListener("input", () => {
-      for (const test of tests) {
-        window.compute(test);
-      }
+      ["hiv", "hbsag", "hcv", "syphilis"].forEach(computeRegularTest);
     });
+
+    malariaLowerLimit.addEventListener("input", computeMalaria);
+    malariaUpperLimit.addEventListener("input", computeMalaria);
 
     window.togglePanel = (id) => {
       document.getElementById(id).classList.toggle("hidden");
@@ -515,6 +606,8 @@
         updateRepeatDateVisibility();
 
         cutoffInput.value = s.cutoff || "";
+        malariaLowerLimit.value = s.malariaLowerLimit || "";
+        malariaUpperLimit.value = s.malariaUpperLimit || "";
 
         fillTestData("hiv", s.hiv);
         fillTestData("hbsag", s.hbsag);
@@ -559,6 +652,8 @@
           },
           screening: {
             cutoff: cutoffInput.value.trim(),
+            malariaLowerLimit: malariaLowerLimit.value.trim(),
+            malariaUpperLimit: malariaUpperLimit.value.trim(),
             hiv: getTestData("hiv"),
             hbsag: getTestData("hbsag"),
             hcv: getTestData("hcv"),
