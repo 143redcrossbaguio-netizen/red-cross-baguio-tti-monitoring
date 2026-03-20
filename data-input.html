@@ -1,48 +1,243 @@
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {
-  getFirestore, doc, getDoc, addDoc, collection
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TTI Monitoring - Data Input</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
-  authDomain: "red-cross-baguio-tti-monitor.firebaseapp.com",
-  projectId: "red-cross-baguio-tti-monitor"
-};
+  <header class="top-header">
+    <div class="top-header-inner centered-header">
+      <img src="logo.png" alt="PRC Logo" class="header-logo" />
+      <div class="header-text">
+        <h1>PHILIPPINE RED CROSS BAGUIO CITY CHAPTER</h1>
+        <h2>TTI MONITORING</h2>
+      </div>
+    </div>
+  </header>
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <img src="logo.png" alt="PRC Logo" class="sidebar-logo" />
+        <div>
+          <div class="brand-title">TTI System</div>
+          <div class="brand-subtitle">Hospital Dashboard</div>
+        </div>
+      </div>
 
-let currentRole = "";
+      <nav class="sidebar-nav">
+        <a href="data-input.html" class="nav-link active">Data Input</a>
+        <a href="tracking.html" class="nav-link">Tracking</a>
+        <a href="statistics.html" class="nav-link">Statistics</a>
+      </nav>
 
-// CHECK LOGIN + ROLE
-onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    alert("Please login first");
-    window.location.href = "index.html";
-    return;
-  }
+      <div class="sidebar-user-box">
+        <div><strong>User:</strong> <span id="sidebarEmail">-</span></div>
+        <div><strong>Role:</strong> <span id="sidebarRole">-</span></div>
+      </div>
 
-  const snap = await getDoc(doc(db, "users", user.uid));
-  if (snap.exists()) {
-    currentRole = snap.data().role;
-  }
-});
+      <button id="logoutBtn" class="logout-btn">Logout</button>
+    </aside>
 
-// SAVE (BOTH CAN SAVE)
-saveBtn.onclick = async () => {
-  await addDoc(collection(db, "tti_records"), {
-    donorName: donorName.value,
-    donorId: donorId.value,
-    date: date.value,
-    hiv: hiv.value
-  });
+    <main class="main-content">
+      <section class="page-banner">
+        <div>
+          <h3>Data Input</h3>
+          <p>Enter donor screening records</p>
+        </div>
+      </section>
 
-  msg.textContent = "Saved!";
-};
+      <section class="cards-grid two-col">
+        <div class="content-card">
+          <div class="card-title-row">
+            <h4>Patient / Donor Information</h4>
+          </div>
 
-window.back = () => window.location.href = "index.html";
-</script>
+          <input type="text" id="donorName" placeholder="Donor Name" />
+          <input type="text" id="donorId" placeholder="Donor ID" />
+          <input type="date" id="date" />
+        </div>
+
+        <div class="content-card">
+          <div class="card-title-row">
+            <h4>TTI Screening Results</h4>
+          </div>
+
+          <select id="hiv">
+            <option value="">HIV</option>
+            <option value="Non-Reactive">Non-Reactive</option>
+            <option value="Reactive">Reactive</option>
+          </select>
+
+          <select id="hbsag">
+            <option value="">HBsAg</option>
+            <option value="Non-Reactive">Non-Reactive</option>
+            <option value="Reactive">Reactive</option>
+          </select>
+
+          <select id="hcv">
+            <option value="">HCV</option>
+            <option value="Non-Reactive">Non-Reactive</option>
+            <option value="Reactive">Reactive</option>
+          </select>
+
+          <select id="syphilis">
+            <option value="">Syphilis</option>
+            <option value="Non-Reactive">Non-Reactive</option>
+            <option value="Reactive">Reactive</option>
+          </select>
+
+          <select id="malaria">
+            <option value="">Malaria</option>
+            <option value="Non-Reactive">Non-Reactive</option>
+            <option value="Reactive">Reactive</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="content-card">
+        <div class="card-title-row">
+          <h4>Remarks</h4>
+        </div>
+
+        <textarea id="remarks" placeholder="Remarks"></textarea>
+
+        <div class="action-row">
+          <button id="saveBtn" class="primary-btn">Save Record</button>
+        </div>
+        <p id="msg" class="message"></p>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      addDoc,
+      collection,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
+      authDomain: "red-cross-baguio-tti-monitor.firebaseapp.com",
+      projectId: "red-cross-baguio-tti-monitor",
+      storageBucket: "red-cross-baguio-tti-monitor.firebasestorage.app",
+      messagingSenderId: "361015244463",
+      appId: "1:361015244463:web:076f8802942ca904f5065a"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentRole = "";
+    let currentUser = null;
+
+    const donorName = document.getElementById("donorName");
+    const donorId = document.getElementById("donorId");
+    const date = document.getElementById("date");
+    const hiv = document.getElementById("hiv");
+    const hbsag = document.getElementById("hbsag");
+    const hcv = document.getElementById("hcv");
+    const syphilis = document.getElementById("syphilis");
+    const malaria = document.getElementById("malaria");
+    const remarks = document.getElementById("remarks");
+    const msg = document.getElementById("msg");
+    const saveBtn = document.getElementById("saveBtn");
+    const sidebarEmail = document.getElementById("sidebarEmail");
+    const sidebarRole = document.getElementById("sidebarRole");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "index.html";
+        return;
+      }
+
+      currentUser = user;
+      sidebarEmail.textContent = user.email;
+
+      const snap = await getDoc(doc(db, "users", user.uid));
+      if (snap.exists()) {
+        currentRole = snap.data().role || "";
+        sidebarRole.textContent = currentRole || "-";
+      } else {
+        currentRole = "";
+        sidebarRole.textContent = "no role";
+      }
+    });
+
+    saveBtn.onclick = async () => {
+      msg.textContent = "";
+
+      if (!currentUser) {
+        msg.textContent = "Please login first.";
+        return;
+      }
+
+      if (
+        !donorName.value.trim() ||
+        !donorId.value.trim() ||
+        !date.value ||
+        !hiv.value ||
+        !hbsag.value ||
+        !hcv.value ||
+        !syphilis.value ||
+        !malaria.value
+      ) {
+        msg.textContent = "Please complete all required fields.";
+        return;
+      }
+
+      try {
+        await addDoc(collection(db, "tti_records"), {
+          donorName: donorName.value.trim(),
+          donorId: donorId.value.trim(),
+          date: date.value,
+          hiv: hiv.value,
+          hbsag: hbsag.value,
+          hcv: hcv.value,
+          syphilis: syphilis.value,
+          malaria: malaria.value,
+          remarks: remarks.value.trim(),
+          createdBy: currentUser.email,
+          createdByUid: currentUser.uid,
+          role: currentRole,
+          createdAt: serverTimestamp()
+        });
+
+        msg.textContent = "Record saved successfully.";
+
+        donorName.value = "";
+        donorId.value = "";
+        date.value = "";
+        hiv.value = "";
+        hbsag.value = "";
+        hcv.value = "";
+        syphilis.value = "";
+        malaria.value = "";
+        remarks.value = "";
+      } catch (error) {
+        msg.textContent = error.message;
+      }
+    };
+
+    logoutBtn.onclick = async () => {
+      await signOut(auth);
+      window.location.href = "index.html";
+    };
+  </script>
+</body>
+</html>
