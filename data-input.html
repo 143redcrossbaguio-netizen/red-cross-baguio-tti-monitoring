@@ -129,7 +129,7 @@
         </div>
 
         <div class="cutoff-wrap">
-          <label class="field-label">Common Cutoff Value (for HIV / HBsAg / HCV / Syphilis)</label>
+          <label class="field-label">Common Cutoff Value (HIV / HBsAg / HCV / Syphilis)</label>
           <input type="number" id="cutoff" step="0.01" placeholder="Enter cutoff value (e.g. 1.00)" />
         </div>
 
@@ -148,7 +148,6 @@
 
         <div class="tti-grid">
 
-          <!-- HIV -->
           <div class="tti-item">
             <button type="button" class="tti-header-btn" onclick="togglePanel('hivPanel')">
               <span>HIV</span>
@@ -171,7 +170,6 @@
             </div>
           </div>
 
-          <!-- HBsAg -->
           <div class="tti-item">
             <button type="button" class="tti-header-btn" onclick="togglePanel('hbsagPanel')">
               <span>HBsAg</span>
@@ -194,7 +192,6 @@
             </div>
           </div>
 
-          <!-- HCV -->
           <div class="tti-item">
             <button type="button" class="tti-header-btn" onclick="togglePanel('hcvPanel')">
               <span>HCV</span>
@@ -217,7 +214,6 @@
             </div>
           </div>
 
-          <!-- Syphilis -->
           <div class="tti-item">
             <button type="button" class="tti-header-btn" onclick="togglePanel('syphilisPanel')">
               <span>Syphilis</span>
@@ -240,7 +236,6 @@
             </div>
           </div>
 
-          <!-- Malaria -->
           <div class="tti-item">
             <button type="button" class="tti-header-btn" onclick="togglePanel('malariaPanel')">
               <span>Malaria</span>
@@ -277,20 +272,8 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getAuth,
-      onAuthStateChanged,
-      signOut
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import {
-      getFirestore,
-      doc,
-      getDoc,
-      addDoc,
-      updateDoc,
-      collection,
-      serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, getDoc, addDoc, updateDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
@@ -370,9 +353,7 @@
       const today = new Date();
       let age = today.getFullYear() - birthDate.getFullYear();
       const monthDiff = today.getMonth() - birthDate.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
-      }
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
       ageInput.value = age >= 0 ? age : "";
     });
 
@@ -431,7 +412,6 @@
 
       const r1NonReactive = !isNaN(repeat1) && repeat1 <= cutoff;
       const r2NonReactive = !isNaN(repeat2) && repeat2 <= cutoff;
-
       const r1Reactive = !isNaN(repeat1) && repeat1 > cutoff;
       const r2Reactive = !isNaN(repeat2) && repeat2 > cutoff;
 
@@ -467,7 +447,6 @@
 
       const r1Normal = !isNaN(repeat1) && isWithinMalariaRange(repeat1, low, high);
       const r2Normal = !isNaN(repeat2) && isWithinMalariaRange(repeat2, low, high);
-
       const r1Abnormal = !isNaN(repeat1) && !isWithinMalariaRange(repeat1, low, high);
       const r2Abnormal = !isNaN(repeat2) && !isWithinMalariaRange(repeat2, low, high);
 
@@ -489,7 +468,6 @@
 
       for (const test of tests) {
         const txt = document.getElementById(`${test}_result`).textContent;
-
         if (txt === "🔴 Reactive") {
           hasReactive = true;
           hasValue = true;
@@ -520,11 +498,8 @@
     }
 
     window.compute = (test) => {
-      if (test === "malaria") {
-        computeMalaria();
-      } else {
-        computeRegularTest(test);
-      }
+      if (test === "malaria") computeMalaria();
+      else computeRegularTest(test);
     };
 
     cutoffInput.addEventListener("input", () => {
