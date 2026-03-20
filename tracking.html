@@ -47,11 +47,10 @@
       <section class="page-banner">
         <div>
           <h3>Tracking</h3>
-          <p>View all donor records from Data Input</p>
+          <p>View and manage donor records</p>
         </div>
       </section>
 
-      <!-- SEARCH / FILTER -->
       <section class="content-card">
         <div class="card-title-row">
           <h4>Search Filter</h4>
@@ -72,14 +71,12 @@
         </div>
       </section>
 
-      <!-- RECORD COUNT -->
       <section class="content-card compact-card">
         <div class="tracking-count-row">
           <div><strong>Total Records Shown:</strong> <span id="recordCount">0</span></div>
         </div>
       </section>
 
-      <!-- RECORDS -->
       <div id="recordsContainer"></div>
     </main>
   </div>
@@ -152,7 +149,6 @@
             ...docSnap.data()
           });
         });
-
         renderRecords();
       });
     });
@@ -182,11 +178,7 @@
       const firstName = safe(patientInfo?.firstName);
       const middleName = safe(patientInfo?.middleName);
       const suffix = safe(patientInfo?.suffix);
-
-      return [surname, firstName, middleName, suffix]
-        .filter(Boolean)
-        .join(", ")
-        .replace(", ,", ",");
+      return [surname, firstName, middleName, suffix].filter(Boolean).join(" ");
     }
 
     function getSearchableText(record) {
@@ -214,6 +206,56 @@
         safe(s.overallStatus),
         safe(record.createdBy)
       ].join(" ").toLowerCase();
+    }
+
+    function renderTestTable(screening) {
+      const tests = [
+        ["HIV", screening?.hiv],
+        ["HBsAg", screening?.hbsag],
+        ["HCV", screening?.hcv],
+        ["Syphilis", screening?.syphilis],
+        ["Malaria", screening?.malaria]
+      ];
+
+      return `
+        <div class="table-wrap">
+          <table class="records-table tracking-results-table">
+            <thead>
+              <tr>
+                <th>Test</th>
+                <th>OD</th>
+                <th>Repeat 1</th>
+                <th>Repeat 2</th>
+                <th>Lot Number</th>
+                <th>Expiration Date</th>
+                <th>Date Tested</th>
+                <th>Interpretation</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tests.map(([label, d]) => `
+                <tr>
+                  <td>${label}</td>
+                  <td>${safe(d?.od)}</td>
+                  <td>${safe(d?.repeat1)}</td>
+                  <td>${safe(d?.repeat2)}</td>
+                  <td>${safe(d?.lotNumber)}</td>
+                  <td>${safe(d?.expirationDate)}</td>
+                  <td>${safe(d?.dateTested)}</td>
+                  <td>${renderInterpretationBadge(safe(d?.interpretation))}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderInterpretationBadge(text) {
+      let cls = "table-badge-neutral";
+      if (text === "🔴 Reactive") cls = "table-badge-reactive";
+      if (text === "🟢 Non-Reactive") cls = "table-badge-nonreactive";
+      return `<span class="table-result-badge ${cls}">${text || "--"}</span>`;
     }
 
     function renderRecords() {
@@ -266,7 +308,8 @@
               <span class="tracking-overall-badge ${overallClass}">${overall || "--"}</span>
               ${
                 currentRole === "master"
-                  ? `<button class="table-action-btn deleteRecordBtn" data-id="${record.id}">Delete</button>`
+                  ? `<button class="secondary-btn editRecordBtn" data-id="${record.id}">Edit</button>
+                     <button class="table-action-btn deleteRecordBtn" data-id="${record.id}">Delete</button>`
                   : ""
               }
             </div>
@@ -299,56 +342,11 @@
           </div>
 
           <div class="tracking-section-title">TTI Screening Results</div>
-          <div class="table-wrap">
-            <table class="records-table tracking-results-table">
-              <thead>
-                <tr>
-                  <th>Test</th>
-                  <th>OD</th>
-                  <th>Repeat 1</th>
-                  <th>Repeat 2</th>
-                  <th>Lot Number</th>
-                  <th>Expiration Date</th>
-                  <th>Date Tested</th>
-                  <th>Interpretation</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${renderTestRow("HIV", s.hiv)}
-                ${renderTestRow("HBsAg", s.hbsag)}
-                ${renderTestRow("HCV", s.hcv)}
-                ${renderTestRow("Syphilis", s.syphilis)}
-                ${renderTestRow("Malaria", s.malaria)}
-              </tbody>
-            </table>
-          </div>
+          ${renderTestTable(s)}
         `;
 
         recordsContainer.appendChild(card);
       });
-    }
-
-    function renderTestRow(label, data) {
-      const interpretation = safe(data?.interpretation);
-      const badgeClass =
-        interpretation === "🔴 Reactive"
-          ? "table-badge-reactive"
-          : interpretation === "🟢 Non-Reactive"
-          ? "table-badge-nonreactive"
-          : "table-badge-neutral";
-
-      return `
-        <tr>
-          <td>${label}</td>
-          <td>${safe(data?.od)}</td>
-          <td>${safe(data?.repeat1)}</td>
-          <td>${safe(data?.repeat2)}</td>
-          <td>${safe(data?.lotNumber)}</td>
-          <td>${safe(data?.expirationDate)}</td>
-          <td>${safe(data?.dateTested)}</td>
-          <td><span class="table-result-badge ${badgeClass}">${interpretation || "--"}</span></td>
-        </tr>
-      `;
     }
 
     document.addEventListener("click", async (e) => {
@@ -367,6 +365,11 @@
         } catch (error) {
           alert(error.message);
         }
+      }
+
+      if (e.target.classList.contains("editRecordBtn")) {
+        const id = e.target.getAttribute("data-id");
+        window.location.href = `data-input.html?edit=${id}`;
       }
     });
   </script>
