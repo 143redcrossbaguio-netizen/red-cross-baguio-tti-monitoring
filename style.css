@@ -821,3 +821,283 @@ textarea {
     justify-content: flex-start;
   }
 }
+/* TRACKING FILTER */
+.tracking-filter-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.secondary-btn {
+  padding: 12px 18px;
+  background: #475467;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondary-btn:hover {
+  background: #344054;
+}
+
+.compact-card {
+  padding: 16px 20px;
+}
+
+.tracking-count-row {
+  font-size: 14px;
+  color: #344054;
+}
+
+/* COLLAPSED LIST */
+.tracking-list-card {
+  margin-bottom: 16px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.tracking-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: #ffffff;
+}
+
+.clickable-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  cursor: pointer;
+  flex: 1;
+}
+
+.clickable-header:hover .tracking-name {
+  color: #b30000;
+}
+
+.collapse-toggle {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 10px;
+  background: #b30000;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.tracking-name-block {
+  min-width: 0;
+}
+
+.tracking-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #101828;
+}
+
+.tracking-subline {
+  font-size: 12px;
+  color: #667085;
+  margin-top: 3px;
+}
+
+.tracking-list-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.tracking-collapsed-body {
+  border-top: 1px solid #eaecf0;
+  padding: 18px;
+  background: #fcfcfd;
+}
+
+.referral-btn {
+  padding: 9px 12px;
+  border: none;
+  border-radius: 10px;
+  background: #1570ef;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.referral-btn:hover {
+  background: #175cd3;
+}
+
+.referral-status-badge {
+  display: inline-block;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.referral-yes {
+  background: #ffe5e5;
+  color: #b30000;
+}
+
+.referral-no {
+  background: #e6f4ea;
+  color: #1e7e34;
+}
+
+/* BOXED DETAILS */
+.screening-box {
+  background: #ffffff;
+  border: 1px solid #eaecf0;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.04);
+}
+
+.screening-box-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #b30000;
+  margin-bottom: 12px;
+  border-left: 4px solid #b30000;
+  padding-left: 10px;
+}
+
+.tracking-info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tracking-info-item {
+  background: #f8fafc;
+  border: 1px solid #eaecf0;
+  border-radius: 12px;
+  padding: 12px;
+  min-height: 74px;
+}
+
+.tracking-info-item .label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #667085;
+  margin-bottom: 6px;
+}
+
+.tracking-info-item .value {
+  display: block;
+  font-size: 14px;
+  color: #101828;
+  word-break: break-word;
+}
+
+/* TABLE */
+.table-wrap {
+  overflow-x: auto;
+}
+
+.tracking-results-table {
+  min-width: 1000px;
+}
+
+.records-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.records-table th {
+  background: #b30000;
+  color: #ffffff;
+  padding: 12px 10px;
+  font-size: 13px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.records-table td {
+  padding: 10px;
+  border-bottom: 1px solid #eaecf0;
+  font-size: 13px;
+  text-align: center;
+  white-space: nowrap;
+  background: #ffffff;
+}
+
+.records-table tr:hover td {
+  background: #fdf4f4;
+}
+
+.table-result-badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.table-badge-reactive {
+  background: #ffe5e5;
+  color: #b30000;
+}
+
+.table-badge-nonreactive {
+  background: #e6f4ea;
+  color: #1e7e34;
+}
+
+.table-badge-neutral {
+  background: #f2f4f7;
+  color: #667085;
+}
+
+.tracking-overall-badge {
+  display: inline-block;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.empty-state {
+  text-align: center;
+  color: #667085;
+  font-size: 14px;
+  padding: 10px 0;
+}
+
+.hidden {
+  display: none;
+}
+
+@media (max-width: 1000px) {
+  .tracking-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tracking-list-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tracking-list-right {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .tracking-info-grid {
+    grid-template-columns: 1fr;
+  }
+}
