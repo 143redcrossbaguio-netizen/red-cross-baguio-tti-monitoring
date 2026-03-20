@@ -140,6 +140,10 @@
       return safe(record.referralStatus) || "No";
     }
 
+    function getConfirmatoryStatus(record) {
+      return safe(record.confirmatoryStatus) || "";
+    }
+
     function fullName(record) {
       const p = getPatientInfo(record);
       return [safe(p.surname), safe(p.firstName), safe(p.middleName), safe(p.suffix)]
@@ -182,6 +186,7 @@
         safe(p.collectionDate),
         safe(s.overallStatus),
         safe(record.referralStatus),
+        safe(record.confirmatoryStatus),
         safe(record.createdBy)
       ].join(" ").toLowerCase();
     }
@@ -221,6 +226,9 @@
 
     function renderScreeningTable(record) {
       const s = getScreening(record);
+      const referral = getReferralStatus(record);
+      const confirmatory = getConfirmatoryStatus(record);
+
       const rows = [
         ["HIV", s.hiv || {}],
         ["HBsAg", s.hbsag || {}],
@@ -244,10 +252,12 @@
                   <th>Expiration Date</th>
                   <th>Date Tested</th>
                   <th>Interpretation</th>
+                  <th>Referral</th>
+                  <th>Confirmatory</th>
                 </tr>
               </thead>
               <tbody>
-                ${rows.map(([label, d]) => `
+                ${rows.map(([label, d], index) => `
                   <tr>
                     <td>${label}</td>
                     <td>${safe(d.od) || "--"}</td>
@@ -257,6 +267,34 @@
                     <td>${safe(d.expirationDate) || "--"}</td>
                     <td>${safe(d.dateTested) || "--"}</td>
                     <td>${interpretationBadge(safe(d.interpretation))}</td>
+                    ${
+                      index === 0
+                        ? `
+                          <td rowspan="5" class="merge-cell">
+                            <select class="inline-select referral-select" data-id="${record.id}">
+                              <option value="No" ${referral === "No" ? "selected" : ""}>No</option>
+                              <option value="Yes" ${referral === "Yes" ? "selected" : ""}>Yes</option>
+                            </select>
+                          </td>
+                          <td rowspan="5" class="merge-cell">
+                            ${
+                              referral === "Yes"
+                                ? `
+                                  <input
+                                    type="text"
+                                    class="confirmatory-input"
+                                    data-id="${record.id}"
+                                    value="${confirmatory}"
+                                    placeholder="Enter confirmatory"
+                                  />
+                                  <button class="secondary-btn saveConfirmatoryBtn mini-btn" data-id="${record.id}">Save</button>
+                                `
+                                : `<span class="muted-text">--</span>`
+                            }
+                          </td>
+                        `
+                        : ""
+                    }
                   </tr>
                 `).join("")}
               </tbody>
@@ -305,6 +343,7 @@
       lines.push(["Repeat Date", safe(p.repeatDate)]);
       lines.push(["Overall Status", safe(s.overallStatus)]);
       lines.push(["Referral Status", getReferralStatus(record)]);
+      lines.push(["Confirmatory", getConfirmatoryStatus(record)]);
       lines.push(["Encoded By", safe(record.createdBy)]);
       lines.push([]);
       lines.push(["Test", "OD", "Repeat 1", "Repeat 2", "Lot Number", "Expiration Date", "Date Tested", "Interpretation"]);
@@ -330,9 +369,7 @@
         ]);
       });
 
-      return lines
-        .map(row => row.map(csvEscape).join(","))
-        .join("\n");
+      return lines.map(row => row.map(csvEscape).join(",")).join("\n");
     }
 
     function downloadCSV(record) {
@@ -422,6 +459,7 @@
                 <div class="item"><span class="label">Repeat Date</span>${safe(p.repeatDate) || "--"}</div>
                 <div class="item"><span class="label">Overall Status</span>${safe(s.overallStatus) || "--"}</div>
                 <div class="item"><span class="label">Referral Status</span>${getReferralStatus(record)}</div>
+                <div class="item"><span class="label">Confirmatory</span>${getConfirmatoryStatus(record) || "--"}</div>
                 <div class="item"><span class="label">Encoded By</span>${safe(record.createdBy) || "--"}</div>
               </div>
             </div>
@@ -508,8 +546,6 @@
 
             <div class="tracking-list-right">
               <span class="tracking-overall-badge ${overallClass(overall)}">${overall}</span>
-              <button type="button" class="referral-btn" data-id="${record.id}">Referral</button>
-              <span class="referral-status-badge ${referralClass(referral)}">${referral}</span>
               <button class="secondary-btn printRecordBtn" data-id="${record.id}">Print</button>
               <button class="secondary-btn exportCsvBtn" data-id="${record.id}">Export CSV</button>
               ${
@@ -532,7 +568,15 @@
     }
 
     async function setReferralStatus(id, value) {
-      await updateDoc(doc(db, "tti_records", id), { referralStatus: value });
+      const payload = { referralStatus: value };
+      if (value === "No") payload.confirmatoryStatus = "";
+      await updateDoc(doc(db, "tti_records", id), payload);
+    }
+
+    async function saveConfirmatoryStatus(id, value) {
+      await updateDoc(doc(db, "tti_records", id), {
+        confirmatoryStatus: value
+      });
     }
 
     onAuthStateChanged(auth, async (user) => {
@@ -612,6 +656,19 @@
         return;
       }
 
+      if (e.target.classList.contains("saveConfirmatoryBtn")) {
+        const id = e.target.getAttribute("data-id");
+        const input = document.querySelector(`.confirmatory-input[data-id="${id}"]`);
+        const value = input ? input.value.trim() : "";
+        try {
+          await saveConfirmatoryStatus(id, value);
+          alert("Confirmatory saved.");
+        } catch (error) {
+          alert(error.message);
+        }
+        return;
+      }
+
       if (e.target.classList.contains("editRecordBtn")) {
         const id = e.target.getAttribute("data-id");
         window.location.href = `data-input.html?edit=${id}`;
@@ -632,15 +689,17 @@
         }
         return;
       }
+    });
 
-      if (e.target.classList.contains("referral-btn")) {
+    document.addEventListener("change", async (e) => {
+      if (e.target.classList.contains("referral-select")) {
         const id = e.target.getAttribute("data-id");
-        const answer = prompt("Set referral status: Yes or No", "No");
-        if (!answer) return;
-        const v = answer.trim().toLowerCase();
-        if (v === "yes") await setReferralStatus(id, "Yes");
-        else if (v === "no") await setReferralStatus(id, "No");
-        else alert("Please enter Yes or No.");
+        const value = e.target.value;
+        try {
+          await setReferralStatus(id, value);
+        } catch (error) {
+          alert(error.message);
+        }
       }
     });
   </script>
