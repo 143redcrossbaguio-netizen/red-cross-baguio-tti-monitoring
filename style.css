@@ -752,3 +752,25 @@ textarea {
   margin-bottom: 16px;
   box-shadow: 0 4px 12px rgba(16, 24, 40, 0.04);
 }
+.screening-box {
+  background: #ffffff;
+  border: 1px solid #eaecf0;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.04);
+}
+
+.screening-box-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #b30000;
+  margin-bottom: 12px;
+  border-left: 4px solid #b30000;
+  padding-left: 10px;
+}
+
+.table-badge-initially-reactive {
+  background: #fff4e5;
+  color: #b54708;
+}
