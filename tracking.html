@@ -47,7 +47,7 @@
       <section class="page-banner">
         <div>
           <h3>Tracking</h3>
-          <p>View and manage donor records</p>
+          <p>Collapsed donor list with expandable details</p>
         </div>
       </section>
 
@@ -57,7 +57,7 @@
         </div>
 
         <div class="tracking-filter-grid">
-          <input type="text" id="searchInput" placeholder="Search surname, first name, serial number, blood type, address, contact, occupation, status..." />
+          <input type="text" id="searchInput" placeholder="Search donor name, serial number, blood type, address, status..." />
           <select id="statusFilter">
             <option value="">All Overall Status</option>
             <option value="🔴 Reactive">Reactive</option>
@@ -94,7 +94,8 @@
       onSnapshot,
       deleteDoc,
       doc,
-      getDoc
+      getDoc,
+      updateDoc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -173,7 +174,7 @@
       return val ?? "";
     }
 
-    function formatName(patientInfo) {
+    function fullName(patientInfo) {
       const surname = safe(patientInfo?.surname);
       const firstName = safe(patientInfo?.firstName);
       const middleName = safe(patientInfo?.middleName);
@@ -192,20 +193,21 @@
         safe(p.suffix),
         safe(p.serialNumber),
         safe(p.bloodType),
-        safe(p.civilStatus),
-        safe(p.birthday),
-        safe(p.age),
-        safe(p.sex),
-        safe(p.contactInfo),
         safe(p.address),
+        safe(p.contactInfo),
         safe(p.occupation),
         safe(p.collectionDate),
-        safe(p.donorType),
-        safe(p.donationFrequency),
-        safe(p.repeatDate),
         safe(s.overallStatus),
+        safe(record.referralStatus),
         safe(record.createdBy)
       ].join(" ").toLowerCase();
+    }
+
+    function renderInterpretationBadge(text) {
+      let cls = "table-badge-neutral";
+      if (text === "🔴 Reactive") cls = "table-badge-reactive";
+      if (text === "🟢 Non-Reactive") cls = "table-badge-nonreactive";
+      return `<span class="table-result-badge ${cls}">${text || "--"}</span>`;
     }
 
     function renderTestTable(screening) {
@@ -251,13 +253,6 @@
       `;
     }
 
-    function renderInterpretationBadge(text) {
-      let cls = "table-badge-neutral";
-      if (text === "🔴 Reactive") cls = "table-badge-reactive";
-      if (text === "🟢 Non-Reactive") cls = "table-badge-nonreactive";
-      return `<span class="table-result-badge ${cls}">${text || "--"}</span>`;
-    }
-
     function renderRecords() {
       const searchTerm = searchInput.value.trim().toLowerCase();
       const statusValue = statusFilter.value;
@@ -290,6 +285,7 @@
         const p = record.patientInfo || {};
         const s = record.screening || {};
         const overall = safe(s.overallStatus);
+        const referral = safe(record.referralStatus) || "No";
 
         const overallClass =
           overall === "🔴 Reactive"
@@ -298,14 +294,29 @@
             ? "overall-nonreactive"
             : "overall-neutral";
 
-        const card = document.createElement("section");
-        card.className = "content-card tracking-record-card";
+        const referralClass =
+          referral === "Yes" ? "referral-yes" : "referral-no";
 
-        card.innerHTML = `
-          <div class="card-title-row">
-            <h4>${formatName(p) || "Unnamed Record"}</h4>
-            <div class="tracking-top-actions">
+        const item = document.createElement("section");
+        item.className = "content-card tracking-list-card";
+
+        item.innerHTML = `
+          <div class="tracking-list-header" data-toggle="${record.id}">
+            <div class="tracking-list-left">
+              <button class="collapse-toggle" type="button" data-toggle="${record.id}">+</button>
+              <div class="tracking-name-block">
+                <div class="tracking-name">${fullName(p) || "Unnamed Record"}</div>
+                <div class="tracking-subline">Serial No: ${safe(p.serialNumber) || "--"}</div>
+              </div>
+            </div>
+
+            <div class="tracking-list-right">
               <span class="tracking-overall-badge ${overallClass}">${overall || "--"}</span>
+
+              <button type="button" class="referral-btn" data-id="${record.id}">Referral</button>
+
+              <span class="referral-status-badge ${referralClass}">${referral}</span>
+
               ${
                 currentRole === "master"
                   ? `<button class="secondary-btn editRecordBtn" data-id="${record.id}">Edit</button>
@@ -315,41 +326,66 @@
             </div>
           </div>
 
-          <div class="tracking-section-title">Patient Information</div>
-          <div class="tracking-info-grid">
-            <div class="tracking-info-item"><span class="label">Surname</span><span class="value">${safe(p.surname)}</span></div>
-            <div class="tracking-info-item"><span class="label">First Name</span><span class="value">${safe(p.firstName)}</span></div>
-            <div class="tracking-info-item"><span class="label">Middle Name</span><span class="value">${safe(p.middleName)}</span></div>
-            <div class="tracking-info-item"><span class="label">Suffix</span><span class="value">${safe(p.suffix)}</span></div>
+          <div class="tracking-collapsed-body hidden" id="details-${record.id}">
+            <div class="tracking-section-title">Patient Information</div>
+            <div class="tracking-info-grid">
+              <div class="tracking-info-item"><span class="label">Surname</span><span class="value">${safe(p.surname)}</span></div>
+              <div class="tracking-info-item"><span class="label">First Name</span><span class="value">${safe(p.firstName)}</span></div>
+              <div class="tracking-info-item"><span class="label">Middle Name</span><span class="value">${safe(p.middleName)}</span></div>
+              <div class="tracking-info-item"><span class="label">Suffix</span><span class="value">${safe(p.suffix)}</span></div>
 
-            <div class="tracking-info-item"><span class="label">Serial Number</span><span class="value">${safe(p.serialNumber)}</span></div>
-            <div class="tracking-info-item"><span class="label">Blood Type</span><span class="value">${safe(p.bloodType)}</span></div>
-            <div class="tracking-info-item"><span class="label">Civil Status</span><span class="value">${safe(p.civilStatus)}</span></div>
-            <div class="tracking-info-item"><span class="label">Birthday</span><span class="value">${safe(p.birthday)}</span></div>
+              <div class="tracking-info-item"><span class="label">Serial Number</span><span class="value">${safe(p.serialNumber)}</span></div>
+              <div class="tracking-info-item"><span class="label">Blood Type</span><span class="value">${safe(p.bloodType)}</span></div>
+              <div class="tracking-info-item"><span class="label">Civil Status</span><span class="value">${safe(p.civilStatus)}</span></div>
+              <div class="tracking-info-item"><span class="label">Birthday</span><span class="value">${safe(p.birthday)}</span></div>
 
-            <div class="tracking-info-item"><span class="label">Age</span><span class="value">${safe(p.age)}</span></div>
-            <div class="tracking-info-item"><span class="label">Sex</span><span class="value">${safe(p.sex)}</span></div>
-            <div class="tracking-info-item"><span class="label">Contact Info</span><span class="value">${safe(p.contactInfo)}</span></div>
-            <div class="tracking-info-item"><span class="label">Address</span><span class="value">${safe(p.address)}</span></div>
+              <div class="tracking-info-item"><span class="label">Age</span><span class="value">${safe(p.age)}</span></div>
+              <div class="tracking-info-item"><span class="label">Sex</span><span class="value">${safe(p.sex)}</span></div>
+              <div class="tracking-info-item"><span class="label">Contact Info</span><span class="value">${safe(p.contactInfo)}</span></div>
+              <div class="tracking-info-item"><span class="label">Address</span><span class="value">${safe(p.address)}</span></div>
 
-            <div class="tracking-info-item"><span class="label">Occupation</span><span class="value">${safe(p.occupation)}</span></div>
-            <div class="tracking-info-item"><span class="label">Collection Date</span><span class="value">${safe(p.collectionDate)}</span></div>
-            <div class="tracking-info-item"><span class="label">Donor Type</span><span class="value">${safe(p.donorType)}</span></div>
-            <div class="tracking-info-item"><span class="label">Donation Frequency</span><span class="value">${safe(p.donationFrequency)}</span></div>
+              <div class="tracking-info-item"><span class="label">Occupation</span><span class="value">${safe(p.occupation)}</span></div>
+              <div class="tracking-info-item"><span class="label">Collection Date</span><span class="value">${safe(p.collectionDate)}</span></div>
+              <div class="tracking-info-item"><span class="label">Donor Type</span><span class="value">${safe(p.donorType)}</span></div>
+              <div class="tracking-info-item"><span class="label">Donation Frequency</span><span class="value">${safe(p.donationFrequency)}</span></div>
 
-            <div class="tracking-info-item"><span class="label">Repeat Date</span><span class="value">${safe(p.repeatDate)}</span></div>
-            <div class="tracking-info-item"><span class="label">Encoded By</span><span class="value">${safe(record.createdBy)}</span></div>
+              <div class="tracking-info-item"><span class="label">Repeat Date</span><span class="value">${safe(p.repeatDate)}</span></div>
+              <div class="tracking-info-item"><span class="label">Encoded By</span><span class="value">${safe(record.createdBy)}</span></div>
+            </div>
+
+            <div class="tracking-section-title">TTI Screening Results</div>
+            ${renderTestTable(s)}
           </div>
-
-          <div class="tracking-section-title">TTI Screening Results</div>
-          ${renderTestTable(s)}
         `;
 
-        recordsContainer.appendChild(card);
+        recordsContainer.appendChild(item);
       });
     }
 
+    async function setReferralStatus(id, value) {
+      try {
+        await updateDoc(doc(db, "tti_records", id), {
+          referralStatus: value
+        });
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
     document.addEventListener("click", async (e) => {
+      const toggleId = e.target.getAttribute("data-toggle");
+
+      if (toggleId) {
+        const details = document.getElementById(`details-${toggleId}`);
+        const btn = document.querySelector(`.collapse-toggle[data-toggle="${toggleId}"]`);
+        if (details) {
+          const isHidden = details.classList.contains("hidden");
+          details.classList.toggle("hidden");
+          if (btn) btn.textContent = isHidden ? "−" : "+";
+        }
+        return;
+      }
+
       if (e.target.classList.contains("deleteRecordBtn")) {
         const id = e.target.getAttribute("data-id");
 
@@ -370,6 +406,23 @@
       if (e.target.classList.contains("editRecordBtn")) {
         const id = e.target.getAttribute("data-id");
         window.location.href = `data-input.html?edit=${id}`;
+      }
+
+      if (e.target.classList.contains("referral-btn")) {
+        const id = e.target.getAttribute("data-id");
+        const answer = prompt("Set referral status: Yes or No", "No");
+
+        if (!answer) return;
+
+        const normalized = answer.trim().toLowerCase();
+
+        if (normalized === "yes") {
+          await setReferralStatus(id, "Yes");
+        } else if (normalized === "no") {
+          await setReferralStatus(id, "No");
+        } else {
+          alert("Please enter Yes or No.");
+        }
       }
     });
   </script>
