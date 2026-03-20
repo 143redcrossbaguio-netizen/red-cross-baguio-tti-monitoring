@@ -23,8 +23,62 @@
     <section id="dashboardSection" class="card hidden">
       <h2>Dashboard</h2>
       <p><strong>Email:</strong> <span id="userEmail"></span></p>
-      <p><strong>Status:</strong> Logged in</p>
-      <button type="button" id="logoutBtn">Logout</button>
+      <p><strong>Role:</strong> <span id="userRole"></span></p>
+
+      <div id="masterPanel" class="panel hidden">
+        <h3>MASTER ACCESS</h3>
+        <p>Full access is enabled.</p>
+      </div>
+
+      <div id="memberPanel" class="panel hidden">
+        <h3>MEMBER ACCESS</h3>
+        <p>Limited access is enabled.</p>
+      </div>
+
+      <div class="form-box">
+        <h3>DATA INPUT</h3>
+
+        <input type="text" id="donorName" placeholder="Donor Name" />
+        <input type="text" id="donorId" placeholder="Donor ID" />
+        <input type="date" id="date" />
+
+        <select id="hiv">
+          <option value="">HIV Result</option>
+          <option value="Non-Reactive">Non-Reactive</option>
+          <option value="Reactive">Reactive</option>
+        </select>
+
+        <select id="hbsag">
+          <option value="">HBsAg Result</option>
+          <option value="Non-Reactive">Non-Reactive</option>
+          <option value="Reactive">Reactive</option>
+        </select>
+
+        <select id="hcv">
+          <option value="">HCV Result</option>
+          <option value="Non-Reactive">Non-Reactive</option>
+          <option value="Reactive">Reactive</option>
+        </select>
+
+        <select id="syphilis">
+          <option value="">Syphilis Result</option>
+          <option value="Non-Reactive">Non-Reactive</option>
+          <option value="Reactive">Reactive</option>
+        </select>
+
+        <select id="malaria">
+          <option value="">Malaria Result</option>
+          <option value="Non-Reactive">Non-Reactive</option>
+          <option value="Reactive">Reactive</option>
+        </select>
+
+        <textarea id="remarks" placeholder="Remarks"></textarea>
+
+        <button type="button" id="saveBtn">Save Record</button>
+        <p id="saveMsg"></p>
+      </div>
+
+      <button type="button" id="logoutBtn" class="logout">Logout</button>
     </section>
   </main>
 
@@ -36,6 +90,14 @@
       signOut,
       onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      collection,
+      addDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
@@ -48,6 +110,7 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
     const emailInput = document.getElementById("email");
     const passwordInput = document.getElementById("password");
@@ -57,9 +120,25 @@
 
     const loginSection = document.getElementById("loginSection");
     const dashboardSection = document.getElementById("dashboardSection");
-    const userEmail = document.getElementById("userEmail");
 
-    console.log("Firebase loaded");
+    const userEmail = document.getElementById("userEmail");
+    const userRole = document.getElementById("userRole");
+    const masterPanel = document.getElementById("masterPanel");
+    const memberPanel = document.getElementById("memberPanel");
+
+    const donorName = document.getElementById("donorName");
+    const donorId = document.getElementById("donorId");
+    const dateInput = document.getElementById("date");
+    const hiv = document.getElementById("hiv");
+    const hbsag = document.getElementById("hbsag");
+    const hcv = document.getElementById("hcv");
+    const syphilis = document.getElementById("syphilis");
+    const malaria = document.getElementById("malaria");
+    const remarks = document.getElementById("remarks");
+    const saveBtn = document.getElementById("saveBtn");
+    const saveMsg = document.getElementById("saveMsg");
+
+    let currentRole = "";
 
     loginBtn.addEventListener("click", async () => {
       loginMsg.textContent = "Trying to log in...";
@@ -89,15 +168,106 @@
       }
     });
 
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       if (user) {
         loginSection.classList.add("hidden");
         dashboardSection.classList.remove("hidden");
         userEmail.textContent = user.email;
+
+        try {
+          const userRef = doc(db, "users", user.uid);
+          const userSnap = await getDoc(userRef);
+
+          masterPanel.classList.add("hidden");
+          memberPanel.classList.add("hidden");
+
+          if (userSnap.exists()) {
+            const data = userSnap.data();
+            currentRole = data.role || "";
+            userRole.textContent = currentRole || "no role";
+
+            if (currentRole === "master") {
+              masterPanel.classList.remove("hidden");
+            } else if (currentRole === "member") {
+              memberPanel.classList.remove("hidden");
+            }
+          } else {
+            currentRole = "";
+            userRole.textContent = "no role assigned";
+          }
+        } catch (error) {
+          console.error(error);
+          currentRole = "";
+          userRole.textContent = "error loading role";
+        }
       } else {
         loginSection.classList.remove("hidden");
         dashboardSection.classList.add("hidden");
         userEmail.textContent = "";
+        userRole.textContent = "";
+        currentRole = "";
+      }
+    });
+
+    saveBtn.addEventListener("click", async () => {
+      saveMsg.textContent = "";
+
+      const user = auth.currentUser;
+      if (!user) {
+        saveMsg.textContent = "Please log in first.";
+        return;
+      }
+
+      if (!currentRole) {
+        saveMsg.textContent = "No role assigned for this account.";
+        return;
+      }
+
+      if (
+        donorName.value.trim() === "" ||
+        donorId.value.trim() === "" ||
+        dateInput.value === "" ||
+        hiv.value === "" ||
+        hbsag.value === "" ||
+        hcv.value === "" ||
+        syphilis.value === "" ||
+        malaria.value === ""
+      ) {
+        saveMsg.textContent = "Please complete all required fields.";
+        return;
+      }
+
+      try {
+        await addDoc(collection(db, "tti_records"), {
+          donorName: donorName.value.trim(),
+          donorId: donorId.value.trim(),
+          date: dateInput.value,
+          hiv: hiv.value,
+          hbsag: hbsag.value,
+          hcv: hcv.value,
+          syphilis: syphilis.value,
+          malaria: malaria.value,
+          remarks: remarks.value.trim(),
+          createdBy: user.email,
+          createdByUid: user.uid,
+          role: currentRole,
+          createdAt: serverTimestamp()
+        });
+
+        saveMsg.textContent = "Record saved successfully.";
+
+        donorName.value = "";
+        donorId.value = "";
+        dateInput.value = "";
+        hiv.value = "";
+        hbsag.value = "";
+        hcv.value = "";
+        syphilis.value = "";
+        malaria.value = "";
+        remarks.value = "";
+      } catch (error) {
+        console.error(error);
+        saveMsg.textContent = error.code + ": " + error.message;
       }
     });
   </script>
