@@ -16,7 +16,7 @@ header {
 }
 
 .container {
-  max-width: 500px;
+  max-width: 700px;
   margin: 40px auto;
   padding: 20px;
 }
@@ -33,11 +33,25 @@ header {
 }
 
 input,
+select,
+textarea,
 button {
   width: 100%;
   padding: 12px;
   margin-top: 10px;
   font-size: 16px;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+textarea {
+  min-height: 100px;
+  resize: vertical;
 }
 
 button {
@@ -53,9 +67,35 @@ button:hover {
   background: #8f0000;
 }
 
-#loginMsg {
+#loginMsg,
+#saveMsg {
   margin-top: 12px;
   color: #b30000;
   font-weight: bold;
   min-height: 20px;
+}
+
+.panel {
+  margin-top: 15px;
+  padding: 15px;
+  border-left: 5px solid #b30000;
+  background: #fff7f7;
+  border-radius: 6px;
+}
+
+.form-box {
+  margin-top: 20px;
+  padding: 18px;
+  background: #fafafa;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.logout {
+  margin-top: 20px;
+  background: #444;
+}
+
+.logout:hover {
+  background: #222;
 }
