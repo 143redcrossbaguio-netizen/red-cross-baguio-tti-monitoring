@@ -744,3 +744,11 @@ textarea {
     justify-content: flex-start;
   }
 }
+.malaria-cov-box {
+  background: #ffffff;
+  border: 1px solid #eaecf0;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.04);
+}
