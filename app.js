@@ -6,14 +6,13 @@ import {
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// REPLACE THESE WITH YOUR REAL FIREBASE VALUES
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.firebasestorage.app",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
+  authDomain: "red-cross-baguio-tti-monitor.firebaseapp.com",
+  projectId: "red-cross-baguio-tti-monitor",
+  storageBucket: "red-cross-baguio-tti-monitor.firebasestorage.app",
+  messagingSenderId: "361015244463",
+  appId: "1:361015244463:web:076f8802942ca904f5065a"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -33,7 +32,6 @@ console.log("app.js loaded");
 console.log("loginBtn found:", !!loginBtn);
 
 loginBtn.addEventListener("click", async () => {
-  console.log("Login button clicked");
   loginMsg.textContent = "Trying to log in...";
 
   const email = emailInput.value.trim();
@@ -46,25 +44,21 @@ loginBtn.addEventListener("click", async () => {
 
   try {
     const result = await signInWithEmailAndPassword(auth, email, password);
-    console.log("Login success:", result.user.email);
     loginMsg.textContent = "Login successful.";
+    console.log("Login success:", result.user.email);
   } catch (error) {
-    console.error("Login error:", error);
-    loginMsg.textContent = `${error.code}: ${error.message}`;
+    console.error(error);
+    loginMsg.textContent = error.code + ": " + error.message;
   }
 });
 
-logoutBtn.addEventListener("click", async () => {
-  try {
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", async () => {
     await signOut(auth);
-  } catch (error) {
-    console.error("Logout error:", error);
-  }
-});
+  });
+}
 
 onAuthStateChanged(auth, (user) => {
-  console.log("Auth state changed:", user ? user.email : "No user");
-
   if (user) {
     loginSection.classList.add("hidden");
     dashboardSection.classList.remove("hidden");
