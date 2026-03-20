@@ -823,3 +823,40 @@ textarea {
 .table-action-btn:hover {
   background: #912018;
 }
+.checkbox-cell {
+  text-align: center;
+}
+
+.referral-check-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.referral-checkbox {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.table-badge-reactive {
+  background: #ffe5e5;
+  color: #b30000;
+}
+
+.table-badge-initially-reactive {
+  background: #fff4e5;
+  color: #b54708;
+}
+
+.table-badge-nonreactive {
+  background: #e6f4ea;
+  color: #1e7e34;
+}
+
+.table-badge-neutral {
+  background: #f2f4f7;
+  color: #667085;
+}
