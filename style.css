@@ -289,6 +289,20 @@ textarea {
   background: #8f0000;
 }
 
+.secondary-btn {
+  padding: 12px 18px;
+  background: #475467;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondary-btn:hover {
+  background: #344054;
+}
+
 .message {
   color: #b30000;
   font-weight: 700;
@@ -296,9 +310,9 @@ textarea {
   margin-top: 12px;
 }
 
-/* CUTOFF + SUMMARY */
+/* SUMMARY */
 .cutoff-wrap {
-  max-width: 360px;
+  max-width: 420px;
   margin-bottom: 14px;
 }
 
@@ -318,6 +332,10 @@ textarea {
 
 .overall-reactive {
   color: #b30000;
+}
+
+.overall-initially-reactive {
+  color: #b54708;
 }
 
 .overall-nonreactive {
@@ -391,6 +409,12 @@ textarea {
   border-color: #f5c2c2;
 }
 
+.result-box.initially-reactive {
+  background: #fff4e5;
+  color: #b54708;
+  border-color: #f7d8a6;
+}
+
 .result-box.nonreactive {
   background: #e6f4ea;
   color: #1e7e34;
@@ -415,6 +439,11 @@ textarea {
   color: #b30000;
 }
 
+.initially-reactive-badge {
+  background: #fff4e5;
+  color: #b54708;
+}
+
 .nonreactive-badge {
   background: #e6f4ea;
   color: #1e7e34;
@@ -425,422 +454,21 @@ textarea {
   color: #667085;
 }
 
-.hidden {
-  display: none;
-}
-
-/* RESPONSIVE */
-@media (max-width: 1000px) {
-  .app-shell {
-    flex-direction: column;
-  }
-
-  .sidebar {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid #e4e7ec;
-  }
-
-  .grid-4,
-  .grid-2,
-  .tti-row {
-    grid-template-columns: 1fr;
-  }
-}
-/* TRACKING PAGE */
-.tracking-filter-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.secondary-btn {
-  padding: 12px 18px;
-  background: #475467;
-  color: #ffffff;
-  border: none;
-  border-radius: 12px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.secondary-btn:hover {
-  background: #344054;
-}
-
-.compact-card {
-  padding: 16px 20px;
-}
-
-.tracking-count-row {
-  font-size: 14px;
-  color: #344054;
-}
-
-.tracking-record-card {
-  margin-bottom: 20px;
-}
-
-.tracking-top-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.tracking-overall-badge {
-  display: inline-block;
-  padding: 7px 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.tracking-section-title {
-  margin: 18px 0 12px;
-  font-size: 14px;
-  font-weight: 700;
-  color: #b30000;
-  border-left: 4px solid #b30000;
-  padding-left: 10px;
-}
-
-.tracking-info-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.tracking-info-item {
-  background: #f8fafc;
-  border: 1px solid #eaecf0;
-  border-radius: 12px;
-  padding: 12px;
-  min-height: 74px;
-}
-
-.tracking-info-item .label {
-  display: block;
-  font-size: 12px;
-  font-weight: 700;
-  color: #667085;
-  margin-bottom: 6px;
-}
-
-.tracking-info-item .value {
-  display: block;
-  font-size: 14px;
-  color: #101828;
-  word-break: break-word;
-}
-
-.tracking-results-table {
-  min-width: 1000px;
-}
-
-.table-result-badge {
-  display: inline-block;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.table-badge-reactive {
-  background: #ffe5e5;
-  color: #b30000;
-}
-
-.table-badge-nonreactive {
-  background: #e6f4ea;
-  color: #1e7e34;
-}
-
-.table-badge-neutral {
-  background: #f2f4f7;
-  color: #667085;
-}
-
-.empty-state {
-  text-align: center;
-  color: #667085;
-  font-size: 14px;
-  padding: 10px 0;
-}
-
-@media (max-width: 1000px) {
-  .tracking-filter-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .tracking-info-grid {
-    grid-template-columns: 1fr;
-  }
-}
-/* TRACKING PAGE */
-.tracking-filter-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.secondary-btn {
-  padding: 12px 18px;
-  background: #475467;
-  color: #ffffff;
-  border: none;
-  border-radius: 12px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.secondary-btn:hover {
-  background: #344054;
-}
-
-.compact-card {
-  padding: 16px 20px;
-}
-
-.tracking-count-row {
-  font-size: 14px;
-  color: #344054;
-}
-
-.tracking-record-card {
-  margin-bottom: 20px;
-}
-
-.tracking-top-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.tracking-overall-badge {
-  display: inline-block;
-  padding: 7px 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.tracking-section-title {
-  margin: 18px 0 12px;
-  font-size: 14px;
-  font-weight: 700;
-  color: #b30000;
-  border-left: 4px solid #b30000;
-  padding-left: 10px;
-}
-
-.tracking-info-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.tracking-info-item {
-  background: #f8fafc;
-  border: 1px solid #eaecf0;
-  border-radius: 12px;
-  padding: 12px;
-  min-height: 74px;
-}
-
-.tracking-info-item .label {
-  display: block;
-  font-size: 12px;
-  font-weight: 700;
-  color: #667085;
-  margin-bottom: 6px;
-}
-
-.tracking-info-item .value {
-  display: block;
-  font-size: 14px;
-  color: #101828;
-  word-break: break-word;
-}
-
-.tracking-results-table {
-  min-width: 1000px;
-}
-
-.table-result-badge {
-  display: inline-block;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.table-badge-reactive {
-  background: #ffe5e5;
-  color: #b30000;
-}
-
-.table-badge-nonreactive {
-  background: #e6f4ea;
-  color: #1e7e34;
-}
-
-.table-badge-neutral {
-  background: #f2f4f7;
-  color: #667085;
-}
-
-.empty-state {
-  text-align: center;
-  color: #667085;
-  font-size: 14px;
-  padding: 10px 0;
-}
-
-@media (max-width: 1000px) {
-  .tracking-filter-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .tracking-info-grid {
-    grid-template-columns: 1fr;
-  }
-}
-/* COLLAPSED TRACKING LIST */
-.tracking-list-card {
-  margin-bottom: 16px;
-  padding: 0;
-  overflow: hidden;
-}
-
-.tracking-list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 14px;
-  padding: 16px 18px;
-  cursor: pointer;
+.malaria-cov-box {
   background: #ffffff;
+  border: 1px solid #eaecf0;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.04);
 }
 
-.tracking-list-header:hover {
-  background: #fbfcfd;
-}
-
-.tracking-list-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-
-.collapse-toggle {
-  width: 34px;
-  height: 34px;
-  border: none;
-  border-radius: 10px;
-  background: #b30000;
-  color: #fff;
-  font-size: 20px;
-  font-weight: 700;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.tracking-name-block {
-  min-width: 0;
-}
-
-.tracking-name {
-  font-size: 16px;
-  font-weight: 700;
-  color: #101828;
-}
-
-.tracking-subline {
-  font-size: 12px;
-  color: #667085;
-  margin-top: 3px;
-}
-
-.tracking-list-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.tracking-collapsed-body {
-  border-top: 1px solid #eaecf0;
-  padding: 18px;
-  background: #fcfcfd;
-}
-
-.referral-btn {
-  padding: 9px 12px;
-  border: none;
-  border-radius: 10px;
-  background: #1570ef;
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.referral-btn:hover {
-  background: #175cd3;
-}
-
-.referral-status-badge {
-  display: inline-block;
-  padding: 7px 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.referral-yes {
-  background: #ffe5e5;
-  color: #b30000;
-}
-
-.referral-no {
-  background: #e6f4ea;
-  color: #1e7e34;
-}
-
-@media (max-width: 1000px) {
-  .tracking-list-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .tracking-list-right {
-    width: 100%;
-    justify-content: flex-start;
-  }
-}
 /* TRACKING FILTER */
 .tracking-filter-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 12px;
   margin-bottom: 12px;
-}
-
-.secondary-btn {
-  padding: 12px 18px;
-  background: #475467;
-  color: #ffffff;
-  border: none;
-  border-radius: 12px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.secondary-btn:hover {
-  background: #344054;
 }
 
 .compact-card {
@@ -1009,13 +637,13 @@ textarea {
   overflow-x: auto;
 }
 
-.tracking-results-table {
-  min-width: 1000px;
-}
-
 .records-table {
   width: 100%;
   border-collapse: collapse;
+}
+
+.tracking-results-table {
+  min-width: 1000px;
 }
 
 .records-table th {
@@ -1053,6 +681,11 @@ textarea {
   color: #b30000;
 }
 
+.table-badge-initially-reactive {
+  background: #fff4e5;
+  color: #b54708;
+}
+
 .table-badge-nonreactive {
   background: #e6f4ea;
   color: #1e7e34;
@@ -1083,7 +716,21 @@ textarea {
 }
 
 @media (max-width: 1000px) {
-  .tracking-filter-grid {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e4e7ec;
+  }
+
+  .grid-4,
+  .grid-2,
+  .tti-row,
+  .tracking-filter-grid,
+  .tracking-info-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1096,33 +743,4 @@ textarea {
     width: 100%;
     justify-content: flex-start;
   }
-
-  .tracking-info-grid {
-    grid-template-columns: 1fr;
-  }
-}
-/* INITIALLY REACTIVE COLORS */
-.result-box.initially-reactive {
-  background: #fff4e5;
-  color: #b54708;
-  border-color: #f7d8a6;
-}
-
-.initially-reactive-badge {
-  background: #fff4e5;
-  color: #b54708;
-}
-
-.overall-initially-reactive {
-  color: #b54708;
-}
-
-/* MALARIA RANGE BOX */
-.malaria-cov-box {
-  background: #ffffff;
-  border: 1px solid #eaecf0;
-  border-radius: 14px;
-  padding: 16px;
-  margin-bottom: 16px;
-  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.04);
 }
