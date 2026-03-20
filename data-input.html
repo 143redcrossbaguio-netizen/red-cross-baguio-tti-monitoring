@@ -1,243 +1,175 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TTI Monitoring - Data Input</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<title>Data Input</title>
+<link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-  <header class="top-header">
-    <div class="top-header-inner centered-header">
-      <img src="logo.png" alt="PRC Logo" class="header-logo" />
-      <div class="header-text">
-        <h1>PHILIPPINE RED CROSS BAGUIO CITY CHAPTER</h1>
-        <h2>TTI MONITORING</h2>
-      </div>
+<!-- HEADER -->
+<header class="top-header">
+  <div class="top-header-inner centered-header">
+    <img src="logo.png" class="header-logo">
+    <div class="header-text">
+      <h1>PHILIPPINE RED CROSS BAGUIO CITY CHAPTER</h1>
+      <h2>TTI MONITORING</h2>
     </div>
-  </header>
-
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="sidebar-brand">
-        <img src="logo.png" alt="PRC Logo" class="sidebar-logo" />
-        <div>
-          <div class="brand-title">TTI System</div>
-          <div class="brand-subtitle">Hospital Dashboard</div>
-        </div>
-      </div>
-
-      <nav class="sidebar-nav">
-        <a href="data-input.html" class="nav-link active">Data Input</a>
-        <a href="tracking.html" class="nav-link">Tracking</a>
-        <a href="statistics.html" class="nav-link">Statistics</a>
-      </nav>
-
-      <div class="sidebar-user-box">
-        <div><strong>User:</strong> <span id="sidebarEmail">-</span></div>
-        <div><strong>Role:</strong> <span id="sidebarRole">-</span></div>
-      </div>
-
-      <button id="logoutBtn" class="logout-btn">Logout</button>
-    </aside>
-
-    <main class="main-content">
-      <section class="page-banner">
-        <div>
-          <h3>Data Input</h3>
-          <p>Enter donor screening records</p>
-        </div>
-      </section>
-
-      <section class="cards-grid two-col">
-        <div class="content-card">
-          <div class="card-title-row">
-            <h4>Patient / Donor Information</h4>
-          </div>
-
-          <input type="text" id="donorName" placeholder="Donor Name" />
-          <input type="text" id="donorId" placeholder="Donor ID" />
-          <input type="date" id="date" />
-        </div>
-
-        <div class="content-card">
-          <div class="card-title-row">
-            <h4>TTI Screening Results</h4>
-          </div>
-
-          <select id="hiv">
-            <option value="">HIV</option>
-            <option value="Non-Reactive">Non-Reactive</option>
-            <option value="Reactive">Reactive</option>
-          </select>
-
-          <select id="hbsag">
-            <option value="">HBsAg</option>
-            <option value="Non-Reactive">Non-Reactive</option>
-            <option value="Reactive">Reactive</option>
-          </select>
-
-          <select id="hcv">
-            <option value="">HCV</option>
-            <option value="Non-Reactive">Non-Reactive</option>
-            <option value="Reactive">Reactive</option>
-          </select>
-
-          <select id="syphilis">
-            <option value="">Syphilis</option>
-            <option value="Non-Reactive">Non-Reactive</option>
-            <option value="Reactive">Reactive</option>
-          </select>
-
-          <select id="malaria">
-            <option value="">Malaria</option>
-            <option value="Non-Reactive">Non-Reactive</option>
-            <option value="Reactive">Reactive</option>
-          </select>
-        </div>
-      </section>
-
-      <section class="content-card">
-        <div class="card-title-row">
-          <h4>Remarks</h4>
-        </div>
-
-        <textarea id="remarks" placeholder="Remarks"></textarea>
-
-        <div class="action-row">
-          <button id="saveBtn" class="primary-btn">Save Record</button>
-        </div>
-        <p id="msg" class="message"></p>
-      </section>
-    </main>
   </div>
+</header>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getAuth,
-      onAuthStateChanged,
-      signOut
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import {
-      getFirestore,
-      doc,
-      getDoc,
-      addDoc,
-      collection,
-      serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<div class="app-shell">
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
-      authDomain: "red-cross-baguio-tti-monitor.firebaseapp.com",
-      projectId: "red-cross-baguio-tti-monitor",
-      storageBucket: "red-cross-baguio-tti-monitor.firebasestorage.app",
-      messagingSenderId: "361015244463",
-      appId: "1:361015244463:web:076f8802942ca904f5065a"
-    };
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <a href="data-input.html" class="nav-link active">Data Input</a>
+  <a href="tracking.html" class="nav-link">Tracking</a>
+  <a href="statistics.html" class="nav-link">Statistics</a>
+  <button onclick="logout()" class="logout-btn">Logout</button>
+</aside>
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+<!-- MAIN -->
+<main class="main-content">
 
-    let currentRole = "";
-    let currentUser = null;
+<h3>DATA INPUT</h3>
 
-    const donorName = document.getElementById("donorName");
-    const donorId = document.getElementById("donorId");
-    const date = document.getElementById("date");
-    const hiv = document.getElementById("hiv");
-    const hbsag = document.getElementById("hbsag");
-    const hcv = document.getElementById("hcv");
-    const syphilis = document.getElementById("syphilis");
-    const malaria = document.getElementById("malaria");
-    const remarks = document.getElementById("remarks");
-    const msg = document.getElementById("msg");
-    const saveBtn = document.getElementById("saveBtn");
-    const sidebarEmail = document.getElementById("sidebarEmail");
-    const sidebarRole = document.getElementById("sidebarRole");
-    const logoutBtn = document.getElementById("logoutBtn");
+<!-- PATIENT INFO -->
+<div class="content-card">
 
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        window.location.href = "index.html";
-        return;
-      }
+<h4>Patient Information</h4>
 
-      currentUser = user;
-      sidebarEmail.textContent = user.email;
+<!-- NAME -->
+<div class="grid-4">
+  <input id="surname" placeholder="Surname">
+  <input id="firstname" placeholder="First Name">
+  <input id="middlename" placeholder="Middle Name">
+  <input id="suffix" placeholder="Suffix">
+</div>
 
-      const snap = await getDoc(doc(db, "users", user.uid));
-      if (snap.exists()) {
-        currentRole = snap.data().role || "";
-        sidebarRole.textContent = currentRole || "-";
-      } else {
-        currentRole = "";
-        sidebarRole.textContent = "no role";
-      }
-    });
+<input id="serial" placeholder="Serial Number">
 
-    saveBtn.onclick = async () => {
-      msg.textContent = "";
+<div class="grid-2">
+  <input id="bloodType" placeholder="Blood Type">
+  <select id="civil">
+    <option>Civil Status</option>
+    <option>Single</option>
+    <option>Married</option>
+    <option>Separated</option>
+    <option>Widow</option>
+    <option>Divorced</option>
+  </select>
+</div>
 
-      if (!currentUser) {
-        msg.textContent = "Please login first.";
-        return;
-      }
+<div class="grid-2">
+  <input type="date" id="birthday">
+  <input id="age" placeholder="Age" readonly>
+</div>
 
-      if (
-        !donorName.value.trim() ||
-        !donorId.value.trim() ||
-        !date.value ||
-        !hiv.value ||
-        !hbsag.value ||
-        !hcv.value ||
-        !syphilis.value ||
-        !malaria.value
-      ) {
-        msg.textContent = "Please complete all required fields.";
-        return;
-      }
+<input id="sex" placeholder="Sex">
+<input id="contact" placeholder="Contact Info">
+<input id="address" placeholder="Address">
+<input id="occupation" placeholder="Occupation">
 
-      try {
-        await addDoc(collection(db, "tti_records"), {
-          donorName: donorName.value.trim(),
-          donorId: donorId.value.trim(),
-          date: date.value,
-          hiv: hiv.value,
-          hbsag: hbsag.value,
-          hcv: hcv.value,
-          syphilis: syphilis.value,
-          malaria: malaria.value,
-          remarks: remarks.value.trim(),
-          createdBy: currentUser.email,
-          createdByUid: currentUser.uid,
-          role: currentRole,
-          createdAt: serverTimestamp()
-        });
+<input type="date" id="collectionDate">
 
-        msg.textContent = "Record saved successfully.";
+<!-- DONOR TYPE -->
+<label>Type of Donor:</label>
+<div class="inline">
+  <label><input type="checkbox"> Patient Directed</label>
+  <label><input type="checkbox"> Walk-in</label>
+  <label><input type="checkbox"> MBD</label>
+</div>
 
-        donorName.value = "";
-        donorId.value = "";
-        date.value = "";
-        hiv.value = "";
-        hbsag.value = "";
-        hcv.value = "";
-        syphilis.value = "";
-        malaria.value = "";
-        remarks.value = "";
-      } catch (error) {
-        msg.textContent = error.message;
-      }
-    };
+<!-- FREQUENCY -->
+<label>Frequency:</label>
+<div class="inline">
+  <label><input type="checkbox" id="newDonor"> New</label>
+  <label><input type="checkbox" id="repeatDonor"> Repeat</label>
+</div>
 
-    logoutBtn.onclick = async () => {
-      await signOut(auth);
-      window.location.href = "index.html";
-    };
-  </script>
+<input type="date" id="repeatDate" class="hidden" placeholder="Last Donation">
+
+</div>
+
+<!-- TTI RESULTS -->
+<div class="content-card">
+
+<h4>TTI Screening Results</h4>
+
+<!-- TEST -->
+<div>
+  <label><input type="checkbox" onclick="toggleTest('hivBox')"> HIV</label>
+  <div id="hivBox" class="hidden">
+    <input placeholder="OD">
+    <input placeholder="Repeat 1">
+    <input placeholder="Repeat 2">
+  </div>
+</div>
+
+<div>
+  <label><input type="checkbox" onclick="toggleTest('hbsagBox')"> HBsAg</label>
+  <div id="hbsagBox" class="hidden">
+    <input placeholder="OD">
+    <input placeholder="Repeat 1">
+    <input placeholder="Repeat 2">
+  </div>
+</div>
+
+<!-- COMMON FIELDS -->
+<input placeholder="Lot Number">
+<input type="date" placeholder="Expiration Date">
+<input type="date" placeholder="Date Tested">
+
+</div>
+
+<button onclick="save()">SAVE</button>
+<p id="msg"></p>
+
+</main>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey:"AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
+  projectId:"red-cross-baguio-tti-monitor"
+});
+
+const db = getFirestore(app);
+
+// AUTO AGE
+birthday.onchange = () => {
+  const b = new Date(birthday.value);
+  const today = new Date();
+  let ageVal = today.getFullYear() - b.getFullYear();
+  age.value = ageVal;
+};
+
+// REPEAT TOGGLE
+repeatDonor.onchange = () => {
+  repeatDate.classList.toggle("hidden", !repeatDonor.checked);
+};
+
+// TEST TOGGLE
+window.toggleTest = (id) => {
+  document.getElementById(id).classList.toggle("hidden");
+};
+
+// SAVE
+window.save = async () => {
+  await addDoc(collection(db,"tti_records"),{
+    name: surname.value + " " + firstname.value,
+    serial: serial.value
+  });
+  msg.textContent="Saved!";
+};
+
+// LOGOUT
+window.logout = () => location.href="index.html";
+</script>
+
 </body>
 </html>
