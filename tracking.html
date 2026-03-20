@@ -1,73 +1,189 @@
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {
-  getFirestore, collection, onSnapshot,
-  deleteDoc, doc, getDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TTI Monitoring - Tracking</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
-  authDomain: "red-cross-baguio-tti-monitor.firebaseapp.com",
-  projectId: "red-cross-baguio-tti-monitor"
-};
+  <header class="top-header">
+    <div class="top-header-inner centered-header">
+      <img src="logo.png" alt="PRC Logo" class="header-logo" />
+      <div class="header-text">
+        <h1>PHILIPPINE RED CROSS BAGUIO CITY CHAPTER</h1>
+        <h2>TTI MONITORING</h2>
+      </div>
+    </div>
+  </header>
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <img src="logo.png" alt="PRC Logo" class="sidebar-logo" />
+        <div>
+          <div class="brand-title">TTI System</div>
+          <div class="brand-subtitle">Hospital Dashboard</div>
+        </div>
+      </div>
 
-let currentRole = "";
+      <nav class="sidebar-nav">
+        <a href="data-input.html" class="nav-link">Data Input</a>
+        <a href="tracking.html" class="nav-link active">Tracking</a>
+        <a href="statistics.html" class="nav-link">Statistics</a>
+      </nav>
 
-// CHECK USER + ROLE
-onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    alert("Login required");
-    window.location.href = "index.html";
-    return;
-  }
+      <div class="sidebar-user-box">
+        <div><strong>User:</strong> <span id="sidebarEmail">-</span></div>
+        <div><strong>Role:</strong> <span id="sidebarRole">-</span></div>
+      </div>
 
-  const snap = await getDoc(doc(db, "users", user.uid));
-  if (snap.exists()) {
-    currentRole = snap.data().role;
-  }
+      <button id="logoutBtn" class="logout-btn">Logout</button>
+    </aside>
 
-  // LOAD DATA
-  onSnapshot(collection(db, "tti_records"), (snap) => {
-    body.innerHTML = "";
+    <main class="main-content">
+      <section class="page-banner">
+        <div>
+          <h3>Tracking</h3>
+          <p>View submitted records in real time</p>
+        </div>
+      </section>
 
-    snap.forEach((d) => {
-      const data = d.data();
+      <section class="content-card">
+        <div class="card-title-row">
+          <h4>TTI Records</h4>
+        </div>
 
-      body.innerHTML += `
-      <tr>
-        <td>${data.date}</td>
-        <td>${data.donorName}</td>
-        <td>${data.donorId}</td>
-        <td>${data.hiv}</td>
-        <td>
-          ${
-            currentRole === "master"
-              ? `<button onclick="del('${d.id}')">Delete</button>`
-              : ""
-          }
-        </td>
-      </tr>`;
+        <div class="table-wrap">
+          <table class="records-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Donor</th>
+                <th>ID</th>
+                <th>HIV</th>
+                <th>HBsAg</th>
+                <th>HCV</th>
+                <th>Syphilis</th>
+                <th>Malaria</th>
+                <th>Remarks</th>
+                <th>By</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      onSnapshot,
+      deleteDoc,
+      doc,
+      getDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
+      authDomain: "red-cross-baguio-tti-monitor.firebaseapp.com",
+      projectId: "red-cross-baguio-tti-monitor",
+      storageBucket: "red-cross-baguio-tti-monitor.firebasestorage.app",
+      messagingSenderId: "361015244463",
+      appId: "1:361015244463:web:076f8802942ca904f5065a"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentRole = "";
+
+    const body = document.getElementById("body");
+    const sidebarEmail = document.getElementById("sidebarEmail");
+    const sidebarRole = document.getElementById("sidebarRole");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "index.html";
+        return;
+      }
+
+      sidebarEmail.textContent = user.email;
+
+      const snap = await getDoc(doc(db, "users", user.uid));
+      if (snap.exists()) {
+        currentRole = snap.data().role || "";
+        sidebarRole.textContent = currentRole || "-";
+      } else {
+        currentRole = "";
+        sidebarRole.textContent = "no role";
+      }
+
+      onSnapshot(collection(db, "tti_records"), (snapShot) => {
+        body.innerHTML = "";
+
+        snapShot.forEach((d) => {
+          const data = d.data();
+
+          body.innerHTML += `
+            <tr>
+              <td>${data.date || ""}</td>
+              <td>${data.donorName || ""}</td>
+              <td>${data.donorId || ""}</td>
+              <td>${data.hiv || ""}</td>
+              <td>${data.hbsag || ""}</td>
+              <td>${data.hcv || ""}</td>
+              <td>${data.syphilis || ""}</td>
+              <td>${data.malaria || ""}</td>
+              <td>${data.remarks || ""}</td>
+              <td>${data.createdBy || ""}</td>
+              <td>
+                ${currentRole === "master"
+                  ? `<button class="table-action-btn" data-id="${d.id}">Delete</button>`
+                  : ""}
+              </td>
+            </tr>
+          `;
+        });
+      });
     });
-  });
-});
 
-// DELETE (MASTER ONLY)
-window.del = async (id) => {
-  if (currentRole !== "master") {
-    alert("No permission");
-    return;
-  }
+    document.addEventListener("click", async (e) => {
+      if (e.target.classList.contains("table-action-btn")) {
+        const id = e.target.getAttribute("data-id");
 
-  if (!confirm("Delete this record?")) return;
+        if (currentRole !== "master") {
+          alert("No permission.");
+          return;
+        }
 
-  await deleteDoc(doc(db, "tti_records", id));
-};
+        if (!confirm("Delete this record?")) return;
 
-window.back = () => location.href = "index.html";
-</script>
+        try {
+          await deleteDoc(doc(db, "tti_records", id));
+        } catch (error) {
+          alert(error.message);
+        }
+      }
+    });
+
+    logoutBtn.onclick = async () => {
+      await signOut(auth);
+      window.location.href = "index.html";
+    };
+  </script>
+</body>
+</html>
