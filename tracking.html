@@ -3,1022 +3,410 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RED CROSS BAGUIO - TTI Monitoring Tracking</title>
-
-  <!-- Firebase Compat -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-
+  <title>TTI Monitoring - Tracking</title>
   <link rel="stylesheet" href="style.css" />
-
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f4f7fb;
-      color: #222;
-    }
-
-    .main-wrapper {
-      display: flex;
-      min-height: 100vh;
-    }
-
-    .sidebar {
-      width: 250px;
-      background: #a50000;
-      color: white;
-      padding: 20px 0;
-      flex-shrink: 0;
-      box-shadow: 2px 0 8px rgba(0,0,0,0.08);
-    }
-
-    .sidebar .logo-wrap {
-      text-align: center;
-      padding: 10px 20px 20px;
-      border-bottom: 1px solid rgba(255,255,255,0.15);
-    }
-
-    .sidebar .logo-wrap img {
-      width: 80px;
-      height: 80px;
-      object-fit: contain;
-      margin-bottom: 10px;
-    }
-
-    .sidebar .logo-wrap h2 {
-      margin: 0;
-      font-size: 18px;
-      line-height: 1.3;
-    }
-
-    .nav-links {
-      margin-top: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: 0 14px;
-    }
-
-    .nav-links a,
-    .nav-links button {
-      display: block;
-      width: 100%;
-      text-align: left;
-      padding: 12px 14px;
-      border: none;
-      border-radius: 10px;
-      background: transparent;
-      color: white;
-      text-decoration: none;
-      font-size: 15px;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    .nav-links a:hover,
-    .nav-links button:hover,
-    .nav-links .active {
-      background: rgba(255,255,255,0.15);
-    }
-
-    .content {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .topbar {
-      background: white;
-      padding: 18px 24px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-
-    .topbar-inner {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      text-align: center;
-    }
-
-    .topbar-inner img {
-      width: 55px;
-      height: 55px;
-      object-fit: contain;
-    }
-
-    .topbar-title {
-      line-height: 1.2;
-    }
-
-    .topbar-title h1 {
-      margin: 0;
-      font-size: 24px;
-      color: #a50000;
-    }
-
-    .topbar-title p {
-      margin: 3px 0 0;
-      font-size: 13px;
-      color: #555;
-    }
-
-    .page-body {
-      padding: 24px;
-    }
-
-    .page-card {
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
-      padding: 20px;
-    }
-
-    .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
-
-    .page-header h2 {
-      margin: 0;
-      color: #a50000;
-      font-size: 24px;
-    }
-
-    .controls {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 18px;
-    }
-
-    .controls input,
-    .controls select {
-      padding: 10px 12px;
-      border: 1px solid #cfd8e3;
-      border-radius: 10px;
-      font-size: 14px;
-      background: white;
-    }
-
-    .controls input {
-      min-width: 250px;
-      flex: 1;
-    }
-
-    .summary-row {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
-
-    .summary-box {
-      background: #f8fafc;
-      border: 1px solid #e4e9f0;
-      border-radius: 14px;
-      padding: 14px 16px;
-      min-width: 150px;
-      flex: 1;
-    }
-
-    .summary-box .label {
-      font-size: 12px;
-      color: #666;
-      margin-bottom: 6px;
-    }
-
-    .summary-box .value {
-      font-size: 22px;
-      font-weight: bold;
-      color: #a50000;
-    }
-
-    .record-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .record-item {
-      border: 1px solid #e3e8ef;
-      border-radius: 14px;
-      overflow: hidden;
-      background: #fff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-    }
-
-    .record-header {
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 16px;
-      cursor: pointer;
-      background: #fbfcfe;
-      transition: 0.2s ease;
-    }
-
-    .record-header:hover {
-      background: #f4f8fc;
-    }
-
-    .record-name-wrap {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      min-width: 0;
-    }
-
-    .toggle-icon {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: #a50000;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      flex-shrink: 0;
-    }
-
-    .record-name {
-      font-size: 16px;
-      font-weight: bold;
-      color: #1f2937;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .record-date {
-      font-size: 13px;
-      color: #666;
-      white-space: nowrap;
-    }
-
-    .status-badge {
-      padding: 7px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: bold;
-      text-transform: uppercase;
-      white-space: nowrap;
-      text-align: center;
-    }
-
-    .status-reactive {
-      background: #ffe1e1;
-      color: #b30000;
-    }
-
-    .status-initially-reactive {
-      background: #fff2cc;
-      color: #9a6700;
-    }
-
-    .status-non-reactive {
-      background: #dcfce7;
-      color: #166534;
-    }
-
-    .record-details {
-      display: none;
-      padding: 18px 16px 16px;
-      border-top: 1px solid #edf1f6;
-      background: white;
-    }
-
-    .record-item.open .record-details {
-      display: block;
-    }
-
-    .details-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .detail-box {
-      border: 1px solid #e5eaf1;
-      border-radius: 12px;
-      padding: 12px;
-      background: #fafcff;
-    }
-
-    .detail-label {
-      font-size: 12px;
-      color: #666;
-      margin-bottom: 5px;
-    }
-
-    .detail-value {
-      font-size: 14px;
-      font-weight: bold;
-      color: #222;
-      word-break: break-word;
-    }
-
-    .test-section {
-      margin-top: 8px;
-    }
-
-    .test-section h3 {
-      margin: 0 0 10px;
-      color: #a50000;
-      font-size: 16px;
-    }
-
-    .test-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-
-    .test-card {
-      border: 1px solid #e5eaf1;
-      border-radius: 12px;
-      padding: 12px;
-      background: #fff;
-    }
-
-    .test-card .test-name {
-      font-size: 13px;
-      font-weight: bold;
-      color: #a50000;
-      margin-bottom: 6px;
-    }
-
-    .test-card .test-info {
-      font-size: 13px;
-      color: #333;
-      line-height: 1.5;
-    }
-
-    .action-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-      margin-top: 8px;
-    }
-
-    .action-row button {
-      border: none;
-      border-radius: 10px;
-      padding: 10px 14px;
-      font-weight: bold;
-      cursor: pointer;
-      color: white;
-      transition: 0.2s ease;
-    }
-
-    .btn-referral {
-      background: #1565c0;
-    }
-
-    .btn-edit {
-      background: #2e7d32;
-    }
-
-    .btn-delete {
-      background: #c62828;
-    }
-
-    .btn-referral:hover,
-    .btn-edit:hover,
-    .btn-delete:hover {
-      opacity: 0.92;
-    }
-
-    .referral-group {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .referral-label {
-      font-size: 13px;
-      font-weight: bold;
-      color: #444;
-    }
-
-    .ref-btn {
-      border: none;
-      border-radius: 999px;
-      padding: 8px 14px;
-      cursor: pointer;
-      font-weight: bold;
-      color: white;
-    }
-
-    .ref-yes {
-      background: #2e7d32;
-    }
-
-    .ref-no {
-      background: #757575;
-    }
-
-    .ref-current {
-      box-shadow: 0 0 0 3px rgba(0,0,0,0.08) inset;
-      transform: scale(1.02);
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: #666;
-      border: 1px dashed #d8dee8;
-      border-radius: 14px;
-      background: #fcfdff;
-    }
-
-    .loading-text {
-      text-align: center;
-      color: #666;
-      padding: 25px;
-    }
-
-    @media (max-width: 920px) {
-      .main-wrapper {
-        flex-direction: column;
-      }
-
-      .sidebar {
-        width: 100%;
-      }
-
-      .record-header {
-        grid-template-columns: 1fr;
-        align-items: start;
-      }
-
-      .record-date,
-      .status-badge {
-        justify-self: start;
-      }
-    }
-  </style>
 </head>
 <body>
-  <div class="main-wrapper">
+
+  <header class="top-header">
+    <div class="top-header-inner centered-header">
+      <img src="logo.png" alt="PRC Logo" class="header-logo" />
+      <div class="header-text">
+        <h1>PHILIPPINE RED CROSS BAGUIO CITY CHAPTER</h1>
+        <h2>TTI MONITORING</h2>
+      </div>
+    </div>
+  </header>
+
+  <div class="app-shell">
     <aside class="sidebar">
-      <div class="logo-wrap">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/1/17/Philippine_Red_Cross_logo.svg" alt="PRC Logo">
-        <h2>PRC BAGUIO<br>TTI MONITORING</h2>
+      <div class="sidebar-brand">
+        <img src="logo.png" alt="PRC Logo" class="sidebar-logo" />
+        <div>
+          <div class="brand-title">TTI System</div>
+          <div class="brand-subtitle">Hospital Dashboard</div>
+        </div>
       </div>
 
-      <div class="nav-links">
-        <a href="data-input.html">Data Input</a>
-        <a href="tracking.html" class="active">Tracking</a>
-        <a href="statistics.html">Statistics</a>
-        <a href="hubing-results.html">Hubing Results</a>
-        <button id="logoutBtn">Logout</button>
+      <nav class="sidebar-nav">
+        <a href="data-input.html" class="nav-link">Data Input</a>
+        <a href="hubing-results.html" class="nav-link">Hubbing Data</a>
+        <a href="tracking.html" class="nav-link active">Tracking</a>
+        <a href="statistics.html" class="nav-link">Statistics</a>
+      </nav>
+
+      <div class="sidebar-user-box">
+        <div><strong>User:</strong> <span id="sidebarEmail">-</span></div>
+        <div><strong>Role:</strong> <span id="sidebarRole">-</span></div>
       </div>
+
+      <button id="logoutBtn" class="logout-btn">Logout</button>
     </aside>
 
-    <main class="content">
-      <div class="topbar">
-        <div class="topbar-inner">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/1/17/Philippine_Red_Cross_logo.svg" alt="PRC Logo">
-          <div class="topbar-title">
-            <h1>RED CROSS BAGUIO TTI MONITORING</h1>
-            <p>Tracking Module</p>
-          </div>
+    <main class="main-content">
+      <section class="page-banner">
+        <div>
+          <h3>Tracking</h3>
+          <p>Collapsed donor list with expandable details</p>
         </div>
-      </div>
+      </section>
 
-      <div class="page-body">
-        <div class="page-card">
-          <div class="page-header">
-            <h2>Tracking Records</h2>
-          </div>
-
-          <div class="controls">
-            <input type="text" id="searchInput" placeholder="Search donor name..." />
-            <select id="statusFilter">
-              <option value="">All Status</option>
-              <option value="Reactive">Reactive</option>
-              <option value="Initially Reactive">Initially Reactive</option>
-              <option value="Non-Reactive">Non-Reactive</option>
-            </select>
-            <select id="referralFilter">
-              <option value="">All Referral</option>
-              <option value="Yes">Referral: Yes</option>
-              <option value="No">Referral: No</option>
-            </select>
-          </div>
-
-          <div class="summary-row">
-            <div class="summary-box">
-              <div class="label">Total Records</div>
-              <div class="value" id="totalCount">0</div>
-            </div>
-            <div class="summary-box">
-              <div class="label">Reactive</div>
-              <div class="value" id="reactiveCount">0</div>
-            </div>
-            <div class="summary-box">
-              <div class="label">Initially Reactive</div>
-              <div class="value" id="initialReactiveCount">0</div>
-            </div>
-            <div class="summary-box">
-              <div class="label">Non-Reactive</div>
-              <div class="value" id="nonReactiveCount">0</div>
-            </div>
-          </div>
-
-          <div id="recordsContainer" class="record-list">
-            <div class="loading-text">Loading records...</div>
-          </div>
+      <section class="content-card">
+        <div class="card-title-row">
+          <h4>Search Filter</h4>
         </div>
-      </div>
+
+        <div class="tracking-filter-grid">
+          <input type="text" id="searchInput" placeholder="Search donor name, serial number, blood type, address, contact, occupation, status..." />
+          <select id="statusFilter">
+            <option value="">All Overall Status</option>
+            <option value="🔴 Reactive">Reactive</option>
+            <option value="🟠 Initially Reactive">Initially Reactive</option>
+            <option value="🟢 Non-Reactive">Non-Reactive</option>
+          </select>
+        </div>
+
+        <div class="tracking-filter-grid">
+          <input type="date" id="collectionDateFilter" />
+          <button type="button" id="clearFilterBtn" class="secondary-btn">Clear Filters</button>
+        </div>
+      </section>
+
+      <section class="content-card compact-card">
+        <div class="tracking-count-row">
+          <div><strong>Total Records Shown:</strong> <span id="recordCount">0</span></div>
+        </div>
+      </section>
+
+      <div id="recordsContainer"></div>
     </main>
   </div>
 
-  <script>
-    // =========================
-    // FIREBASE CONFIG
-    // =========================
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, deleteDoc, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
+      authDomain: "red-cross-baguio-tti-monitor.firebaseapp.com",
+      projectId: "red-cross-baguio-tti-monitor",
+      storageBucket: "red-cross-baguio-tti-monitor.firebasestorage.app",
+      messagingSenderId: "361015244463",
+      appId: "1:361015244463:web:076f8802942ca904f5065a"
     };
 
-    // CHANGE THIS ONLY IF YOUR COLLECTION NAME IS DIFFERENT
-    const COLLECTION_NAME = "ttiMonitoring";
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-
+    let currentRole = "";
     let allRecords = [];
 
-    const recordsContainer = document.getElementById("recordsContainer");
+    const sidebarEmail = document.getElementById("sidebarEmail");
+    const sidebarRole = document.getElementById("sidebarRole");
+    const logoutBtn = document.getElementById("logoutBtn");
+
     const searchInput = document.getElementById("searchInput");
     const statusFilter = document.getElementById("statusFilter");
-    const referralFilter = document.getElementById("referralFilter");
+    const collectionDateFilter = document.getElementById("collectionDateFilter");
+    const clearFilterBtn = document.getElementById("clearFilterBtn");
+    const recordsContainer = document.getElementById("recordsContainer");
+    const recordCount = document.getElementById("recordCount");
 
-    const totalCount = document.getElementById("totalCount");
-    const reactiveCount = document.getElementById("reactiveCount");
-    const initialReactiveCount = document.getElementById("initialReactiveCount");
-    const nonReactiveCount = document.getElementById("nonReactiveCount");
-
-    // =========================
-    // AUTH + ROLE CHECK
-    // =========================
-    auth.onAuthStateChanged(async (user) => {
+    onAuthStateChanged(auth, async (user) => {
       if (!user) {
         window.location.href = "index.html";
         return;
       }
 
-      try {
-        const userDoc = await db.collection("users").doc(user.uid).get();
+      sidebarEmail.textContent = user.email;
 
-        if (!userDoc.exists) {
-          alert("User role not found.");
-          auth.signOut();
-          return;
-        }
-
-        const userData = userDoc.data();
-        if (!userData.role || !["master", "member"].includes(userData.role)) {
-          alert("Unauthorized access.");
-          auth.signOut();
-          return;
-        }
-
-        loadRecords();
-      } catch (error) {
-        console.error("Role check error:", error);
-        alert("Error checking user role.");
+      const snap = await getDoc(doc(db, "users", user.uid));
+      if (snap.exists()) {
+        currentRole = snap.data().role || "";
+        sidebarRole.textContent = currentRole || "-";
+      } else {
+        currentRole = "";
+        sidebarRole.textContent = "no role";
       }
+
+      onSnapshot(collection(db, "tti_records"), (snapshot) => {
+        allRecords = [];
+        snapshot.forEach((docSnap) => {
+          allRecords.push({
+            id: docSnap.id,
+            ...docSnap.data()
+          });
+        });
+        renderRecords();
+      });
     });
 
-    // =========================
-    // HELPERS
-    // =========================
-    function safeValue(val) {
-      return (val === undefined || val === null || val === "") ? "-" : val;
+    logoutBtn.onclick = async () => {
+      await signOut(auth);
+      window.location.href = "index.html";
+    };
+
+    searchInput.addEventListener("input", renderRecords);
+    statusFilter.addEventListener("change", renderRecords);
+    collectionDateFilter.addEventListener("change", renderRecords);
+
+    clearFilterBtn.addEventListener("click", () => {
+      searchInput.value = "";
+      statusFilter.value = "";
+      collectionDateFilter.value = "";
+      renderRecords();
+    });
+
+    function safe(val) {
+      return val ?? "";
     }
 
-    function formatDate(value) {
-      if (!value) return "-";
-
-      if (typeof value === "string") return value;
-
-      if (value.toDate) {
-        const d = value.toDate();
-        return d.toLocaleDateString();
-      }
-
-      try {
-        const d = new Date(value);
-        if (!isNaN(d.getTime())) return d.toLocaleDateString();
-      } catch (e) {}
-
-      return "-";
+    function fullName(patientInfo) {
+      const surname = safe(patientInfo?.surname);
+      const firstName = safe(patientInfo?.firstName);
+      const middleName = safe(patientInfo?.middleName);
+      const suffix = safe(patientInfo?.suffix);
+      return [surname, firstName, middleName, suffix].filter(Boolean).join(" ");
     }
 
-    function formatDateTime(value) {
-      if (!value) return "-";
+    function getSearchableText(record) {
+      const p = record.patientInfo || {};
+      const s = record.screening || {};
 
-      if (typeof value === "string") return value;
-
-      if (value.toDate) {
-        const d = value.toDate();
-        return d.toLocaleString();
-      }
-
-      try {
-        const d = new Date(value);
-        if (!isNaN(d.getTime())) return d.toLocaleString();
-      } catch (e) {}
-
-      return "-";
+      return [
+        safe(p.surname),
+        safe(p.firstName),
+        safe(p.middleName),
+        safe(p.suffix),
+        safe(p.serialNumber),
+        safe(p.bloodType),
+        safe(p.address),
+        safe(p.contactInfo),
+        safe(p.occupation),
+        safe(p.collectionDate),
+        safe(s.overallStatus),
+        safe(record.referralStatus),
+        safe(record.createdBy)
+      ].join(" ").toLowerCase();
     }
 
-    function normalizeStatus(status) {
-      const s = String(status || "").trim().toLowerCase();
-
-      if (s === "reactive") return "Reactive";
-      if (s === "initially reactive") return "Initially Reactive";
-      if (s === "non-reactive" || s === "non reactive" || s === "nonreactive") return "Non-Reactive";
-
-      return safeValue(status);
+    function renderInterpretationBadge(text) {
+      let cls = "table-badge-neutral";
+      if (text === "🔴 Reactive") cls = "table-badge-reactive";
+      if (text === "🟠 Initially Reactive") cls = "table-badge-initially-reactive";
+      if (text === "🟢 Non-Reactive") cls = "table-badge-nonreactive";
+      return `<span class="table-result-badge ${cls}">${text || "--"}</span>`;
     }
 
-    function getStatusClass(status) {
-      const normalized = normalizeStatus(status);
+    function renderTestTable(screening) {
+      const tests = [
+        ["HIV", screening?.hiv],
+        ["HBsAg", screening?.hbsag],
+        ["HCV", screening?.hcv],
+        ["Syphilis", screening?.syphilis],
+        ["Malaria", screening?.malaria]
+      ];
 
-      if (normalized === "Reactive") return "status-reactive";
-      if (normalized === "Initially Reactive") return "status-initially-reactive";
-      return "status-non-reactive";
+      return `
+        <div class="screening-box">
+          <div class="screening-box-title">TTI Screening Results</div>
+          <div class="table-wrap">
+            <table class="records-table tracking-results-table">
+              <thead>
+                <tr>
+                  <th>Test</th>
+                  <th>OD</th>
+                  <th>Repeat 1</th>
+                  <th>Repeat 2</th>
+                  <th>Lot Number</th>
+                  <th>Expiration Date</th>
+                  <th>Date Tested</th>
+                  <th>Interpretation</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tests.map(([label, d]) => `
+                  <tr>
+                    <td>${label}</td>
+                    <td>${safe(d?.od)}</td>
+                    <td>${safe(d?.repeat1)}</td>
+                    <td>${safe(d?.repeat2)}</td>
+                    <td>${safe(d?.lotNumber)}</td>
+                    <td>${safe(d?.expirationDate)}</td>
+                    <td>${safe(d?.dateTested)}</td>
+                    <td>${renderInterpretationBadge(safe(d?.interpretation))}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
     }
 
-    function fullName(record) {
-      const first = record.firstName || record.firstname || "";
-      const middle = record.middleName || record.middlename || "";
-      const last = record.lastName || record.lastname || "";
-      const suffix = record.suffix || "";
+    function renderPatientInfo(p, createdBy) {
+      return `
+        <div class="screening-box">
+          <div class="screening-box-title">Patient Information</div>
+          <div class="tracking-info-grid">
+            <div class="tracking-info-item"><span class="label">Surname</span><span class="value">${safe(p.surname)}</span></div>
+            <div class="tracking-info-item"><span class="label">First Name</span><span class="value">${safe(p.firstName)}</span></div>
+            <div class="tracking-info-item"><span class="label">Middle Name</span><span class="value">${safe(p.middleName)}</span></div>
+            <div class="tracking-info-item"><span class="label">Suffix</span><span class="value">${safe(p.suffix)}</span></div>
 
-      const combined = [first, middle, last, suffix]
-        .map(v => String(v || "").trim())
-        .filter(Boolean)
-        .join(" ");
+            <div class="tracking-info-item"><span class="label">Serial Number</span><span class="value">${safe(p.serialNumber)}</span></div>
+            <div class="tracking-info-item"><span class="label">Blood Type</span><span class="value">${safe(p.bloodType)}</span></div>
+            <div class="tracking-info-item"><span class="label">Civil Status</span><span class="value">${safe(p.civilStatus)}</span></div>
+            <div class="tracking-info-item"><span class="label">Birthday</span><span class="value">${safe(p.birthday)}</span></div>
 
-      if (combined) return combined;
+            <div class="tracking-info-item"><span class="label">Age</span><span class="value">${safe(p.age)}</span></div>
+            <div class="tracking-info-item"><span class="label">Sex</span><span class="value">${safe(p.sex)}</span></div>
+            <div class="tracking-info-item"><span class="label">Contact Info</span><span class="value">${safe(p.contactInfo)}</span></div>
+            <div class="tracking-info-item"><span class="label">Address</span><span class="value">${safe(p.address)}</span></div>
 
-      return record.name || record.donorName || "Unnamed Donor";
+            <div class="tracking-info-item"><span class="label">Occupation</span><span class="value">${safe(p.occupation)}</span></div>
+            <div class="tracking-info-item"><span class="label">Collection Date</span><span class="value">${safe(p.collectionDate)}</span></div>
+            <div class="tracking-info-item"><span class="label">Donor Type</span><span class="value">${safe(p.donorType)}</span></div>
+            <div class="tracking-info-item"><span class="label">Donation Frequency</span><span class="value">${safe(p.donationFrequency)}</span></div>
+
+            <div class="tracking-info-item"><span class="label">Repeat Date</span><span class="value">${safe(p.repeatDate)}</span></div>
+            <div class="tracking-info-item"><span class="label">Encoded By</span><span class="value">${safe(createdBy)}</span></div>
+          </div>
+        </div>
+      `;
     }
 
-    function getReferralValue(record) {
-      const raw = record.referralStatus ?? record.referral ?? record.referred ?? "";
-      if (String(raw).toLowerCase() === "yes" || raw === true) return "Yes";
-      if (String(raw).toLowerCase() === "no" || raw === false) return "No";
-      return "No";
-    }
+    function renderRecords() {
+      const searchTerm = searchInput.value.trim().toLowerCase();
+      const statusValue = statusFilter.value;
+      const collectionDateValue = collectionDateFilter.value;
 
-    function getRecordStatus(record) {
-      return normalizeStatus(
-        record.finalStatus ||
-        record.status ||
-        record.overallStatus
-      );
-    }
+      const filtered = allRecords.filter((record) => {
+        const p = record.patientInfo || {};
+        const s = record.screening || {};
 
-    function getTestResult(record, keys) {
-      for (const key of keys) {
-        if (record[key] !== undefined && record[key] !== null && record[key] !== "") {
-          return record[key];
-        }
-      }
-      return "-";
-    }
+        const matchesSearch = !searchTerm || getSearchableText(record).includes(searchTerm);
+        const matchesStatus = !statusValue || safe(s.overallStatus) === statusValue;
+        const matchesDate = !collectionDateValue || safe(p.collectionDate) === collectionDateValue;
 
-    function updateSummary(records) {
-      totalCount.textContent = records.length;
-      reactiveCount.textContent = records.filter(r => getRecordStatus(r) === "Reactive").length;
-      initialReactiveCount.textContent = records.filter(r => getRecordStatus(r) === "Initially Reactive").length;
-      nonReactiveCount.textContent = records.filter(r => getRecordStatus(r) === "Non-Reactive").length;
-    }
-
-    // =========================
-    // LOAD RECORDS
-    // =========================
-    async function loadRecords() {
-      try {
-        recordsContainer.innerHTML = '<div class="loading-text">Loading records...</div>';
-
-        const snapshot = await db.collection(COLLECTION_NAME).orderBy("timestamp", "desc").get();
-
-        allRecords = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-
-        applyFilters();
-      } catch (error) {
-        console.error("Error loading records:", error);
-        recordsContainer.innerHTML = '<div class="empty-state">Failed to load records.</div>';
-      }
-    }
-
-    // =========================
-    // FILTERS
-    // =========================
-    function applyFilters() {
-      const searchText = searchInput.value.trim().toLowerCase();
-      const selectedStatus = statusFilter.value;
-      const selectedReferral = referralFilter.value;
-
-      const filtered = allRecords.filter(record => {
-        const donor = fullName(record).toLowerCase();
-        const status = getRecordStatus(record);
-        const referral = getReferralValue(record);
-
-        const matchSearch = donor.includes(searchText);
-        const matchStatus = !selectedStatus || status === selectedStatus;
-        const matchReferral = !selectedReferral || referral === selectedReferral;
-
-        return matchSearch && matchStatus && matchReferral;
+        return matchesSearch && matchesStatus && matchesDate;
       });
 
-      updateSummary(filtered);
-      renderRecords(filtered);
-    }
+      recordCount.textContent = filtered.length;
+      recordsContainer.innerHTML = "";
 
-    searchInput.addEventListener("input", applyFilters);
-    statusFilter.addEventListener("change", applyFilters);
-    referralFilter.addEventListener("change", applyFilters);
-
-    // =========================
-    // RENDER
-    // =========================
-    function renderRecords(records) {
-      if (!records.length) {
-        recordsContainer.innerHTML = '<div class="empty-state">No records found.</div>';
+      if (filtered.length === 0) {
+        recordsContainer.innerHTML = `
+          <section class="content-card">
+            <div class="empty-state">No records found.</div>
+          </section>
+        `;
         return;
       }
 
-      recordsContainer.innerHTML = records.map(record => {
-        const donorName = fullName(record);
-        const status = getRecordStatus(record);
-        const referral = getReferralValue(record);
+      filtered.forEach((record) => {
+        const p = record.patientInfo || {};
+        const s = record.screening || {};
+        const overall = safe(s.overallStatus);
+        const referral = safe(record.referralStatus) || "No";
 
-        return `
-          <div class="record-item" id="record-${record.id}">
-            <div class="record-header" onclick="toggleRecord('${record.id}')">
-              <div class="record-name-wrap">
-                <div class="toggle-icon" id="icon-${record.id}">+</div>
-                <div class="record-name">${escapeHtml(donorName)}</div>
+        const overallClass =
+          overall === "🔴 Reactive"
+            ? "overall-reactive"
+            : overall === "🟠 Initially Reactive"
+            ? "overall-initially-reactive"
+            : overall === "🟢 Non-Reactive"
+            ? "overall-nonreactive"
+            : "overall-neutral";
+
+        const referralClass = referral === "Yes" ? "referral-yes" : "referral-no";
+
+        const item = document.createElement("section");
+        item.className = "content-card tracking-list-card";
+
+        item.innerHTML = `
+          <div class="tracking-list-header">
+            <div class="tracking-list-left clickable-header" data-toggle="${record.id}">
+              <button class="collapse-toggle" type="button" data-toggle="${record.id}">+</button>
+              <div class="tracking-name-block">
+                <div class="tracking-name">${fullName(p) || "Unnamed Record"}</div>
+                <div class="tracking-subline">Serial No: ${safe(p.serialNumber) || "--"}</div>
               </div>
-              <div class="record-date">${escapeHtml(formatDate(record.date || record.collectionDate || record.timestamp))}</div>
-              <div class="status-badge ${getStatusClass(status)}">${escapeHtml(status)}</div>
             </div>
 
-            <div class="record-details" id="details-${record.id}">
-              <div class="details-grid">
-                <div class="detail-box">
-                  <div class="detail-label">Donor Name</div>
-                  <div class="detail-value">${escapeHtml(donorName)}</div>
-                </div>
-                <div class="detail-box">
-                  <div class="detail-label">Age</div>
-                  <div class="detail-value">${escapeHtml(safeValue(record.age))}</div>
-                </div>
-                <div class="detail-box">
-                  <div class="detail-label">Sex</div>
-                  <div class="detail-value">${escapeHtml(safeValue(record.sex))}</div>
-                </div>
-                <div class="detail-box">
-                  <div class="detail-label">Blood Type</div>
-                  <div class="detail-value">${escapeHtml(safeValue(record.bloodType))}</div>
-                </div>
-                <div class="detail-box">
-                  <div class="detail-label">Date</div>
-                  <div class="detail-value">${escapeHtml(formatDate(record.date || record.collectionDate || record.timestamp))}</div>
-                </div>
-                <div class="detail-box">
-                  <div class="detail-label">Status</div>
-                  <div class="detail-value">${escapeHtml(status)}</div>
-                </div>
-                <div class="detail-box">
-                  <div class="detail-label">Referral Status</div>
-                  <div class="detail-value" id="referralText-${record.id}">${escapeHtml(referral)}</div>
-                </div>
-                <div class="detail-box">
-                  <div class="detail-label">Encoded At</div>
-                  <div class="detail-value">${escapeHtml(formatDateTime(record.timestamp))}</div>
-                </div>
-              </div>
-
-              <div class="test-section">
-                <h3>Screening Results</h3>
-                <div class="test-grid">
-                  <div class="test-card">
-                    <div class="test-name">HIV</div>
-                    <div class="test-info">
-                      OD: ${escapeHtml(safeValue(getTestResult(record, ["hivOD", "hivOd"])))}
-                      <br>Repeat 1: ${escapeHtml(safeValue(getTestResult(record, ["hivRepeat1"])))}
-                      <br>Repeat 2: ${escapeHtml(safeValue(getTestResult(record, ["hivRepeat2"])))}
-                      <br>Status: ${escapeHtml(safeValue(getTestResult(record, ["hivStatus"])))}
-                    </div>
-                  </div>
-
-                  <div class="test-card">
-                    <div class="test-name">HBsAg</div>
-                    <div class="test-info">
-                      OD: ${escapeHtml(safeValue(getTestResult(record, ["hbsagOD", "hbsagOd"])))}
-                      <br>Repeat 1: ${escapeHtml(safeValue(getTestResult(record, ["hbsagRepeat1"])))}
-                      <br>Repeat 2: ${escapeHtml(safeValue(getTestResult(record, ["hbsagRepeat2"])))}
-                      <br>Status: ${escapeHtml(safeValue(getTestResult(record, ["hbsagStatus"])))}
-                    </div>
-                  </div>
-
-                  <div class="test-card">
-                    <div class="test-name">HCV</div>
-                    <div class="test-info">
-                      OD: ${escapeHtml(safeValue(getTestResult(record, ["hcvOD", "hcvOd"])))}
-                      <br>Repeat 1: ${escapeHtml(safeValue(getTestResult(record, ["hcvRepeat1"])))}
-                      <br>Repeat 2: ${escapeHtml(safeValue(getTestResult(record, ["hcvRepeat2"])))}
-                      <br>Status: ${escapeHtml(safeValue(getTestResult(record, ["hcvStatus"])))}
-                    </div>
-                  </div>
-
-                  <div class="test-card">
-                    <div class="test-name">Syphilis</div>
-                    <div class="test-info">
-                      OD: ${escapeHtml(safeValue(getTestResult(record, ["syphilisOD", "syphilisOd"])))}
-                      <br>Repeat 1: ${escapeHtml(safeValue(getTestResult(record, ["syphilisRepeat1"])))}
-                      <br>Repeat 2: ${escapeHtml(safeValue(getTestResult(record, ["syphilisRepeat2"])))}
-                      <br>Status: ${escapeHtml(safeValue(getTestResult(record, ["syphilisStatus"])))}
-                    </div>
-                  </div>
-
-                  <div class="test-card">
-                    <div class="test-name">Malaria</div>
-                    <div class="test-info">
-                      COV Lower: ${escapeHtml(safeValue(getTestResult(record, ["malariaCOVLower", "malariaCovLower"])))}
-                      <br>COV Upper: ${escapeHtml(safeValue(getTestResult(record, ["malariaCOVUpper", "malariaCovUpper"])))}
-                      <br>Repeat 1: ${escapeHtml(safeValue(getTestResult(record, ["malariaRepeat1"])))}
-                      <br>Repeat 2: ${escapeHtml(safeValue(getTestResult(record, ["malariaRepeat2"])))}
-                      <br>Status: ${escapeHtml(safeValue(getTestResult(record, ["malariaStatus"])))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="action-row">
-                <div class="referral-group">
-                  <span class="referral-label">Referral:</span>
-                  <button class="ref-btn ref-yes ${referral === 'Yes' ? 'ref-current' : ''}" onclick="event.stopPropagation(); updateReferral('${record.id}', 'Yes')">Yes</button>
-                  <button class="ref-btn ref-no ${referral === 'No' ? 'ref-current' : ''}" onclick="event.stopPropagation(); updateReferral('${record.id}', 'No')">No</button>
-                </div>
-
-                <button class="btn-edit" onclick="event.stopPropagation(); editRecord('${record.id}')">Edit</button>
-                <button class="btn-delete" onclick="event.stopPropagation(); deleteRecord('${record.id}')">Delete</button>
-              </div>
+            <div class="tracking-list-right">
+              <span class="tracking-overall-badge ${overallClass}">${overall || "--"}</span>
+              <button type="button" class="referral-btn" data-id="${record.id}">Referral</button>
+              <span class="referral-status-badge ${referralClass}">${referral}</span>
+              ${
+                currentRole === "master"
+                  ? `<button class="secondary-btn editRecordBtn" data-id="${record.id}">Edit</button>
+                     <button class="table-action-btn deleteRecordBtn" data-id="${record.id}">Delete</button>`
+                  : ""
+              }
             </div>
           </div>
+
+          <div class="tracking-collapsed-body hidden" id="details-${record.id}">
+            ${renderPatientInfo(p, record.createdBy)}
+            ${renderTestTable(s)}
+          </div>
         `;
-      }).join("");
-    }
 
-    function escapeHtml(text) {
-      return String(text)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
-    // =========================
-    // COLLAPSE / EXPAND
-    // =========================
-    function toggleRecord(id) {
-      const item = document.getElementById(`record-${id}`);
-      const icon = document.getElementById(`icon-${id}`);
-
-      const isOpen = item.classList.contains("open");
-
-      document.querySelectorAll(".record-item.open").forEach(el => {
-        el.classList.remove("open");
-        const openIcon = el.querySelector(".toggle-icon");
-        if (openIcon) openIcon.textContent = "+";
+        recordsContainer.appendChild(item);
       });
-
-      if (!isOpen) {
-        item.classList.add("open");
-        icon.textContent = "−";
-      }
     }
 
-    // =========================
-    // REFERRAL
-    // =========================
-    async function updateReferral(id, value) {
+    async function setReferralStatus(id, value) {
       try {
-        await db.collection(COLLECTION_NAME).doc(id).update({
-          referralStatus: value
-        });
-
-        const target = allRecords.find(r => r.id === id);
-        if (target) {
-          target.referralStatus = value;
-        }
-
-        applyFilters();
+        await updateDoc(doc(db, "tti_records", id), { referralStatus: value });
       } catch (error) {
-        console.error("Error updating referral:", error);
-        alert("Failed to update referral status.");
+        alert(error.message);
       }
     }
 
-    // =========================
-    // EDIT
-    // =========================
-    async function editRecord(id) {
-      try {
-        const docSnap = await db.collection(COLLECTION_NAME).doc(id).get();
+    document.addEventListener("click", async (e) => {
+      const toggleId = e.target.getAttribute("data-toggle");
+      if (toggleId) {
+        const details = document.getElementById(`details-${toggleId}`);
+        const btn = document.querySelector(`.collapse-toggle[data-toggle="${toggleId}"]`);
+        if (details) {
+          const isHidden = details.classList.contains("hidden");
+          details.classList.toggle("hidden");
+          if (btn) btn.textContent = isHidden ? "−" : "+";
+        }
+        return;
+      }
 
-        if (!docSnap.exists) {
-          alert("Record not found.");
+      if (e.target.classList.contains("deleteRecordBtn")) {
+        const id = e.target.getAttribute("data-id");
+        if (currentRole !== "master") {
+          alert("No permission.");
           return;
         }
-
-        const recordData = {
-          id: docSnap.id,
-          ...docSnap.data()
-        };
-
-        localStorage.setItem("ttiEditRecord", JSON.stringify(recordData));
-        localStorage.setItem("ttiEditId", docSnap.id);
-
-        window.location.href = "data-input.html?editId=" + encodeURIComponent(docSnap.id);
-      } catch (error) {
-        console.error("Error preparing edit:", error);
-        alert("Failed to open edit mode.");
+        if (!confirm("Delete this record?")) return;
+        try {
+          await deleteDoc(doc(db, "tti_records", id));
+        } catch (error) {
+          alert(error.message);
+        }
       }
-    }
 
-    // =========================
-    // DELETE
-    // =========================
-    async function deleteRecord(id) {
-      const confirmed = confirm("Are you sure you want to delete this record?");
-      if (!confirmed) return;
-
-      try {
-        await db.collection(COLLECTION_NAME).doc(id).delete();
-        allRecords = allRecords.filter(r => r.id !== id);
-        applyFilters();
-      } catch (error) {
-        console.error("Error deleting record:", error);
-        alert("Failed to delete record.");
+      if (e.target.classList.contains("editRecordBtn")) {
+        const id = e.target.getAttribute("data-id");
+        window.location.href = `data-input.html?edit=${id}`;
       }
-    }
 
-    // =========================
-    // LOGOUT
-    // =========================
-    document.getElementById("logoutBtn").addEventListener("click", async () => {
-      try {
-        await auth.signOut();
-        window.location.href = "index.html";
-      } catch (error) {
-        console.error("Logout error:", error);
-        alert("Failed to logout.");
+      if (e.target.classList.contains("referral-btn")) {
+        const id = e.target.getAttribute("data-id");
+        const answer = prompt("Set referral status: Yes or No", "No");
+        if (!answer) return;
+        const normalized = answer.trim().toLowerCase();
+        if (normalized === "yes") await setReferralStatus(id, "Yes");
+        else if (normalized === "no") await setReferralStatus(id, "No");
+        else alert("Please enter Yes or No.");
       }
     });
   </script>
