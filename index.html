@@ -1,121 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TTI Monitoring</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TTI Monitoring - Login</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body class="login-body">
 
-<!-- HEADER -->
-<header class="top-header">
-  <div class="top-header-inner centered-header">
-    <img src="logo.png" class="header-logo">
-    <div class="header-text">
-      <h1>PHILIPPINE RED CROSS BAGUIO CITY CHAPTER</h1>
-      <h2>TTI MONITORING</h2>
+  <header class="top-header">
+    <div class="top-header-inner centered-header">
+      <img src="logo.png" alt="PRC Logo" class="header-logo" />
+      <div class="header-text">
+        <h1>PHILIPPINE RED CROSS BAGUIO CITY CHAPTER</h1>
+        <h2>TTI MONITORING</h2>
+      </div>
     </div>
-  </div>
-</header>
+  </header>
 
-<!-- LOGIN -->
-<div class="login-wrapper" id="loginSection">
-  <div class="login-card">
+  <main class="login-wrapper">
+    <section class="login-card">
+      <div class="login-icon">🩺</div>
+      <h3>System Login</h3>
+      <p class="login-subtext">Authorized personnel only</p>
 
-    <h3>System Login</h3>
+      <input type="email" id="email" placeholder="Email" />
+      <input type="password" id="password" placeholder="Password" />
+      <button id="loginBtn">Login</button>
+      <p id="loginMsg" class="message"></p>
+    </section>
+  </main>
 
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    <button id="loginBtn">Login</button>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
+      authDomain: "red-cross-baguio-tti-monitor.firebaseapp.com",
+      projectId: "red-cross-baguio-tti-monitor",
+      storageBucket: "red-cross-baguio-tti-monitor.firebasestorage.app",
+      messagingSenderId: "361015244463",
+      appId: "1:361015244463:web:076f8802942ca904f5065a"
+    };
 
-    <p id="loginMsg"></p>
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
-  </div>
-</div>
+    const email = document.getElementById("email");
+    const password = document.getElementById("password");
+    const loginBtn = document.getElementById("loginBtn");
+    const loginMsg = document.getElementById("loginMsg");
 
-<!-- DASHBOARD -->
-<div class="login-wrapper hidden" id="dashboardSection">
-  <div class="login-card center">
+    loginBtn.onclick = async () => {
+      loginMsg.textContent = "";
 
-    <h2>DASHBOARD</h2>
+      if (!email.value.trim() || !password.value.trim()) {
+        loginMsg.textContent = "Please enter email and password.";
+        return;
+      }
 
-    <button onclick="goPage('data-input.html')">DATA INPUT</button>
-    <button onclick="goPage('tracking.html')">TRACKING</button>
-    <button onclick="goPage('statistics.html')">STATISTICS</button>
-    <button onclick="goPage('hubing-results.html')">HUBING RESULTS</button>
+      try {
+        await signInWithEmailAndPassword(auth, email.value.trim(), password.value);
+        window.location.href = "data-input.html";
+      } catch (error) {
+        loginMsg.textContent = error.message;
+      }
+    };
 
-    <button class="logout" id="logoutBtn">Logout</button>
-
-  </div>
-</div>
-
-<!-- SCRIPT -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
-  authDomain: "red-cross-baguio-tti-monitor.firebaseapp.com",
-  projectId: "red-cross-baguio-tti-monitor",
-  storageBucket: "red-cross-baguio-tti-monitor.firebasestorage.app",
-  messagingSenderId: "361015244463",
-  appId: "1:361015244463:web:076f8802942ca904f5065a"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-const email = document.getElementById("email");
-const password = document.getElementById("password");
-const loginBtn = document.getElementById("loginBtn");
-const logoutBtn = document.getElementById("logoutBtn");
-const loginMsg = document.getElementById("loginMsg");
-
-const loginSection = document.getElementById("loginSection");
-const dashboardSection = document.getElementById("dashboardSection");
-
-loginBtn.onclick = async () => {
-  loginMsg.textContent = "";
-
-  if (!email.value || !password.value) {
-    loginMsg.textContent = "Enter email and password";
-    return;
-  }
-
-  try {
-    await signInWithEmailAndPassword(auth, email.value, password.value);
-  } catch (error) {
-    loginMsg.textContent = error.message;
-  }
-};
-
-logoutBtn.onclick = async () => {
-  await signOut(auth);
-};
-
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    loginSection.classList.add("hidden");
-    dashboardSection.classList.remove("hidden");
-  } else {
-    loginSection.classList.remove("hidden");
-    dashboardSection.classList.add("hidden");
-  }
-});
-
-window.goPage = (page) => {
-  window.location.href = page;
-};
-</script>
-
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        window.location.href = "data-input.html";
+      }
+    });
+  </script>
 </body>
 </html>
