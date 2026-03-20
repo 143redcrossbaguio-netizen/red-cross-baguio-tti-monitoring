@@ -793,3 +793,20 @@ textarea {
   background: #f2f4f7;
   color: #667085;
 }
+.checkbox-cell {
+  text-align: center;
+}
+
+.referral-check-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.referral-checkbox {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
