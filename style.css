@@ -1101,3 +1101,28 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
+/* INITIALLY REACTIVE COLORS */
+.result-box.initially-reactive {
+  background: #fff4e5;
+  color: #b54708;
+  border-color: #f7d8a6;
+}
+
+.initially-reactive-badge {
+  background: #fff4e5;
+  color: #b54708;
+}
+
+.overall-initially-reactive {
+  color: #b54708;
+}
+
+/* MALARIA RANGE BOX */
+.malaria-cov-box {
+  background: #ffffff;
+  border: 1px solid #eaecf0;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.04);
+}
