@@ -1,94 +1,83 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>TTI Monitoring</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TTI Monitoring - Login</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
+<body class="login-body">
 
-<body>
-
-<!-- HEADER -->
-<header class="main-header">
-  <div class="header-content">
-    <img src="logo.png" class="logo">
-
-    <div class="title-group">
-      <h1>PHILIPPINE RED CROSS BAGUIO CITY CHAPTER</h1>
-      <h2>TTI MONITORING</h2>
+  <header class="top-header">
+    <div class="top-header-inner centered-header">
+      <img src="logo.png" alt="PRC Logo" class="header-logo" />
+      <div class="header-text">
+        <h1>PHILIPPINE RED CROSS BAGUIO CITY CHAPTER</h1>
+        <h2>TTI MONITORING</h2>
+      </div>
     </div>
-  </div>
-</header>
+  </header>
 
-<!-- LOGIN -->
-<div class="container" id="loginSection">
-  <div class="card">
-    <h2>Login</h2>
-    <input type="email" id="email" placeholder="Email">
-    <input type="password" id="password" placeholder="Password">
-    <button id="loginBtn">Login</button>
-    <p id="loginMsg"></p>
-  </div>
-</div>
+  <main class="login-wrapper">
+    <section id="loginSection" class="login-card">
+      <div class="login-icon">🩺</div>
+      <h3>System Login</h3>
+      <p class="login-subtext">Authorized personnel only</p>
 
-<!-- DASHBOARD -->
-<div class="container hidden" id="dashboardSection">
-  <div class="card center">
+      <input type="email" id="email" placeholder="Email" />
+      <input type="password" id="password" placeholder="Password" />
+      <button id="loginBtn">Login</button>
+      <p id="loginMsg" class="message"></p>
+    </section>
+  </main>
 
-    <h2>DASHBOARD</h2>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-    <button onclick="goPage('data-input.html')">DATA INPUT</button>
-    <button onclick="goPage('tracking.html')">TRACKING</button>
-    <button onclick="goPage('statistics.html')">STATISTICS</button>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
+      authDomain: "red-cross-baguio-tti-monitor.firebaseapp.com",
+      projectId: "red-cross-baguio-tti-monitor",
+      storageBucket: "red-cross-baguio-tti-monitor.firebasestorage.app",
+      messagingSenderId: "361015244463",
+      appId: "1:361015244463:web:076f8802942ca904f5065a"
+    };
 
-    <button class="logout" id="logoutBtn">Logout</button>
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
-  </div>
-</div>
+    const email = document.getElementById("email");
+    const password = document.getElementById("password");
+    const loginBtn = document.getElementById("loginBtn");
+    const loginMsg = document.getElementById("loginMsg");
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    loginBtn.onclick = async () => {
+      loginMsg.textContent = "";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
-  authDomain: "red-cross-baguio-tti-monitor.firebaseapp.com",
-  projectId: "red-cross-baguio-tti-monitor",
-  storageBucket: "red-cross-baguio-tti-monitor.firebasestorage.app",
-  messagingSenderId: "361015244463",
-  appId: "1:361015244463:web:076f8802942ca904f5065a"
-};
+      if (!email.value.trim() || !password.value.trim()) {
+        loginMsg.textContent = "Please enter email and password.";
+        return;
+      }
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+      try {
+        await signInWithEmailAndPassword(auth, email.value.trim(), password.value);
+        loginMsg.textContent = "Login successful.";
+        window.location.href = "data-input.html";
+      } catch (error) {
+        loginMsg.textContent = error.message;
+      }
+    };
 
-loginBtn.onclick = async () => {
-  try {
-    await signInWithEmailAndPassword(auth, email.value, password.value);
-  } catch (e) {
-    loginMsg.textContent = e.message;
-  }
-};
-
-logoutBtn.onclick = async () => {
-  await signOut(auth);
-};
-
-onAuthStateChanged(auth, user => {
-  if (user) {
-    loginSection.classList.add("hidden");
-    dashboardSection.classList.remove("hidden");
-  } else {
-    loginSection.classList.remove("hidden");
-    dashboardSection.classList.add("hidden");
-  }
-});
-
-window.goPage = (page) => {
-  window.location.href = page;
-};
-</script>
-
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        window.location.href = "data-input.html";
+      }
+    });
+  </script>
 </body>
 </html>
