@@ -47,7 +47,7 @@
       <section class="page-banner">
         <div>
           <h3>Statistics</h3>
-          <p>Quarter summary and HBsAg detailed listing</p>
+          <p>Quarterly, monthly, referral, and HBsAg detailed reports</p>
         </div>
       </section>
 
@@ -74,62 +74,112 @@
           <button type="button" id="applyBtn" class="primary-btn">Apply Filter</button>
           <button type="button" id="clearBtn" class="secondary-btn">Clear Filter</button>
         </div>
-      </section>
 
-      <section class="content-card">
-        <div class="card-title-row">
-          <h4>Quarter Summary Per Analyte</h4>
-        </div>
-
-        <div class="table-wrap">
-          <table class="records-table">
-            <thead>
-              <tr>
-                <th>Quarter</th>
-                <th>HIV</th>
-                <th>HBsAg</th>
-                <th>HCV</th>
-                <th>Syphilis</th>
-                <th>Malaria</th>
-              </tr>
-            </thead>
-            <tbody id="summaryTableBody">
-              <tr>
-                <td colspan="6">No data</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="tracking-filter-grid">
+          <button type="button" id="printStatsBtn" class="secondary-btn">Print</button>
+          <button type="button" id="exportStatsBtn" class="secondary-btn">Export CSV</button>
         </div>
       </section>
 
-      <section class="content-card">
-        <div class="card-title-row">
-          <h4>HBsAg Detailed Statistics</h4>
-        </div>
+      <div id="printArea">
+        <section class="content-card">
+          <div class="card-title-row">
+            <h4>Quarter Summary Per Analyte</h4>
+          </div>
 
-        <div class="table-wrap">
-          <table class="records-table">
-            <thead>
-              <tr>
-                <th>Serial Number</th>
-                <th>Date Tested</th>
-                <th>OD</th>
-                <th>Repeat 1</th>
-                <th>Repeat 2</th>
-                <th>Interpretation</th>
-                <th>Referral</th>
-              </tr>
-            </thead>
-            <tbody id="hbsagTableBody">
-              <tr>
-                <td colspan="7">No data</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+          <div class="table-wrap">
+            <table class="records-table">
+              <thead>
+                <tr>
+                  <th>Quarter</th>
+                  <th>HIV</th>
+                  <th>HBsAg</th>
+                  <th>HCV</th>
+                  <th>Syphilis</th>
+                  <th>Malaria</th>
+                </tr>
+              </thead>
+              <tbody id="summaryQuarterBody">
+                <tr><td colspan="6">No data</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-        <p id="hbsagMsg" class="message"></p>
-      </section>
+        <section class="content-card">
+          <div class="card-title-row">
+            <h4>Monthly Summary Per Analyte</h4>
+          </div>
+
+          <div class="table-wrap">
+            <table class="records-table">
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>HIV</th>
+                  <th>HBsAg</th>
+                  <th>HCV</th>
+                  <th>Syphilis</th>
+                  <th>Malaria</th>
+                </tr>
+              </thead>
+              <tbody id="summaryMonthlyBody">
+                <tr><td colspan="6">No data</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="content-card">
+          <div class="card-title-row">
+            <h4>Referral Summary for All Tests and Status</h4>
+          </div>
+
+          <div class="table-wrap">
+            <table class="records-table">
+              <thead>
+                <tr>
+                  <th>Test</th>
+                  <th>Reactive</th>
+                  <th>Initially Reactive</th>
+                  <th>Non-Reactive</th>
+                  <th>Referred</th>
+                  <th>Not Referred</th>
+                </tr>
+              </thead>
+              <tbody id="referralSummaryBody">
+                <tr><td colspan="6">No data</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="content-card">
+          <div class="card-title-row">
+            <h4>HBsAg Detailed Statistics</h4>
+          </div>
+
+          <div class="table-wrap">
+            <table class="records-table">
+              <thead>
+                <tr>
+                  <th>Serial Number</th>
+                  <th>Date Tested</th>
+                  <th>OD</th>
+                  <th>Repeat 1</th>
+                  <th>Repeat 2</th>
+                  <th>Interpretation</th>
+                  <th>Referral</th>
+                </tr>
+              </thead>
+              <tbody id="hbsagTableBody">
+                <tr><td colspan="7">No data</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p id="hbsagMsg" class="message"></p>
+        </section>
+      </div>
     </main>
   </div>
 
@@ -159,6 +209,7 @@
     const db = getFirestore(app);
 
     let allRecords = [];
+    let currentFilteredRecords = [];
 
     const sidebarEmail = document.getElementById("sidebarEmail");
     const sidebarRole = document.getElementById("sidebarRole");
@@ -168,8 +219,12 @@
     const quarterFilter = document.getElementById("quarterFilter");
     const applyBtn = document.getElementById("applyBtn");
     const clearBtn = document.getElementById("clearBtn");
+    const printStatsBtn = document.getElementById("printStatsBtn");
+    const exportStatsBtn = document.getElementById("exportStatsBtn");
 
-    const summaryTableBody = document.getElementById("summaryTableBody");
+    const summaryQuarterBody = document.getElementById("summaryQuarterBody");
+    const summaryMonthlyBody = document.getElementById("summaryMonthlyBody");
+    const referralSummaryBody = document.getElementById("referralSummaryBody");
     const hbsagTableBody = document.getElementById("hbsagTableBody");
     const hbsagMsg = document.getElementById("hbsagMsg");
 
@@ -180,7 +235,6 @@
     function parseDateFromRecord(record) {
       const screening = record.screening || {};
       const patientInfo = record.patientInfo || {};
-
       const candidates = [
         screening?.hbsag?.dateTested,
         screening?.hiv?.dateTested,
@@ -201,50 +255,50 @@
 
     function getQuarter(dateObj) {
       const month = dateObj.getMonth() + 1;
-      if (month >= 1 && month <= 3) return "Q1";
-      if (month >= 4 && month <= 6) return "Q2";
-      if (month >= 7 && month <= 9) return "Q3";
+      if (month <= 3) return "Q1";
+      if (month <= 6) return "Q2";
+      if (month <= 9) return "Q3";
       return "Q4";
+    }
+
+    function getMonthLabel(dateObj) {
+      const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+      return `${monthNames[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
     }
 
     function isReactiveRegular(testObj, cutoffValue) {
       if (!testObj) return false;
-
       const od = parseFloat(testObj.od);
       const r1 = parseFloat(testObj.repeat1);
       const r2 = parseFloat(testObj.repeat2);
       const cutoff = parseFloat(cutoffValue);
-
       if ([od, r1, r2, cutoff].some(v => isNaN(v))) return false;
-
       return od > cutoff && r1 > cutoff && r2 > cutoff;
     }
 
     function isReactiveMalaria(testObj, llValue, ulValue) {
       if (!testObj) return false;
-
       const od = parseFloat(testObj.od);
       const r1 = parseFloat(testObj.repeat1);
       const r2 = parseFloat(testObj.repeat2);
       const ll = parseFloat(llValue);
       const ul = parseFloat(ulValue);
-
       if ([od, r1, r2, ll, ul].some(v => isNaN(v))) return false;
-
       const outside = (v) => v < ll || v > ul;
       return outside(od) && outside(r1) && outside(r2);
     }
 
     function renderYearOptions(records) {
       const years = new Set();
-
       records.forEach(record => {
         const d = parseDateFromRecord(record);
         if (d) years.add(d.getFullYear());
       });
 
       const sortedYears = [...years].sort((a, b) => b - a);
-
       yearFilter.innerHTML = `<option value="">All Years</option>`;
       sortedYears.forEach(y => {
         yearFilter.innerHTML += `<option value="${y}">${y}</option>`;
@@ -266,7 +320,7 @@
       });
     }
 
-    function renderSummary(records) {
+    function renderQuarterSummary(records) {
       const grouped = {
         Q1: { hiv: 0, hbsag: 0, hcv: 0, syphilis: 0, malaria: 0 },
         Q2: { hiv: 0, hbsag: 0, hcv: 0, syphilis: 0, malaria: 0 },
@@ -291,20 +345,103 @@
         if (isReactiveMalaria(s.malaria, ll, ul)) grouped[q].malaria++;
       });
 
-      const rows = ["Q1", "Q2", "Q3", "Q4"]
-        .map(q => `
-          <tr>
-            <td>${q}</td>
-            <td>${grouped[q].hiv}</td>
-            <td>${grouped[q].hbsag}</td>
-            <td>${grouped[q].hcv}</td>
-            <td>${grouped[q].syphilis}</td>
-            <td>${grouped[q].malaria}</td>
-          </tr>
-        `)
-        .join("");
+      summaryQuarterBody.innerHTML = ["Q1", "Q2", "Q3", "Q4"].map(q => `
+        <tr>
+          <td>${q}</td>
+          <td>${grouped[q].hiv}</td>
+          <td>${grouped[q].hbsag}</td>
+          <td>${grouped[q].hcv}</td>
+          <td>${grouped[q].syphilis}</td>
+          <td>${grouped[q].malaria}</td>
+        </tr>
+      `).join("");
+    }
 
-      summaryTableBody.innerHTML = rows || `<tr><td colspan="6">No data</td></tr>`;
+    function renderMonthlySummary(records) {
+      const grouped = {};
+
+      records.forEach(record => {
+        const d = parseDateFromRecord(record);
+        if (!d) return;
+
+        const key = getMonthLabel(d);
+        if (!grouped[key]) {
+          grouped[key] = { hiv: 0, hbsag: 0, hcv: 0, syphilis: 0, malaria: 0, sortKey: new Date(d.getFullYear(), d.getMonth(), 1).getTime() };
+        }
+
+        const s = record.screening || {};
+        const cutoff = s.cutoff;
+        const ll = s.malariaLowerLimit;
+        const ul = s.malariaUpperLimit;
+
+        if (isReactiveRegular(s.hiv, cutoff)) grouped[key].hiv++;
+        if (isReactiveRegular(s.hbsag, cutoff)) grouped[key].hbsag++;
+        if (isReactiveRegular(s.hcv, cutoff)) grouped[key].hcv++;
+        if (isReactiveRegular(s.syphilis, cutoff)) grouped[key].syphilis++;
+        if (isReactiveMalaria(s.malaria, ll, ul)) grouped[key].malaria++;
+      });
+
+      const sortedKeys = Object.keys(grouped).sort((a, b) => grouped[b].sortKey - grouped[a].sortKey);
+
+      if (!sortedKeys.length) {
+        summaryMonthlyBody.innerHTML = `<tr><td colspan="6">No data</td></tr>`;
+        return;
+      }
+
+      summaryMonthlyBody.innerHTML = sortedKeys.map(key => `
+        <tr>
+          <td>${key}</td>
+          <td>${grouped[key].hiv}</td>
+          <td>${grouped[key].hbsag}</td>
+          <td>${grouped[key].hcv}</td>
+          <td>${grouped[key].syphilis}</td>
+          <td>${grouped[key].malaria}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderReferralSummary(records) {
+      const tests = {
+        HIV: { reactive: 0, initiallyReactive: 0, nonReactive: 0, referred: 0, notReferred: 0 },
+        HBsAg: { reactive: 0, initiallyReactive: 0, nonReactive: 0, referred: 0, notReferred: 0 },
+        HCV: { reactive: 0, initiallyReactive: 0, nonReactive: 0, referred: 0, notReferred: 0 },
+        Syphilis: { reactive: 0, initiallyReactive: 0, nonReactive: 0, referred: 0, notReferred: 0 },
+        Malaria: { reactive: 0, initiallyReactive: 0, nonReactive: 0, referred: 0, notReferred: 0 }
+      };
+
+      records.forEach(record => {
+        const referred = safe(record.referralStatus) === "Yes";
+        const screening = record.screening || {};
+        const map = [
+          ["HIV", screening.hiv],
+          ["HBsAg", screening.hbsag],
+          ["HCV", screening.hcv],
+          ["Syphilis", screening.syphilis],
+          ["Malaria", screening.malaria]
+        ];
+
+        map.forEach(([name, obj]) => {
+          const interpretation = safe(obj?.interpretation);
+
+          if (interpretation === "🔴 Reactive") tests[name].reactive++;
+          else if (interpretation === "🟠 Initially Reactive") tests[name].initiallyReactive++;
+          else if (interpretation === "🟢 Non-Reactive") tests[name].nonReactive++;
+
+          if (referred) tests[name].referred++;
+          else tests[name].notReferred++;
+        });
+      });
+
+      referralSummaryBody.innerHTML = Object.entries(tests).map(([name, v]) => `
+        <tr>
+          <td>${name}</td>
+          <td>${v.reactive}</td>
+          <td>${v.initiallyReactive}</td>
+          <td>${v.nonReactive}</td>
+          <td>${v.referred}</td>
+          <td>${v.notReferred}</td>
+        </tr>
+      `).join("");
     }
 
     function badgeClass(text) {
@@ -365,9 +502,91 @@
     }
 
     function renderAll() {
-      const filtered = getFilteredRecords();
-      renderSummary(filtered);
-      renderHBsAgTable(filtered);
+      currentFilteredRecords = getFilteredRecords();
+      renderQuarterSummary(currentFilteredRecords);
+      renderMonthlySummary(currentFilteredRecords);
+      renderReferralSummary(currentFilteredRecords);
+      renderHBsAgTable(currentFilteredRecords);
+    }
+
+    function exportStatsCSV() {
+      const quarterRows = [...document.querySelectorAll("#summaryQuarterBody tr")].map(tr =>
+        [...tr.children].map(td => `"${safe(td.textContent).replace(/"/g, '""')}"`).join(",")
+      );
+
+      const monthRows = [...document.querySelectorAll("#summaryMonthlyBody tr")].map(tr =>
+        [...tr.children].map(td => `"${safe(td.textContent).replace(/"/g, '""')}"`).join(",")
+      );
+
+      const referralRows = [...document.querySelectorAll("#referralSummaryBody tr")].map(tr =>
+        [...tr.children].map(td => `"${safe(td.textContent).replace(/"/g, '""')}"`).join(",")
+      );
+
+      const hbsagRows = [...document.querySelectorAll("#hbsagTableBody tr")].map(tr => {
+        const tds = [...tr.children];
+        const vals = tds.slice(0, 6).map(td => `"${safe(td.textContent).replace(/"/g, '""')}"`);
+        const chk = tr.querySelector(".referral-checkbox");
+        vals.push(`"${chk && chk.checked ? "Referred" : "No"}"`);
+        return vals.join(",");
+      });
+
+      const csv = [
+        "Quarter Summary Per Analyte",
+        `"Quarter","HIV","HBsAg","HCV","Syphilis","Malaria"`,
+        ...quarterRows,
+        "",
+        "Monthly Summary Per Analyte",
+        `"Month","HIV","HBsAg","HCV","Syphilis","Malaria"`,
+        ...monthRows,
+        "",
+        "Referral Summary for All Tests and Status",
+        `"Test","Reactive","Initially Reactive","Non-Reactive","Referred","Not Referred"`,
+        ...referralRows,
+        "",
+        "HBsAg Detailed Statistics",
+        `"Serial Number","Date Tested","OD","Repeat 1","Repeat 2","Interpretation","Referral"`,
+        ...hbsagRows
+      ].join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "statistics_report.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function printStats() {
+      const content = document.getElementById("printArea").innerHTML;
+      const win = window.open("", "_blank", "width=1200,height=900");
+      win.document.open();
+      win.document.write(`
+        <html>
+          <head>
+            <title>Statistics Report</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              h1, h2, h3, h4 { margin: 0 0 10px; }
+              .content-card { margin-bottom: 24px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+              th, td { border: 1px solid #999; padding: 8px; text-align: center; font-size: 12px; }
+              th { background: #eee; }
+            </style>
+          </head>
+          <body>
+            <h2>PHILIPPINE RED CROSS BAGUIO CITY CHAPTER</h2>
+            <h3>TTI MONITORING</h3>
+            <h1>Statistics Report</h1>
+            ${content}
+          </body>
+        </html>
+      `);
+      win.document.close();
+      win.focus();
+      win.print();
     }
 
     onAuthStateChanged(auth, async (user) => {
@@ -403,6 +622,9 @@
       quarterFilter.value = "";
       renderAll();
     });
+
+    printStatsBtn.addEventListener("click", printStats);
+    exportStatsBtn.addEventListener("click", exportStatsCSV);
 
     logoutBtn.onclick = async () => {
       await signOut(auth);
