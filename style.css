@@ -1,42 +1,102 @@
-body { margin:0; font-family:Arial; background:#f4f4f4; }
-
-.main-header {
-  background:#b30000;
-  color:white;
-  padding:10px;
-  display:flex;
-  align-items:center;
-  gap:10px;
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f6f8;
 }
 
-.logo { width:40px; }
-.logo-small { width:30px; }
+/* HEADER */
+.main-header {
+  background: white;
+  border-bottom: 4px solid #b30000;
+  padding: 15px 10px;
+  text-align: center;
+}
 
+.header-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* LOGO */
+.logo {
+  width: 55px;
+  height: 55px;
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+
+/* TITLES */
+.title-group h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: bold;
+  color: #b30000;
+  letter-spacing: 0.5px;
+}
+
+.title-group h2 {
+  margin: 3px 0 0;
+  font-size: 13px;
+  color: #555;
+  font-weight: normal;
+}
+
+/* BODY */
 .container {
-  max-width:500px;
-  margin:30px auto;
+  max-width: 600px;
+  margin: 30px auto;
+  padding: 10px;
 }
 
 .card {
-  background:white;
-  padding:20px;
-  border-radius:10px;
+  background: white;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
 }
 
-.center { text-align:center; }
-
-input, select, button {
-  width:100%;
-  padding:10px;
-  margin-top:8px;
+.center {
+  text-align: center;
 }
 
+input, select, textarea, button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  font-size: 15px;
+  border-radius: 6px;
+}
+
+/* INPUT */
+input, select, textarea {
+  border: 1px solid #ccc;
+}
+
+/* BUTTON */
 button {
-  background:#b30000;
-  color:white;
-  border:none;
+  background: #b30000;
+  color: white;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
 }
 
-.hidden { display:none; }
+button:hover {
+  background: #8f0000;
+}
 
-.logout { background:#444; margin-top:10px; }
+/* HIDE */
+.hidden {
+  display: none;
+}
+
+/* LOGOUT */
+.logout {
+  margin-top: 15px;
+  background: #444;
+}
+
+.logout:hover {
+  background: #222;
+}
