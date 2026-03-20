@@ -57,7 +57,7 @@
         </div>
 
         <div class="tracking-filter-grid">
-          <input type="text" id="searchInput" placeholder="Search donor name, serial number, blood type, address, status..." />
+          <input type="text" id="searchInput" placeholder="Search donor name, serial number, blood type, address, contact, occupation, status..." />
           <select id="statusFilter">
             <option value="">All Overall Status</option>
             <option value="🔴 Reactive">Reactive</option>
@@ -220,35 +220,70 @@
       ];
 
       return `
-        <div class="table-wrap">
-          <table class="records-table tracking-results-table">
-            <thead>
-              <tr>
-                <th>Test</th>
-                <th>OD</th>
-                <th>Repeat 1</th>
-                <th>Repeat 2</th>
-                <th>Lot Number</th>
-                <th>Expiration Date</th>
-                <th>Date Tested</th>
-                <th>Interpretation</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${tests.map(([label, d]) => `
+        <div class="screening-box">
+          <div class="screening-box-title">TTI Screening Results</div>
+          <div class="table-wrap">
+            <table class="records-table tracking-results-table">
+              <thead>
                 <tr>
-                  <td>${label}</td>
-                  <td>${safe(d?.od)}</td>
-                  <td>${safe(d?.repeat1)}</td>
-                  <td>${safe(d?.repeat2)}</td>
-                  <td>${safe(d?.lotNumber)}</td>
-                  <td>${safe(d?.expirationDate)}</td>
-                  <td>${safe(d?.dateTested)}</td>
-                  <td>${renderInterpretationBadge(safe(d?.interpretation))}</td>
+                  <th>Test</th>
+                  <th>OD</th>
+                  <th>Repeat 1</th>
+                  <th>Repeat 2</th>
+                  <th>Lot Number</th>
+                  <th>Expiration Date</th>
+                  <th>Date Tested</th>
+                  <th>Interpretation</th>
                 </tr>
-              `).join("")}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                ${tests.map(([label, d]) => `
+                  <tr>
+                    <td>${label}</td>
+                    <td>${safe(d?.od)}</td>
+                    <td>${safe(d?.repeat1)}</td>
+                    <td>${safe(d?.repeat2)}</td>
+                    <td>${safe(d?.lotNumber)}</td>
+                    <td>${safe(d?.expirationDate)}</td>
+                    <td>${safe(d?.dateTested)}</td>
+                    <td>${renderInterpretationBadge(safe(d?.interpretation))}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPatientInfo(p, createdBy) {
+      return `
+        <div class="screening-box">
+          <div class="screening-box-title">Patient Information</div>
+          <div class="tracking-info-grid">
+            <div class="tracking-info-item"><span class="label">Surname</span><span class="value">${safe(p.surname)}</span></div>
+            <div class="tracking-info-item"><span class="label">First Name</span><span class="value">${safe(p.firstName)}</span></div>
+            <div class="tracking-info-item"><span class="label">Middle Name</span><span class="value">${safe(p.middleName)}</span></div>
+            <div class="tracking-info-item"><span class="label">Suffix</span><span class="value">${safe(p.suffix)}</span></div>
+
+            <div class="tracking-info-item"><span class="label">Serial Number</span><span class="value">${safe(p.serialNumber)}</span></div>
+            <div class="tracking-info-item"><span class="label">Blood Type</span><span class="value">${safe(p.bloodType)}</span></div>
+            <div class="tracking-info-item"><span class="label">Civil Status</span><span class="value">${safe(p.civilStatus)}</span></div>
+            <div class="tracking-info-item"><span class="label">Birthday</span><span class="value">${safe(p.birthday)}</span></div>
+
+            <div class="tracking-info-item"><span class="label">Age</span><span class="value">${safe(p.age)}</span></div>
+            <div class="tracking-info-item"><span class="label">Sex</span><span class="value">${safe(p.sex)}</span></div>
+            <div class="tracking-info-item"><span class="label">Contact Info</span><span class="value">${safe(p.contactInfo)}</span></div>
+            <div class="tracking-info-item"><span class="label">Address</span><span class="value">${safe(p.address)}</span></div>
+
+            <div class="tracking-info-item"><span class="label">Occupation</span><span class="value">${safe(p.occupation)}</span></div>
+            <div class="tracking-info-item"><span class="label">Collection Date</span><span class="value">${safe(p.collectionDate)}</span></div>
+            <div class="tracking-info-item"><span class="label">Donor Type</span><span class="value">${safe(p.donorType)}</span></div>
+            <div class="tracking-info-item"><span class="label">Donation Frequency</span><span class="value">${safe(p.donationFrequency)}</span></div>
+
+            <div class="tracking-info-item"><span class="label">Repeat Date</span><span class="value">${safe(p.repeatDate)}</span></div>
+            <div class="tracking-info-item"><span class="label">Encoded By</span><span class="value">${safe(createdBy)}</span></div>
+          </div>
         </div>
       `;
     }
@@ -301,8 +336,8 @@
         item.className = "content-card tracking-list-card";
 
         item.innerHTML = `
-          <div class="tracking-list-header" data-toggle="${record.id}">
-            <div class="tracking-list-left">
+          <div class="tracking-list-header">
+            <div class="tracking-list-left clickable-header" data-toggle="${record.id}">
               <button class="collapse-toggle" type="button" data-toggle="${record.id}">+</button>
               <div class="tracking-name-block">
                 <div class="tracking-name">${fullName(p) || "Unnamed Record"}</div>
@@ -327,33 +362,7 @@
           </div>
 
           <div class="tracking-collapsed-body hidden" id="details-${record.id}">
-            <div class="tracking-section-title">Patient Information</div>
-            <div class="tracking-info-grid">
-              <div class="tracking-info-item"><span class="label">Surname</span><span class="value">${safe(p.surname)}</span></div>
-              <div class="tracking-info-item"><span class="label">First Name</span><span class="value">${safe(p.firstName)}</span></div>
-              <div class="tracking-info-item"><span class="label">Middle Name</span><span class="value">${safe(p.middleName)}</span></div>
-              <div class="tracking-info-item"><span class="label">Suffix</span><span class="value">${safe(p.suffix)}</span></div>
-
-              <div class="tracking-info-item"><span class="label">Serial Number</span><span class="value">${safe(p.serialNumber)}</span></div>
-              <div class="tracking-info-item"><span class="label">Blood Type</span><span class="value">${safe(p.bloodType)}</span></div>
-              <div class="tracking-info-item"><span class="label">Civil Status</span><span class="value">${safe(p.civilStatus)}</span></div>
-              <div class="tracking-info-item"><span class="label">Birthday</span><span class="value">${safe(p.birthday)}</span></div>
-
-              <div class="tracking-info-item"><span class="label">Age</span><span class="value">${safe(p.age)}</span></div>
-              <div class="tracking-info-item"><span class="label">Sex</span><span class="value">${safe(p.sex)}</span></div>
-              <div class="tracking-info-item"><span class="label">Contact Info</span><span class="value">${safe(p.contactInfo)}</span></div>
-              <div class="tracking-info-item"><span class="label">Address</span><span class="value">${safe(p.address)}</span></div>
-
-              <div class="tracking-info-item"><span class="label">Occupation</span><span class="value">${safe(p.occupation)}</span></div>
-              <div class="tracking-info-item"><span class="label">Collection Date</span><span class="value">${safe(p.collectionDate)}</span></div>
-              <div class="tracking-info-item"><span class="label">Donor Type</span><span class="value">${safe(p.donorType)}</span></div>
-              <div class="tracking-info-item"><span class="label">Donation Frequency</span><span class="value">${safe(p.donationFrequency)}</span></div>
-
-              <div class="tracking-info-item"><span class="label">Repeat Date</span><span class="value">${safe(p.repeatDate)}</span></div>
-              <div class="tracking-info-item"><span class="label">Encoded By</span><span class="value">${safe(record.createdBy)}</span></div>
-            </div>
-
-            <div class="tracking-section-title">TTI Screening Results</div>
+            ${renderPatientInfo(p, record.createdBy)}
             ${renderTestTable(s)}
           </div>
         `;
@@ -374,7 +383,6 @@
 
     document.addEventListener("click", async (e) => {
       const toggleId = e.target.getAttribute("data-toggle");
-
       if (toggleId) {
         const details = document.getElementById(`details-${toggleId}`);
         const btn = document.querySelector(`.collapse-toggle[data-toggle="${toggleId}"]`);
