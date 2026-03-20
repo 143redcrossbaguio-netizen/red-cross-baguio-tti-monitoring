@@ -84,8 +84,20 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, collection, onSnapshot, deleteDoc, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      onSnapshot,
+      deleteDoc,
+      doc,
+      getDoc,
+      updateDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
@@ -106,7 +118,6 @@
     const sidebarEmail = document.getElementById("sidebarEmail");
     const sidebarRole = document.getElementById("sidebarRole");
     const logoutBtn = document.getElementById("logoutBtn");
-
     const searchInput = document.getElementById("searchInput");
     const statusFilter = document.getElementById("statusFilter");
     const collectionDateFilter = document.getElementById("collectionDateFilter");
@@ -114,67 +125,59 @@
     const recordsContainer = document.getElementById("recordsContainer");
     const recordCount = document.getElementById("recordCount");
 
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        window.location.href = "index.html";
-        return;
-      }
-
-      sidebarEmail.textContent = user.email;
-
-      const snap = await getDoc(doc(db, "users", user.uid));
-      if (snap.exists()) {
-        currentRole = snap.data().role || "";
-        sidebarRole.textContent = currentRole || "-";
-      } else {
-        currentRole = "";
-        sidebarRole.textContent = "no role";
-      }
-
-      onSnapshot(collection(db, "tti_records"), (snapshot) => {
-        allRecords = [];
-        snapshot.forEach((docSnap) => {
-          allRecords.push({
-            id: docSnap.id,
-            ...docSnap.data()
-          });
-        });
-        renderRecords();
-      });
-    });
-
-    logoutBtn.onclick = async () => {
-      await signOut(auth);
-      window.location.href = "index.html";
-    };
-
-    searchInput.addEventListener("input", renderRecords);
-    statusFilter.addEventListener("change", renderRecords);
-    collectionDateFilter.addEventListener("change", renderRecords);
-
-    clearFilterBtn.addEventListener("click", () => {
-      searchInput.value = "";
-      statusFilter.value = "";
-      collectionDateFilter.value = "";
-      renderRecords();
-    });
-
     function safe(val) {
-      return val ?? "";
+      return val === undefined || val === null ? "" : String(val);
     }
 
-    function fullName(patientInfo) {
-      const surname = safe(patientInfo?.surname);
-      const firstName = safe(patientInfo?.firstName);
-      const middleName = safe(patientInfo?.middleName);
-      const suffix = safe(patientInfo?.suffix);
-      return [surname, firstName, middleName, suffix].filter(Boolean).join(" ");
+    function getPatientInfo(record) {
+      return record.patientInfo || {};
     }
 
-    function getSearchableText(record) {
-      const p = record.patientInfo || {};
-      const s = record.screening || {};
+    function getScreening(record) {
+      return record.screening || {};
+    }
 
+    function getReferralStatus(record) {
+      return safe(record.referralStatus) || "No";
+    }
+
+    function fullName(record) {
+      const p = getPatientInfo(record);
+      return [
+        safe(p.surname),
+        safe(p.firstName),
+        safe(p.middleName),
+        safe(p.suffix)
+      ].filter(Boolean).join(" ");
+    }
+
+    function getOverallStatus(record) {
+      const s = getScreening(record);
+      return safe(s.overallStatus);
+    }
+
+    function overallClass(overall) {
+      if (overall === "🔴 Reactive") return "overall-reactive";
+      if (overall === "🟠 Initially Reactive") return "overall-initially-reactive";
+      if (overall === "🟢 Non-Reactive") return "overall-nonreactive";
+      return "overall-neutral";
+    }
+
+    function interpretationBadge(text) {
+      let cls = "table-badge-neutral";
+      if (text === "🔴 Reactive") cls = "table-badge-reactive";
+      if (text === "🟠 Initially Reactive") cls = "table-badge-initially-reactive";
+      if (text === "🟢 Non-Reactive") cls = "table-badge-nonreactive";
+      return `<span class="table-result-badge ${cls}">${text || "--"}</span>`;
+    }
+
+    function referralClass(value) {
+      return value === "Yes" ? "referral-yes" : "referral-no";
+    }
+
+    function searchBlob(record) {
+      const p = getPatientInfo(record);
+      const s = getScreening(record);
       return [
         safe(p.surname),
         safe(p.firstName),
@@ -192,21 +195,47 @@
       ].join(" ").toLowerCase();
     }
 
-    function renderInterpretationBadge(text) {
-      let cls = "table-badge-neutral";
-      if (text === "🔴 Reactive") cls = "table-badge-reactive";
-      if (text === "🟠 Initially Reactive") cls = "table-badge-initially-reactive";
-      if (text === "🟢 Non-Reactive") cls = "table-badge-nonreactive";
-      return `<span class="table-result-badge ${cls}">${text || "--"}</span>`;
+    function renderPatientInfo(record) {
+      const p = getPatientInfo(record);
+      return `
+        <div class="screening-box">
+          <div class="screening-box-title">Patient Information</div>
+          <div class="tracking-info-grid">
+            <div class="tracking-info-item"><span class="label">Surname</span><span class="value">${safe(p.surname) || "--"}</span></div>
+            <div class="tracking-info-item"><span class="label">First Name</span><span class="value">${safe(p.firstName) || "--"}</span></div>
+            <div class="tracking-info-item"><span class="label">Middle Name</span><span class="value">${safe(p.middleName) || "--"}</span></div>
+            <div class="tracking-info-item"><span class="label">Suffix</span><span class="value">${safe(p.suffix) || "--"}</span></div>
+
+            <div class="tracking-info-item"><span class="label">Serial Number</span><span class="value">${safe(p.serialNumber) || "--"}</span></div>
+            <div class="tracking-info-item"><span class="label">Blood Type</span><span class="value">${safe(p.bloodType) || "--"}</span></div>
+            <div class="tracking-info-item"><span class="label">Civil Status</span><span class="value">${safe(p.civilStatus) || "--"}</span></div>
+            <div class="tracking-info-item"><span class="label">Birthday</span><span class="value">${safe(p.birthday) || "--"}</span></div>
+
+            <div class="tracking-info-item"><span class="label">Age</span><span class="value">${safe(p.age) || "--"}</span></div>
+            <div class="tracking-info-item"><span class="label">Sex</span><span class="value">${safe(p.sex) || "--"}</span></div>
+            <div class="tracking-info-item"><span class="label">Contact Info</span><span class="value">${safe(p.contactInfo) || "--"}</span></div>
+            <div class="tracking-info-item"><span class="label">Address</span><span class="value">${safe(p.address) || "--"}</span></div>
+
+            <div class="tracking-info-item"><span class="label">Occupation</span><span class="value">${safe(p.occupation) || "--"}</span></div>
+            <div class="tracking-info-item"><span class="label">Collection Date</span><span class="value">${safe(p.collectionDate) || "--"}</span></div>
+            <div class="tracking-info-item"><span class="label">Donor Type</span><span class="value">${safe(p.donorType) || "--"}</span></div>
+            <div class="tracking-info-item"><span class="label">Donation Frequency</span><span class="value">${safe(p.donationFrequency) || "--"}</span></div>
+
+            <div class="tracking-info-item"><span class="label">Repeat Date</span><span class="value">${safe(p.repeatDate) || "--"}</span></div>
+            <div class="tracking-info-item"><span class="label">Encoded By</span><span class="value">${safe(record.createdBy) || "--"}</span></div>
+          </div>
+        </div>
+      `;
     }
 
-    function renderTestTable(screening) {
-      const tests = [
-        ["HIV", screening?.hiv],
-        ["HBsAg", screening?.hbsag],
-        ["HCV", screening?.hcv],
-        ["Syphilis", screening?.syphilis],
-        ["Malaria", screening?.malaria]
+    function renderScreeningTable(record) {
+      const s = getScreening(record);
+      const rows = [
+        ["HIV", s.hiv || {}],
+        ["HBsAg", s.hbsag || {}],
+        ["HCV", s.hcv || {}],
+        ["Syphilis", s.syphilis || {}],
+        ["Malaria", s.malaria || {}]
       ];
 
       return `
@@ -227,16 +256,16 @@
                 </tr>
               </thead>
               <tbody>
-                ${tests.map(([label, d]) => `
+                ${rows.map(([label, d]) => `
                   <tr>
                     <td>${label}</td>
-                    <td>${safe(d?.od)}</td>
-                    <td>${safe(d?.repeat1)}</td>
-                    <td>${safe(d?.repeat2)}</td>
-                    <td>${safe(d?.lotNumber)}</td>
-                    <td>${safe(d?.expirationDate)}</td>
-                    <td>${safe(d?.dateTested)}</td>
-                    <td>${renderInterpretationBadge(safe(d?.interpretation))}</td>
+                    <td>${safe(d.od) || "--"}</td>
+                    <td>${safe(d.repeat1) || "--"}</td>
+                    <td>${safe(d.repeat2) || "--"}</td>
+                    <td>${safe(d.lotNumber) || "--"}</td>
+                    <td>${safe(d.expirationDate) || "--"}</td>
+                    <td>${safe(d.dateTested) || "--"}</td>
+                    <td>${interpretationBadge(safe(d.interpretation))}</td>
                   </tr>
                 `).join("")}
               </tbody>
@@ -246,58 +275,26 @@
       `;
     }
 
-    function renderPatientInfo(p, createdBy) {
-      return `
-        <div class="screening-box">
-          <div class="screening-box-title">Patient Information</div>
-          <div class="tracking-info-grid">
-            <div class="tracking-info-item"><span class="label">Surname</span><span class="value">${safe(p.surname)}</span></div>
-            <div class="tracking-info-item"><span class="label">First Name</span><span class="value">${safe(p.firstName)}</span></div>
-            <div class="tracking-info-item"><span class="label">Middle Name</span><span class="value">${safe(p.middleName)}</span></div>
-            <div class="tracking-info-item"><span class="label">Suffix</span><span class="value">${safe(p.suffix)}</span></div>
-
-            <div class="tracking-info-item"><span class="label">Serial Number</span><span class="value">${safe(p.serialNumber)}</span></div>
-            <div class="tracking-info-item"><span class="label">Blood Type</span><span class="value">${safe(p.bloodType)}</span></div>
-            <div class="tracking-info-item"><span class="label">Civil Status</span><span class="value">${safe(p.civilStatus)}</span></div>
-            <div class="tracking-info-item"><span class="label">Birthday</span><span class="value">${safe(p.birthday)}</span></div>
-
-            <div class="tracking-info-item"><span class="label">Age</span><span class="value">${safe(p.age)}</span></div>
-            <div class="tracking-info-item"><span class="label">Sex</span><span class="value">${safe(p.sex)}</span></div>
-            <div class="tracking-info-item"><span class="label">Contact Info</span><span class="value">${safe(p.contactInfo)}</span></div>
-            <div class="tracking-info-item"><span class="label">Address</span><span class="value">${safe(p.address)}</span></div>
-
-            <div class="tracking-info-item"><span class="label">Occupation</span><span class="value">${safe(p.occupation)}</span></div>
-            <div class="tracking-info-item"><span class="label">Collection Date</span><span class="value">${safe(p.collectionDate)}</span></div>
-            <div class="tracking-info-item"><span class="label">Donor Type</span><span class="value">${safe(p.donorType)}</span></div>
-            <div class="tracking-info-item"><span class="label">Donation Frequency</span><span class="value">${safe(p.donationFrequency)}</span></div>
-
-            <div class="tracking-info-item"><span class="label">Repeat Date</span><span class="value">${safe(p.repeatDate)}</span></div>
-            <div class="tracking-info-item"><span class="label">Encoded By</span><span class="value">${safe(createdBy)}</span></div>
-          </div>
-        </div>
-      `;
-    }
-
     function renderRecords() {
       const searchTerm = searchInput.value.trim().toLowerCase();
       const statusValue = statusFilter.value;
-      const collectionDateValue = collectionDateFilter.value;
+      const dateValue = collectionDateFilter.value;
 
       const filtered = allRecords.filter((record) => {
-        const p = record.patientInfo || {};
-        const s = record.screening || {};
+        const p = getPatientInfo(record);
+        const overall = getOverallStatus(record);
 
-        const matchesSearch = !searchTerm || getSearchableText(record).includes(searchTerm);
-        const matchesStatus = !statusValue || safe(s.overallStatus) === statusValue;
-        const matchesDate = !collectionDateValue || safe(p.collectionDate) === collectionDateValue;
+        const matchSearch = !searchTerm || searchBlob(record).includes(searchTerm);
+        const matchStatus = !statusValue || overall === statusValue;
+        const matchDate = !dateValue || safe(p.collectionDate) === dateValue;
 
-        return matchesSearch && matchesStatus && matchesDate;
+        return matchSearch && matchStatus && matchDate;
       });
 
       recordCount.textContent = filtered.length;
       recordsContainer.innerHTML = "";
 
-      if (filtered.length === 0) {
+      if (!filtered.length) {
         recordsContainer.innerHTML = `
           <section class="content-card">
             <div class="empty-state">No records found.</div>
@@ -307,39 +304,29 @@
       }
 
       filtered.forEach((record) => {
-        const p = record.patientInfo || {};
-        const s = record.screening || {};
-        const overall = safe(s.overallStatus);
-        const referral = safe(record.referralStatus) || "No";
+        const p = getPatientInfo(record);
+        const donorName = fullName(record) || "Unnamed Record";
+        const serial = safe(p.serialNumber) || "--";
+        const overall = getOverallStatus(record) || "--";
+        const referral = getReferralStatus(record);
 
-        const overallClass =
-          overall === "🔴 Reactive"
-            ? "overall-reactive"
-            : overall === "🟠 Initially Reactive"
-            ? "overall-initially-reactive"
-            : overall === "🟢 Non-Reactive"
-            ? "overall-nonreactive"
-            : "overall-neutral";
+        const section = document.createElement("section");
+        section.className = "content-card tracking-list-card";
 
-        const referralClass = referral === "Yes" ? "referral-yes" : "referral-no";
-
-        const item = document.createElement("section");
-        item.className = "content-card tracking-list-card";
-
-        item.innerHTML = `
+        section.innerHTML = `
           <div class="tracking-list-header">
             <div class="tracking-list-left clickable-header" data-toggle="${record.id}">
               <button class="collapse-toggle" type="button" data-toggle="${record.id}">+</button>
               <div class="tracking-name-block">
-                <div class="tracking-name">${fullName(p) || "Unnamed Record"}</div>
-                <div class="tracking-subline">Serial No: ${safe(p.serialNumber) || "--"}</div>
+                <div class="tracking-name">${donorName}</div>
+                <div class="tracking-subline">Serial No: ${serial}</div>
               </div>
             </div>
 
             <div class="tracking-list-right">
-              <span class="tracking-overall-badge ${overallClass}">${overall || "--"}</span>
+              <span class="tracking-overall-badge ${overallClass(overall)}">${overall}</span>
               <button type="button" class="referral-btn" data-id="${record.id}">Referral</button>
-              <span class="referral-status-badge ${referralClass}">${referral}</span>
+              <span class="referral-status-badge ${referralClass(referral)}">${referral}</span>
               ${
                 currentRole === "master"
                   ? `<button class="secondary-btn editRecordBtn" data-id="${record.id}">Edit</button>
@@ -350,21 +337,19 @@
           </div>
 
           <div class="tracking-collapsed-body hidden" id="details-${record.id}">
-            ${renderPatientInfo(p, record.createdBy)}
-            ${renderTestTable(s)}
+            ${renderPatientInfo(record)}
+            ${renderScreeningTable(record)}
           </div>
         `;
 
-        recordsContainer.appendChild(item);
+        recordsContainer.appendChild(section);
       });
     }
 
     async function setReferralStatus(id, value) {
-      try {
-        await updateDoc(doc(db, "tti_records", id), { referralStatus: value });
-      } catch (error) {
-        alert(error.message);
-      }
+      await updateDoc(doc(db, "tti_records", id), {
+        referralStatus: value
+      });
     }
 
     document.addEventListener("click", async (e) => {
@@ -373,10 +358,16 @@
         const details = document.getElementById(`details-${toggleId}`);
         const btn = document.querySelector(`.collapse-toggle[data-toggle="${toggleId}"]`);
         if (details) {
-          const isHidden = details.classList.contains("hidden");
+          const hidden = details.classList.contains("hidden");
           details.classList.toggle("hidden");
-          if (btn) btn.textContent = isHidden ? "−" : "+";
+          if (btn) btn.textContent = hidden ? "−" : "+";
         }
+        return;
+      }
+
+      if (e.target.classList.contains("editRecordBtn")) {
+        const id = e.target.getAttribute("data-id");
+        window.location.href = `data-input.html?edit=${id}`;
         return;
       }
 
@@ -392,22 +383,25 @@
         } catch (error) {
           alert(error.message);
         }
-      }
-
-      if (e.target.classList.contains("editRecordBtn")) {
-        const id = e.target.getAttribute("data-id");
-        window.location.href = `data-input.html?edit=${id}`;
+        return;
       }
 
       if (e.target.classList.contains("referral-btn")) {
         const id = e.target.getAttribute("data-id");
         const answer = prompt("Set referral status: Yes or No", "No");
         if (!answer) return;
-        const normalized = answer.trim().toLowerCase();
-        if (normalized === "yes") await setReferralStatus(id, "Yes");
-        else if (normalized === "no") await setReferralStatus(id, "No");
+        const v = answer.trim().toLowerCase();
+        if (v === "yes") await setReferralStatus(id, "Yes");
+        else if (v === "no") await setReferralStatus(id, "No");
         else alert("Please enter Yes or No.");
       }
+    });
+
+    clearFilterBtn.addEventListener("click", () => {
+      searchInput.value = "";
+      statusFilter.value = "";
+      collectionDateFilter.value = "";
+      renderRecords();
     });
   </script>
 </body>
