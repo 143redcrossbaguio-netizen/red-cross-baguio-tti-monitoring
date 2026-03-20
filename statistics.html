@@ -127,6 +127,8 @@
             </tbody>
           </table>
         </div>
+
+        <p id="hbsagMsg" class="message"></p>
       </section>
     </main>
   </div>
@@ -139,7 +141,8 @@
       collection,
       onSnapshot,
       doc,
-      getDoc
+      getDoc,
+      updateDoc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -168,6 +171,7 @@
 
     const summaryTableBody = document.getElementById("summaryTableBody");
     const hbsagTableBody = document.getElementById("hbsagTableBody");
+    const hbsagMsg = document.getElementById("hbsagMsg");
 
     function safe(val) {
       return val === undefined || val === null ? "" : String(val);
@@ -228,7 +232,6 @@
       if ([od, r1, r2, ll, ul].some(v => isNaN(v))) return false;
 
       const outside = (v) => v < ll || v > ul;
-
       return outside(od) && outside(r1) && outside(r2);
     }
 
@@ -311,25 +314,21 @@
       return "table-badge-neutral";
     }
 
-    function referralClass(value) {
-      return value === "Yes" ? "referral-yes" : "referral-no";
-    }
-
     function renderHBsAgTable(records) {
       const rows = records
         .map(record => {
           const patientInfo = record.patientInfo || {};
           const hbsag = record.screening?.hbsag || {};
-          const referral = safe(record.referralStatus) || "No";
 
           return {
+            id: record.id,
             serialNumber: safe(patientInfo.serialNumber),
             dateTested: safe(hbsag.dateTested),
             od: safe(hbsag.od),
             repeat1: safe(hbsag.repeat1),
             repeat2: safe(hbsag.repeat2),
             interpretation: safe(hbsag.interpretation),
-            referral
+            referral: safe(record.referralStatus) === "Yes"
           };
         })
         .filter(row =>
@@ -350,7 +349,17 @@
           <td>${row.repeat1 || "--"}</td>
           <td>${row.repeat2 || "--"}</td>
           <td><span class="table-result-badge ${badgeClass(row.interpretation)}">${row.interpretation || "--"}</span></td>
-          <td><span class="referral-status-badge ${referralClass(row.referral)}">${row.referral}</span></td>
+          <td class="checkbox-cell">
+            <label class="referral-check-wrap">
+              <input
+                type="checkbox"
+                class="referral-checkbox"
+                data-id="${row.id}"
+                ${row.referral ? "checked" : ""}
+              />
+              <span>${row.referral ? "Referred" : "No"}</span>
+            </label>
+          </td>
         </tr>
       `).join("");
     }
@@ -399,6 +408,35 @@
       await signOut(auth);
       window.location.href = "index.html";
     };
+
+    document.addEventListener("change", async (e) => {
+      if (!e.target.classList.contains("referral-checkbox")) return;
+
+      const id = e.target.getAttribute("data-id");
+      const isChecked = e.target.checked;
+      const label = e.target.closest(".referral-check-wrap")?.querySelector("span");
+
+      try {
+        await updateDoc(doc(db, "tti_records", id), {
+          referralStatus: isChecked ? "Yes" : "No"
+        });
+
+        if (label) {
+          label.textContent = isChecked ? "Referred" : "No";
+        }
+
+        hbsagMsg.textContent = "Referral updated successfully.";
+        setTimeout(() => {
+          hbsagMsg.textContent = "";
+        }, 2000);
+      } catch (error) {
+        e.target.checked = !isChecked;
+        if (label) {
+          label.textContent = !isChecked ? "Referred" : "No";
+        }
+        hbsagMsg.textContent = error.message;
+      }
+    });
   </script>
 </body>
 </html>
