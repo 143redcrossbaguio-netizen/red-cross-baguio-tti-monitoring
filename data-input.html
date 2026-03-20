@@ -46,8 +46,8 @@
     <main class="main-content">
       <section class="page-banner">
         <div>
-          <h3>Data Input</h3>
-          <p>Enter donor profile and TTI screening details</p>
+          <h3 id="pageTitle">Data Input</h3>
+          <p id="pageSubtitle">Enter donor profile and TTI screening details</p>
         </div>
       </section>
 
@@ -139,6 +139,7 @@
         </div>
 
         <div class="tti-grid">
+
           <div class="tti-item">
             <button type="button" class="tti-header-btn" onclick="togglePanel('hivPanel')">
               <span>HIV</span>
@@ -248,6 +249,7 @@
               <div id="malaria_result" class="result-box neutral">--</div>
             </div>
           </div>
+
         </div>
       </section>
 
@@ -262,8 +264,20 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, getDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      addDoc,
+      updateDoc,
+      collection,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
@@ -280,6 +294,7 @@
 
     let currentRole = "";
     let currentUser = null;
+    let editingId = null;
 
     const sidebarEmail = document.getElementById("sidebarEmail");
     const sidebarRole = document.getElementById("sidebarRole");
@@ -293,8 +308,12 @@
     const repeatDateWrap = document.getElementById("repeatDateWrap");
     const cutoffInput = document.getElementById("cutoff");
     const overallStatus = document.getElementById("overallStatus");
+    const pageTitle = document.getElementById("pageTitle");
+    const pageSubtitle = document.getElementById("pageSubtitle");
 
     const tests = ["hiv", "hbsag", "hcv", "syphilis", "malaria"];
+    const params = new URLSearchParams(window.location.search);
+    editingId = params.get("edit");
 
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -313,6 +332,13 @@
         currentRole = "";
         sidebarRole.textContent = "no role";
       }
+
+      if (editingId) {
+        pageTitle.textContent = "Edit Record";
+        pageSubtitle.textContent = "Modify donor profile and screening details";
+        saveBtn.textContent = "Update Record";
+        await loadRecordForEdit(editingId);
+      }
     });
 
     logoutBtn.onclick = async () => {
@@ -325,16 +351,13 @@
         ageInput.value = "";
         return;
       }
-
       const birthDate = new Date(birthdayInput.value);
       const today = new Date();
       let age = today.getFullYear() - birthDate.getFullYear();
       const monthDiff = today.getMonth() - birthDate.getMonth();
-
       if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
         age--;
       }
-
       ageInput.value = age >= 0 ? age : "";
     });
 
@@ -429,6 +452,13 @@
       return el ? el.value : "";
     }
 
+    function setCheckedRadioValue(name, value) {
+      const radios = document.querySelectorAll(`input[name="${name}"]`);
+      radios.forEach((radio) => {
+        radio.checked = radio.value === value;
+      });
+    }
+
     function getTestData(test) {
       return {
         od: document.getElementById(`${test}_od`).value.trim(),
@@ -439,6 +469,63 @@
         dateTested: document.getElementById(`${test}_tested`).value,
         interpretation: document.getElementById(`${test}_result`).textContent
       };
+    }
+
+    function fillTestData(test, data) {
+      document.getElementById(`${test}_od`).value = data?.od || "";
+      document.getElementById(`${test}_repeat1`).value = data?.repeat1 || "";
+      document.getElementById(`${test}_repeat2`).value = data?.repeat2 || "";
+      document.getElementById(`${test}_lot`).value = data?.lotNumber || "";
+      document.getElementById(`${test}_expiration`).value = data?.expirationDate || "";
+      document.getElementById(`${test}_tested`).value = data?.dateTested || "";
+      document.getElementById(`${test}Panel`).classList.remove("hidden");
+      window.compute(test);
+    }
+
+    async function loadRecordForEdit(id) {
+      try {
+        const snap = await getDoc(doc(db, "tti_records", id));
+        if (!snap.exists()) {
+          msg.textContent = "Record not found.";
+          return;
+        }
+
+        const record = snap.data();
+        const p = record.patientInfo || {};
+        const s = record.screening || {};
+
+        document.getElementById("surname").value = p.surname || "";
+        document.getElementById("firstname").value = p.firstName || "";
+        document.getElementById("middlename").value = p.middleName || "";
+        document.getElementById("suffix").value = p.suffix || "";
+        document.getElementById("serialNumber").value = p.serialNumber || "";
+        document.getElementById("bloodType").value = p.bloodType || "";
+        document.getElementById("civilStatus").value = p.civilStatus || "";
+        document.getElementById("birthday").value = p.birthday || "";
+        document.getElementById("age").value = p.age || "";
+        document.getElementById("sex").value = p.sex || "";
+        document.getElementById("contactInfo").value = p.contactInfo || "";
+        document.getElementById("address").value = p.address || "";
+        document.getElementById("occupation").value = p.occupation || "";
+        document.getElementById("collectionDate").value = p.collectionDate || "";
+        document.getElementById("repeatDate").value = p.repeatDate || "";
+
+        setCheckedRadioValue("donorType", p.donorType || "");
+        setCheckedRadioValue("donationFrequency", p.donationFrequency || "");
+        updateRepeatDateVisibility();
+
+        cutoffInput.value = s.cutoff || "";
+
+        fillTestData("hiv", s.hiv);
+        fillTestData("hbsag", s.hbsag);
+        fillTestData("hcv", s.hcv);
+        fillTestData("syphilis", s.syphilis);
+        fillTestData("malaria", s.malaria);
+
+        updateSummary();
+      } catch (error) {
+        msg.textContent = error.message;
+      }
     }
 
     saveBtn.onclick = async () => {
@@ -482,11 +569,17 @@
           createdBy: currentUser.email,
           createdByUid: currentUser.uid,
           role: currentRole,
-          createdAt: serverTimestamp()
+          updatedAt: serverTimestamp()
         };
 
-        await addDoc(collection(db, "tti_records"), record);
-        msg.textContent = "Record saved successfully.";
+        if (editingId) {
+          await updateDoc(doc(db, "tti_records", editingId), record);
+          msg.textContent = "Record updated successfully.";
+        } else {
+          record.createdAt = serverTimestamp();
+          await addDoc(collection(db, "tti_records"), record);
+          msg.textContent = "Record saved successfully.";
+        }
       } catch (error) {
         msg.textContent = error.message;
       }
