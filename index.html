@@ -3,359 +3,242 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RED CROSS BAGUIO TTI MONITORING</title>
+  <title>TTI Monitoring</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <h1>RED CROSS BAGUIO TTI MONITORING</h1>
-  </header>
 
-  <main class="container">
-    <section id="loginSection" class="card">
-      <h2>Login</h2>
-      <input type="email" id="email" placeholder="Email" />
-      <input type="password" id="password" placeholder="Password" />
-      <button type="button" id="loginBtn">Login</button>
-      <p id="loginMsg"></p>
-    </section>
+<!-- HEADER -->
+<header class="main-header">
+  <div class="header-content">
+    <img src="logo.png" alt="PRC Logo" class="logo">
 
-    <section id="dashboardSection" class="card hidden">
-      <h2>Dashboard</h2>
-      <p><strong>Email:</strong> <span id="userEmail"></span></p>
-      <p><strong>Role:</strong> <span id="userRole"></span></p>
+    <div class="title-group">
+      <h1>PHILIPPINE RED CROSS BAGUIO CITY CHAPTER</h1>
+      <h2>TTI MONITORING</h2>
+    </div>
 
-      <div id="masterPanel" class="panel hidden">
-        <h3>MASTER ACCESS</h3>
-        <p>Full access is enabled.</p>
-      </div>
+    <div class="user-info" id="headerUser"></div>
+  </div>
+</header>
 
-      <div id="memberPanel" class="panel hidden">
-        <h3>MEMBER ACCESS</h3>
-        <p>Limited access is enabled.</p>
-      </div>
+<main class="container">
 
-      <div class="form-box">
-        <h3>DATA INPUT</h3>
+  <!-- LOGIN -->
+  <section id="loginSection" class="card">
+    <h2>Login</h2>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <button id="loginBtn">Login</button>
+    <p id="loginMsg"></p>
+  </section>
 
-        <input type="text" id="donorName" placeholder="Donor Name" />
-        <input type="text" id="donorId" placeholder="Donor ID" />
-        <input type="date" id="date" />
+  <!-- DASHBOARD -->
+  <section id="dashboardSection" class="card hidden">
 
-        <select id="hiv">
-          <option value="">HIV Result</option>
-          <option value="Non-Reactive">Non-Reactive</option>
-          <option value="Reactive">Reactive</option>
-        </select>
+    <div class="top-bar">
+      <span><strong>Email:</strong> <span id="userEmail"></span></span>
+      <span><strong>Role:</strong> <span id="userRole"></span></span>
+    </div>
 
-        <select id="hbsag">
-          <option value="">HBsAg Result</option>
-          <option value="Non-Reactive">Non-Reactive</option>
-          <option value="Reactive">Reactive</option>
-        </select>
+    <div id="masterPanel" class="panel hidden">
+      <h3>MASTER ACCESS</h3>
+    </div>
 
-        <select id="hcv">
-          <option value="">HCV Result</option>
-          <option value="Non-Reactive">Non-Reactive</option>
-          <option value="Reactive">Reactive</option>
-        </select>
+    <div id="memberPanel" class="panel hidden">
+      <h3>MEMBER ACCESS</h3>
+    </div>
 
-        <select id="syphilis">
-          <option value="">Syphilis Result</option>
-          <option value="Non-Reactive">Non-Reactive</option>
-          <option value="Reactive">Reactive</option>
-        </select>
+    <!-- DATA INPUT -->
+    <div class="form-box">
+      <h3>DATA INPUT</h3>
 
-        <select id="malaria">
-          <option value="">Malaria Result</option>
-          <option value="Non-Reactive">Non-Reactive</option>
-          <option value="Reactive">Reactive</option>
-        </select>
+      <input type="text" id="donorName" placeholder="Donor Name" />
+      <input type="text" id="donorId" placeholder="Donor ID" />
+      <input type="date" id="date" />
 
-        <textarea id="remarks" placeholder="Remarks"></textarea>
+      <select id="hiv">
+        <option value="">HIV</option>
+        <option value="Non-Reactive">Non-Reactive</option>
+        <option value="Reactive">Reactive</option>
+      </select>
 
-        <button type="button" id="saveBtn">Save Record</button>
-        <p id="saveMsg"></p>
-      </div>
+      <select id="hbsag">
+        <option value="">HBsAg</option>
+        <option value="Non-Reactive">Non-Reactive</option>
+        <option value="Reactive">Reactive</option>
+      </select>
 
-      <div class="table-box">
-        <h3>TTI RECORDS</h3>
-        <table id="recordsTable">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Donor</th>
-              <th>ID</th>
-              <th>HIV</th>
-              <th>HBsAg</th>
-              <th>HCV</th>
-              <th>Syphilis</th>
-              <th>Malaria</th>
-              <th>Remarks</th>
-              <th>By</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="recordsBody"></tbody>
-        </table>
-      </div>
+      <select id="hcv">
+        <option value="">HCV</option>
+        <option value="Non-Reactive">Non-Reactive</option>
+        <option value="Reactive">Reactive</option>
+      </select>
 
-      <button type="button" id="logoutBtn" class="logout">Logout</button>
-    </section>
-  </main>
+      <select id="syphilis">
+        <option value="">Syphilis</option>
+        <option value="Non-Reactive">Non-Reactive</option>
+        <option value="Reactive">Reactive</option>
+      </select>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getAuth,
-      signInWithEmailAndPassword,
-      signOut,
-      onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import {
-      getFirestore,
-      doc,
-      getDoc,
-      collection,
-      addDoc,
-      serverTimestamp,
-      onSnapshot,
-      deleteDoc
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+      <select id="malaria">
+        <option value="">Malaria</option>
+        <option value="Non-Reactive">Non-Reactive</option>
+        <option value="Reactive">Reactive</option>
+      </select>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
-      authDomain: "red-cross-baguio-tti-monitor.firebaseapp.com",
-      projectId: "red-cross-baguio-tti-monitor",
-      storageBucket: "red-cross-baguio-tti-monitor.firebasestorage.app",
-      messagingSenderId: "361015244463",
-      appId: "1:361015244463:web:076f8802942ca904f5065a"
-    };
+      <textarea id="remarks" placeholder="Remarks"></textarea>
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+      <button id="saveBtn">Save Record</button>
+      <p id="saveMsg"></p>
+    </div>
 
-    const emailInput = document.getElementById("email");
-    const passwordInput = document.getElementById("password");
-    const loginBtn = document.getElementById("loginBtn");
-    const logoutBtn = document.getElementById("logoutBtn");
-    const loginMsg = document.getElementById("loginMsg");
+    <!-- TABLE -->
+    <div class="table-box">
+      <h3>TTI RECORDS</h3>
 
-    const loginSection = document.getElementById("loginSection");
-    const dashboardSection = document.getElementById("dashboardSection");
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Donor</th>
+            <th>ID</th>
+            <th>HIV</th>
+            <th>HBsAg</th>
+            <th>HCV</th>
+            <th>Syphilis</th>
+            <th>Malaria</th>
+            <th>Remarks</th>
+            <th>By</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="recordsBody"></tbody>
+      </table>
+    </div>
 
-    const userEmail = document.getElementById("userEmail");
-    const userRole = document.getElementById("userRole");
-    const masterPanel = document.getElementById("masterPanel");
-    const memberPanel = document.getElementById("memberPanel");
+    <button id="logoutBtn" class="logout">Logout</button>
 
-    const donorName = document.getElementById("donorName");
-    const donorId = document.getElementById("donorId");
-    const dateInput = document.getElementById("date");
-    const hiv = document.getElementById("hiv");
-    const hbsag = document.getElementById("hbsag");
-    const hcv = document.getElementById("hcv");
-    const syphilis = document.getElementById("syphilis");
-    const malaria = document.getElementById("malaria");
-    const remarks = document.getElementById("remarks");
-    const saveBtn = document.getElementById("saveBtn");
-    const saveMsg = document.getElementById("saveMsg");
+  </section>
+</main>
 
-    const recordsBody = document.getElementById("recordsBody");
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, collection, addDoc,
+  serverTimestamp, onSnapshot, deleteDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    let currentRole = "";
-    let unsubscribeRecords = null;
+const firebaseConfig = {
+  apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
+  authDomain: "red-cross-baguio-tti-monitor.firebaseapp.com",
+  projectId: "red-cross-baguio-tti-monitor",
+  storageBucket: "red-cross-baguio-tti-monitor.firebasestorage.app",
+  messagingSenderId: "361015244463",
+  appId: "1:361015244463:web:076f8802942ca904f5065a"
+};
 
-    loginBtn.addEventListener("click", async () => {
-      loginMsg.textContent = "Trying to log in...";
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-      const email = emailInput.value.trim();
-      const password = passwordInput.value;
+let currentRole = "";
+let unsubscribe = null;
 
-      if (!email || !password) {
-        loginMsg.textContent = "Enter email and password.";
-        return;
-      }
+loginBtn.onclick = async () => {
+  try {
+    await signInWithEmailAndPassword(auth, email.value, password.value);
+  } catch (e) {
+    loginMsg.textContent = e.message;
+  }
+};
 
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-        loginMsg.textContent = "Login successful.";
-      } catch (error) {
-        console.error(error);
-        loginMsg.textContent = error.code + ": " + error.message;
-      }
+logoutBtn.onclick = async () => {
+  if (unsubscribe) unsubscribe();
+  await signOut(auth);
+};
+
+onAuthStateChanged(auth, async (user) => {
+  if (unsubscribe) unsubscribe();
+
+  if (user) {
+    loginSection.classList.add("hidden");
+    dashboardSection.classList.remove("hidden");
+
+    userEmail.textContent = user.email;
+    headerUser.textContent = user.email;
+
+    const snap = await getDoc(doc(db, "users", user.uid));
+
+    if (snap.exists()) {
+      currentRole = snap.data().role;
+      userRole.textContent = currentRole;
+
+      masterPanel.classList.toggle("hidden", currentRole !== "master");
+      memberPanel.classList.toggle("hidden", currentRole !== "member");
+    }
+
+    unsubscribe = onSnapshot(collection(db, "tti_records"), (snapshot) => {
+      recordsBody.innerHTML = "";
+
+      snapshot.forEach((docSnap) => {
+        const d = docSnap.data();
+
+        const row = `
+        <tr>
+          <td>${d.date || ""}</td>
+          <td>${d.donorName || ""}</td>
+          <td>${d.donorId || ""}</td>
+          <td>${d.hiv || ""}</td>
+          <td>${d.hbsag || ""}</td>
+          <td>${d.hcv || ""}</td>
+          <td>${d.syphilis || ""}</td>
+          <td>${d.malaria || ""}</td>
+          <td>${d.remarks || ""}</td>
+          <td>${d.createdBy || ""}</td>
+          <td>
+            ${currentRole === "master"
+              ? `<button class="deleteBtn" data-id="${docSnap.id}">Delete</button>`
+              : ""}
+          </td>
+        </tr>`;
+
+        recordsBody.innerHTML += row;
+      });
     });
+  } else {
+    loginSection.classList.remove("hidden");
+    dashboardSection.classList.add("hidden");
+  }
+});
 
-    logoutBtn.addEventListener("click", async () => {
-      try {
-        if (unsubscribeRecords) {
-          unsubscribeRecords();
-          unsubscribeRecords = null;
-        }
-        await signOut(auth);
-      } catch (error) {
-        console.error(error);
-      }
-    });
+saveBtn.onclick = async () => {
+  await addDoc(collection(db, "tti_records"), {
+    donorName: donorName.value,
+    donorId: donorId.value,
+    date: date.value,
+    hiv: hiv.value,
+    hbsag: hbsag.value,
+    hcv: hcv.value,
+    syphilis: syphilis.value,
+    malaria: malaria.value,
+    remarks: remarks.value,
+    createdBy: auth.currentUser.email,
+    createdAt: serverTimestamp()
+  });
 
-    onAuthStateChanged(auth, async (user) => {
-      if (unsubscribeRecords) {
-        unsubscribeRecords();
-        unsubscribeRecords = null;
-      }
+  saveMsg.textContent = "Saved!";
+};
 
-      if (user) {
-        loginSection.classList.add("hidden");
-        dashboardSection.classList.remove("hidden");
-        userEmail.textContent = user.email;
+document.addEventListener("click", async (e) => {
+  if (e.target.classList.contains("deleteBtn")) {
+    await deleteDoc(doc(db, "tti_records", e.target.dataset.id));
+  }
+});
+</script>
 
-        try {
-          const userRef = doc(db, "users", user.uid);
-          const userSnap = await getDoc(userRef);
-
-          masterPanel.classList.add("hidden");
-          memberPanel.classList.add("hidden");
-
-          if (userSnap.exists()) {
-            const data = userSnap.data();
-            currentRole = data.role || "";
-            userRole.textContent = currentRole || "no role";
-
-            if (currentRole === "master") {
-              masterPanel.classList.remove("hidden");
-            } else if (currentRole === "member") {
-              memberPanel.classList.remove("hidden");
-            }
-          } else {
-            currentRole = "";
-            userRole.textContent = "no role assigned";
-          }
-
-          unsubscribeRecords = onSnapshot(collection(db, "tti_records"), (snapshot) => {
-            recordsBody.innerHTML = "";
-
-            snapshot.forEach((docSnap) => {
-              const data = docSnap.data();
-              const docId = docSnap.id;
-
-              const row = document.createElement("tr");
-
-              row.innerHTML = `
-                <td>${data.date || ""}</td>
-                <td>${data.donorName || ""}</td>
-                <td>${data.donorId || ""}</td>
-                <td>${data.hiv || ""}</td>
-                <td>${data.hbsag || ""}</td>
-                <td>${data.hcv || ""}</td>
-                <td>${data.syphilis || ""}</td>
-                <td>${data.malaria || ""}</td>
-                <td>${data.remarks || ""}</td>
-                <td>${data.createdBy || ""}</td>
-                <td>
-                  ${
-                    currentRole === "master"
-                      ? `<button class="deleteBtn" data-id="${docId}">Delete</button>`
-                      : ""
-                  }
-                </td>
-              `;
-
-              recordsBody.appendChild(row);
-            });
-          });
-        } catch (error) {
-          console.error(error);
-          currentRole = "";
-          userRole.textContent = "error loading role";
-        }
-      } else {
-        loginSection.classList.remove("hidden");
-        dashboardSection.classList.add("hidden");
-        userEmail.textContent = "";
-        userRole.textContent = "";
-        currentRole = "";
-        recordsBody.innerHTML = "";
-      }
-    });
-
-    saveBtn.addEventListener("click", async () => {
-      saveMsg.textContent = "";
-
-      const user = auth.currentUser;
-      if (!user) {
-        saveMsg.textContent = "Please log in first.";
-        return;
-      }
-
-      if (!currentRole) {
-        saveMsg.textContent = "No role assigned for this account.";
-        return;
-      }
-
-      if (
-        donorName.value.trim() === "" ||
-        donorId.value.trim() === "" ||
-        dateInput.value === "" ||
-        hiv.value === "" ||
-        hbsag.value === "" ||
-        hcv.value === "" ||
-        syphilis.value === "" ||
-        malaria.value === ""
-      ) {
-        saveMsg.textContent = "Please complete all required fields.";
-        return;
-      }
-
-      try {
-        await addDoc(collection(db, "tti_records"), {
-          donorName: donorName.value.trim(),
-          donorId: donorId.value.trim(),
-          date: dateInput.value,
-          hiv: hiv.value,
-          hbsag: hbsag.value,
-          hcv: hcv.value,
-          syphilis: syphilis.value,
-          malaria: malaria.value,
-          remarks: remarks.value.trim(),
-          createdBy: user.email,
-          createdByUid: user.uid,
-          role: currentRole,
-          createdAt: serverTimestamp()
-        });
-
-        saveMsg.textContent = "Record saved successfully.";
-
-        donorName.value = "";
-        donorId.value = "";
-        dateInput.value = "";
-        hiv.value = "";
-        hbsag.value = "";
-        hcv.value = "";
-        syphilis.value = "";
-        malaria.value = "";
-        remarks.value = "";
-      } catch (error) {
-        console.error(error);
-        saveMsg.textContent = error.code + ": " + error.message;
-      }
-    });
-
-    document.addEventListener("click", async (e) => {
-      if (e.target.classList.contains("deleteBtn")) {
-        const id = e.target.getAttribute("data-id");
-
-        if (!confirm("Delete this record?")) return;
-
-        try {
-          await deleteDoc(doc(db, "tti_records", id));
-          alert("Deleted successfully");
-        } catch (error) {
-          console.error(error);
-          alert("Error deleting: " + error.message);
-        }
-      }
-    });
-  </script>
 </body>
 </html>
