@@ -47,7 +47,7 @@
       <section class="page-banner">
         <div>
           <h3>Statistics</h3>
-          <p>Quarterly, monthly, referral, and HBsAg detailed reports</p>
+          <p>Quarterly, monthly, referral, HBsAg detailed, and hubbing reports</p>
         </div>
       </section>
 
@@ -67,6 +67,30 @@
             <option value="Q2">Q2 (Apr-Jun)</option>
             <option value="Q3">Q3 (Jul-Sep)</option>
             <option value="Q4">Q4 (Oct-Dec)</option>
+          </select>
+        </div>
+
+        <div class="tracking-filter-grid">
+          <select id="monthFilter">
+            <option value="">All Months</option>
+            <option value="1">January</option>
+            <option value="2">February</option>
+            <option value="3">March</option>
+            <option value="4">April</option>
+            <option value="5">May</option>
+            <option value="6">June</option>
+            <option value="7">July</option>
+            <option value="8">August</option>
+            <option value="9">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+          </select>
+
+          <select id="sourceFilter">
+            <option value="">All Sources</option>
+            <option value="tti">Data Input Only</option>
+            <option value="hubbing">Hubbing Only</option>
           </select>
         </div>
 
@@ -179,6 +203,33 @@
           </div>
           <p id="hbsagMsg" class="message"></p>
         </section>
+
+        <section class="content-card">
+          <div class="card-title-row">
+            <h4>Hubbing Summary</h4>
+          </div>
+
+          <div class="table-wrap">
+            <table class="records-table">
+              <thead>
+                <tr>
+                  <th>Facility</th>
+                  <th>Month</th>
+                  <th>No. of Samples</th>
+                  <th>HIV</th>
+                  <th>HBsAg</th>
+                  <th>HCV</th>
+                  <th>Syphilis</th>
+                  <th>Malaria</th>
+                  <th>Overall Status</th>
+                </tr>
+              </thead>
+              <tbody id="hubbingSummaryBody">
+                <tr><td colspan="9">No data</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
       </div>
     </main>
   </div>
@@ -208,8 +259,10 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    let allRecords = [];
-    let currentFilteredRecords = [];
+    let allTTIRecords = [];
+    let allHubbingRecords = [];
+    let currentFilteredTTIRecords = [];
+    let currentFilteredHubbingRecords = [];
 
     const sidebarEmail = document.getElementById("sidebarEmail");
     const sidebarRole = document.getElementById("sidebarRole");
@@ -217,6 +270,8 @@
 
     const yearFilter = document.getElementById("yearFilter");
     const quarterFilter = document.getElementById("quarterFilter");
+    const monthFilter = document.getElementById("monthFilter");
+    const sourceFilter = document.getElementById("sourceFilter");
     const applyBtn = document.getElementById("applyBtn");
     const clearBtn = document.getElementById("clearBtn");
     const printStatsBtn = document.getElementById("printStatsBtn");
@@ -226,15 +281,17 @@
     const summaryMonthlyBody = document.getElementById("summaryMonthlyBody");
     const referralSummaryBody = document.getElementById("referralSummaryBody");
     const hbsagTableBody = document.getElementById("hbsagTableBody");
+    const hubbingSummaryBody = document.getElementById("hubbingSummaryBody");
     const hbsagMsg = document.getElementById("hbsagMsg");
 
     function safe(val) {
       return val === undefined || val === null ? "" : String(val);
     }
 
-    function parseDateFromRecord(record) {
+    function parseDateFromTTIRecord(record) {
       const screening = record.screening || {};
       const patientInfo = record.patientInfo || {};
+
       const candidates = [
         screening?.hbsag?.dateTested,
         screening?.hiv?.dateTested,
@@ -242,6 +299,25 @@
         screening?.syphilis?.dateTested,
         screening?.malaria?.dateTested,
         patientInfo?.collectionDate
+      ];
+
+      for (const c of candidates) {
+        if (c) {
+          const d = new Date(c);
+          if (!isNaN(d.getTime())) return d;
+        }
+      }
+      return null;
+    }
+
+    function parseDateFromHubbingRecord(record) {
+      const candidates = [
+        record?.dateTested,
+        record?.screening?.hbsag?.dateTested,
+        record?.screening?.hiv?.dateTested,
+        record?.screening?.hcv?.dateTested,
+        record?.screening?.syphilis?.dateTested,
+        record?.screening?.malaria?.dateTested
       ];
 
       for (const c of candidates) {
@@ -291,10 +367,16 @@
       return outside(od) && outside(r1) && outside(r2);
     }
 
-    function renderYearOptions(records) {
+    function renderYearOptions() {
       const years = new Set();
-      records.forEach(record => {
-        const d = parseDateFromRecord(record);
+
+      allTTIRecords.forEach(record => {
+        const d = parseDateFromTTIRecord(record);
+        if (d) years.add(d.getFullYear());
+      });
+
+      allHubbingRecords.forEach(record => {
+        const d = parseDateFromHubbingRecord(record);
         if (d) years.add(d.getFullYear());
       });
 
@@ -305,18 +387,31 @@
       });
     }
 
-    function getFilteredRecords() {
+    function datePassesFilters(dateObj) {
+      if (!dateObj) return false;
+
       const selectedYear = yearFilter.value;
       const selectedQuarter = quarterFilter.value;
+      const selectedMonth = monthFilter.value;
 
-      return allRecords.filter(record => {
-        const d = parseDateFromRecord(record);
-        if (!d) return false;
+      const yearMatch = !selectedYear || String(dateObj.getFullYear()) === selectedYear;
+      const quarterMatch = !selectedQuarter || getQuarter(dateObj) === selectedQuarter;
+      const monthMatch = !selectedMonth || String(dateObj.getMonth() + 1) === selectedMonth;
 
-        const yearMatch = !selectedYear || String(d.getFullYear()) === selectedYear;
-        const quarterMatch = !selectedQuarter || getQuarter(d) === selectedQuarter;
+      return yearMatch && quarterMatch && monthMatch;
+    }
 
-        return yearMatch && quarterMatch;
+    function getFilteredTTIRecords() {
+      return allTTIRecords.filter(record => {
+        const d = parseDateFromTTIRecord(record);
+        return datePassesFilters(d);
+      });
+    }
+
+    function getFilteredHubbingRecords() {
+      return allHubbingRecords.filter(record => {
+        const d = parseDateFromHubbingRecord(record);
+        return datePassesFilters(d);
       });
     }
 
@@ -329,7 +424,7 @@
       };
 
       records.forEach(record => {
-        const d = parseDateFromRecord(record);
+        const d = parseDateFromTTIRecord(record);
         if (!d) return;
 
         const q = getQuarter(d);
@@ -361,12 +456,15 @@
       const grouped = {};
 
       records.forEach(record => {
-        const d = parseDateFromRecord(record);
+        const d = parseDateFromTTIRecord(record);
         if (!d) return;
 
         const key = getMonthLabel(d);
         if (!grouped[key]) {
-          grouped[key] = { hiv: 0, hbsag: 0, hcv: 0, syphilis: 0, malaria: 0, sortKey: new Date(d.getFullYear(), d.getMonth(), 1).getTime() };
+          grouped[key] = {
+            hiv: 0, hbsag: 0, hcv: 0, syphilis: 0, malaria: 0,
+            sortKey: new Date(d.getFullYear(), d.getMonth(), 1).getTime()
+          };
         }
 
         const s = record.screening || {};
@@ -501,34 +599,86 @@
       `).join("");
     }
 
+    function renderHubbingSummary(records) {
+      const rows = records
+        .map(record => {
+          const d = parseDateFromHubbingRecord(record);
+          return {
+            facility: safe(record.facility),
+            month: d ? getMonthLabel(d) : "--",
+            numberOfSamples: safe(record.numberOfSamples) || "--",
+            hiv: safe(record.screening?.hiv?.interpretation) || "--",
+            hbsag: safe(record.screening?.hbsag?.interpretation) || "--",
+            hcv: safe(record.screening?.hcv?.interpretation) || "--",
+            syphilis: safe(record.screening?.syphilis?.interpretation) || "--",
+            malaria: safe(record.screening?.malaria?.interpretation) || "--",
+            overall: safe(record.screening?.overallStatus) || "--",
+            sortKey: d ? d.getTime() : 0
+          };
+        })
+        .sort((a, b) => b.sortKey - a.sortKey);
+
+      if (!rows.length) {
+        hubbingSummaryBody.innerHTML = `<tr><td colspan="9">No data</td></tr>`;
+        return;
+      }
+
+      hubbingSummaryBody.innerHTML = rows.map(row => `
+        <tr>
+          <td>${row.facility || "--"}</td>
+          <td>${row.month}</td>
+          <td>${row.numberOfSamples}</td>
+          <td><span class="table-result-badge ${badgeClass(row.hiv)}">${row.hiv}</span></td>
+          <td><span class="table-result-badge ${badgeClass(row.hbsag)}">${row.hbsag}</span></td>
+          <td><span class="table-result-badge ${badgeClass(row.hcv)}">${row.hcv}</span></td>
+          <td><span class="table-result-badge ${badgeClass(row.syphilis)}">${row.syphilis}</span></td>
+          <td><span class="table-result-badge ${badgeClass(row.malaria)}">${row.malaria}</span></td>
+          <td><span class="table-result-badge ${badgeClass(row.overall)}">${row.overall}</span></td>
+        </tr>
+      `).join("");
+    }
+
     function renderAll() {
-      currentFilteredRecords = getFilteredRecords();
-      renderQuarterSummary(currentFilteredRecords);
-      renderMonthlySummary(currentFilteredRecords);
-      renderReferralSummary(currentFilteredRecords);
-      renderHBsAgTable(currentFilteredRecords);
+      const src = sourceFilter.value;
+
+      currentFilteredTTIRecords = src === "hubbing" ? [] : getFilteredTTIRecords();
+      currentFilteredHubbingRecords = src === "tti" ? [] : getFilteredHubbingRecords();
+
+      renderQuarterSummary(currentFilteredTTIRecords);
+      renderMonthlySummary(currentFilteredTTIRecords);
+      renderReferralSummary(currentFilteredTTIRecords);
+      renderHBsAgTable(currentFilteredTTIRecords);
+      renderHubbingSummary(currentFilteredHubbingRecords);
+    }
+
+    function textToCsvCell(value) {
+      return `"${safe(value).replace(/"/g, '""')}"`;
     }
 
     function exportStatsCSV() {
       const quarterRows = [...document.querySelectorAll("#summaryQuarterBody tr")].map(tr =>
-        [...tr.children].map(td => `"${safe(td.textContent).replace(/"/g, '""')}"`).join(",")
+        [...tr.children].map(td => textToCsvCell(td.textContent)).join(",")
       );
 
       const monthRows = [...document.querySelectorAll("#summaryMonthlyBody tr")].map(tr =>
-        [...tr.children].map(td => `"${safe(td.textContent).replace(/"/g, '""')}"`).join(",")
+        [...tr.children].map(td => textToCsvCell(td.textContent)).join(",")
       );
 
       const referralRows = [...document.querySelectorAll("#referralSummaryBody tr")].map(tr =>
-        [...tr.children].map(td => `"${safe(td.textContent).replace(/"/g, '""')}"`).join(",")
+        [...tr.children].map(td => textToCsvCell(td.textContent)).join(",")
       );
 
       const hbsagRows = [...document.querySelectorAll("#hbsagTableBody tr")].map(tr => {
         const tds = [...tr.children];
-        const vals = tds.slice(0, 6).map(td => `"${safe(td.textContent).replace(/"/g, '""')}"`);
+        const vals = tds.slice(0, 6).map(td => textToCsvCell(td.textContent));
         const chk = tr.querySelector(".referral-checkbox");
-        vals.push(`"${chk && chk.checked ? "Referred" : "No"}"`);
+        vals.push(textToCsvCell(chk && chk.checked ? "Referred" : "No"));
         return vals.join(",");
       });
+
+      const hubbingRows = [...document.querySelectorAll("#hubbingSummaryBody tr")].map(tr =>
+        [...tr.children].map(td => textToCsvCell(td.textContent)).join(",")
+      );
 
       const csv = [
         "Quarter Summary Per Analyte",
@@ -545,7 +695,11 @@
         "",
         "HBsAg Detailed Statistics",
         `"Serial Number","Date Tested","OD","Repeat 1","Repeat 2","Interpretation","Referral"`,
-        ...hbsagRows
+        ...hbsagRows,
+        "",
+        "Hubbing Summary",
+        `"Facility","Month","No. of Samples","HIV","HBsAg","HCV","Syphilis","Malaria","Overall Status"`,
+        ...hubbingRows
       ].join("\n");
 
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -604,14 +758,32 @@
         sidebarRole.textContent = "no role";
       }
 
+      let ttiReady = false;
+      let hubbingReady = false;
+
+      function tryRender() {
+        if (ttiReady && hubbingReady) {
+          renderYearOptions();
+          renderAll();
+        }
+      }
+
       onSnapshot(collection(db, "tti_records"), (snapshot) => {
-        allRecords = snapshot.docs.map(d => ({
+        allTTIRecords = snapshot.docs.map(d => ({
           id: d.id,
           ...d.data()
         }));
+        ttiReady = true;
+        tryRender();
+      });
 
-        renderYearOptions(allRecords);
-        renderAll();
+      onSnapshot(collection(db, "hubing_results"), (snapshot) => {
+        allHubbingRecords = snapshot.docs.map(d => ({
+          id: d.id,
+          ...d.data()
+        }));
+        hubbingReady = true;
+        tryRender();
       });
     });
 
@@ -620,6 +792,8 @@
     clearBtn.addEventListener("click", () => {
       yearFilter.value = "";
       quarterFilter.value = "";
+      monthFilter.value = "";
+      sourceFilter.value = "";
       renderAll();
     });
 
