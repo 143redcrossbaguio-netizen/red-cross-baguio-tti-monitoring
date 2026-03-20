@@ -1,136 +1,55 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TTI Monitoring</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<title>TTI Monitoring</title>
+<link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
 <!-- HEADER -->
 <header class="main-header">
   <div class="header-content">
-    <img src="logo.png" alt="PRC Logo" class="logo">
+    <img src="logo.png" class="logo">
 
     <div class="title-group">
       <h1>PHILIPPINE RED CROSS BAGUIO CITY CHAPTER</h1>
       <h2>TTI MONITORING</h2>
     </div>
-
-    <div class="user-info" id="headerUser"></div>
   </div>
 </header>
 
-<main class="container">
-
-  <!-- LOGIN -->
-  <section id="loginSection" class="card">
+<!-- LOGIN -->
+<div class="container" id="loginSection">
+  <div class="card">
     <h2>Login</h2>
-    <input type="email" id="email" placeholder="Email" />
-    <input type="password" id="password" placeholder="Password" />
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
     <button id="loginBtn">Login</button>
     <p id="loginMsg"></p>
-  </section>
+  </div>
+</div>
 
-  <!-- DASHBOARD -->
-  <section id="dashboardSection" class="card hidden">
+<!-- DASHBOARD -->
+<div class="container hidden" id="dashboardSection">
+  <div class="card center">
 
-    <div class="top-bar">
-      <span><strong>Email:</strong> <span id="userEmail"></span></span>
-      <span><strong>Role:</strong> <span id="userRole"></span></span>
-    </div>
+    <h2>DASHBOARD</h2>
 
-    <div id="masterPanel" class="panel hidden">
-      <h3>MASTER ACCESS</h3>
-    </div>
+    <button onclick="goPage('data-input.html')">DATA INPUT</button>
+    <button onclick="goPage('tracking.html')">TRACKING</button>
+    <button onclick="goPage('statistics.html')">STATISTICS</button>
 
-    <div id="memberPanel" class="panel hidden">
-      <h3>MEMBER ACCESS</h3>
-    </div>
+    <button class="logout" id="logoutBtn">Logout</button>
 
-    <!-- DATA INPUT -->
-    <div class="form-box">
-      <h3>DATA INPUT</h3>
-
-      <input type="text" id="donorName" placeholder="Donor Name" />
-      <input type="text" id="donorId" placeholder="Donor ID" />
-      <input type="date" id="date" />
-
-      <select id="hiv">
-        <option value="">HIV</option>
-        <option value="Non-Reactive">Non-Reactive</option>
-        <option value="Reactive">Reactive</option>
-      </select>
-
-      <select id="hbsag">
-        <option value="">HBsAg</option>
-        <option value="Non-Reactive">Non-Reactive</option>
-        <option value="Reactive">Reactive</option>
-      </select>
-
-      <select id="hcv">
-        <option value="">HCV</option>
-        <option value="Non-Reactive">Non-Reactive</option>
-        <option value="Reactive">Reactive</option>
-      </select>
-
-      <select id="syphilis">
-        <option value="">Syphilis</option>
-        <option value="Non-Reactive">Non-Reactive</option>
-        <option value="Reactive">Reactive</option>
-      </select>
-
-      <select id="malaria">
-        <option value="">Malaria</option>
-        <option value="Non-Reactive">Non-Reactive</option>
-        <option value="Reactive">Reactive</option>
-      </select>
-
-      <textarea id="remarks" placeholder="Remarks"></textarea>
-
-      <button id="saveBtn">Save Record</button>
-      <p id="saveMsg"></p>
-    </div>
-
-    <!-- TABLE -->
-    <div class="table-box">
-      <h3>TTI RECORDS</h3>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Donor</th>
-            <th>ID</th>
-            <th>HIV</th>
-            <th>HBsAg</th>
-            <th>HCV</th>
-            <th>Syphilis</th>
-            <th>Malaria</th>
-            <th>Remarks</th>
-            <th>By</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="recordsBody"></tbody>
-      </table>
-    </div>
-
-    <button id="logoutBtn" class="logout">Logout</button>
-
-  </section>
-</main>
+  </div>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {
-  getFirestore, doc, getDoc, collection, addDoc,
-  serverTimestamp, onSnapshot, deleteDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
@@ -143,10 +62,6 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
-
-let currentRole = "";
-let unsubscribe = null;
 
 loginBtn.onclick = async () => {
   try {
@@ -157,87 +72,22 @@ loginBtn.onclick = async () => {
 };
 
 logoutBtn.onclick = async () => {
-  if (unsubscribe) unsubscribe();
   await signOut(auth);
 };
 
-onAuthStateChanged(auth, async (user) => {
-  if (unsubscribe) unsubscribe();
-
+onAuthStateChanged(auth, user => {
   if (user) {
     loginSection.classList.add("hidden");
     dashboardSection.classList.remove("hidden");
-
-    userEmail.textContent = user.email;
-    headerUser.textContent = user.email;
-
-    const snap = await getDoc(doc(db, "users", user.uid));
-
-    if (snap.exists()) {
-      currentRole = snap.data().role;
-      userRole.textContent = currentRole;
-
-      masterPanel.classList.toggle("hidden", currentRole !== "master");
-      memberPanel.classList.toggle("hidden", currentRole !== "member");
-    }
-
-    unsubscribe = onSnapshot(collection(db, "tti_records"), (snapshot) => {
-      recordsBody.innerHTML = "";
-
-      snapshot.forEach((docSnap) => {
-        const d = docSnap.data();
-
-        const row = `
-        <tr>
-          <td>${d.date || ""}</td>
-          <td>${d.donorName || ""}</td>
-          <td>${d.donorId || ""}</td>
-          <td>${d.hiv || ""}</td>
-          <td>${d.hbsag || ""}</td>
-          <td>${d.hcv || ""}</td>
-          <td>${d.syphilis || ""}</td>
-          <td>${d.malaria || ""}</td>
-          <td>${d.remarks || ""}</td>
-          <td>${d.createdBy || ""}</td>
-          <td>
-            ${currentRole === "master"
-              ? `<button class="deleteBtn" data-id="${docSnap.id}">Delete</button>`
-              : ""}
-          </td>
-        </tr>`;
-
-        recordsBody.innerHTML += row;
-      });
-    });
   } else {
     loginSection.classList.remove("hidden");
     dashboardSection.classList.add("hidden");
   }
 });
 
-saveBtn.onclick = async () => {
-  await addDoc(collection(db, "tti_records"), {
-    donorName: donorName.value,
-    donorId: donorId.value,
-    date: date.value,
-    hiv: hiv.value,
-    hbsag: hbsag.value,
-    hcv: hcv.value,
-    syphilis: syphilis.value,
-    malaria: malaria.value,
-    remarks: remarks.value,
-    createdBy: auth.currentUser.email,
-    createdAt: serverTimestamp()
-  });
-
-  saveMsg.textContent = "Saved!";
+window.goPage = (page) => {
+  window.location.href = page;
 };
-
-document.addEventListener("click", async (e) => {
-  if (e.target.classList.contains("deleteBtn")) {
-    await deleteDoc(doc(db, "tti_records", e.target.dataset.id));
-  }
-});
 </script>
 
 </body>
