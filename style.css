@@ -1,1 +1,97 @@
 
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+}
+
+header {
+  background: #b30000;
+  color: white;
+  text-align: center;
+  padding: 18px;
+}
+
+.container {
+  max-width: 700px;
+  margin: 30px auto;
+  padding: 20px;
+}
+
+.card {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+}
+
+.hidden {
+  display: none;
+}
+
+input,
+select,
+textarea,
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid #ccc;
+}
+
+textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+button {
+  border: none;
+  background: #b30000;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #8f0000;
+}
+
+.panel {
+  margin: 15px 0;
+  padding: 15px;
+  border-left: 5px solid #b30000;
+  background: #fff7f7;
+  border-radius: 8px;
+}
+
+.form-box {
+  margin-top: 25px;
+  padding: 20px;
+  background: #fafafa;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+}
+
+#loginMsg,
+#saveMsg {
+  margin-top: 12px;
+  color: #b30000;
+  font-weight: bold;
+}
+
+.logout {
+  margin-top: 20px;
+  background: #444;
+}
+
+.logout:hover {
+  background: #222;
+}
