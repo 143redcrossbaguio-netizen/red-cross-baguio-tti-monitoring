@@ -30,6 +30,7 @@
 
       <nav class="sidebar-nav">
         <a href="data-input.html" class="nav-link">Data Input</a>
+        <a href="hubing-results.html" class="nav-link">Hubbing Data</a>
         <a href="tracking.html" class="nav-link">Tracking</a>
         <a href="statistics.html" class="nav-link active">Statistics</a>
       </nav>
@@ -46,50 +47,85 @@
       <section class="page-banner">
         <div>
           <h3>Statistics</h3>
-          <p>Live summary of TTI monitoring records</p>
-        </div>
-      </section>
-
-      <section class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-label">Total Records</div>
-          <div class="stat-value" id="totalRecords">0</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-label">Reactive HIV</div>
-          <div class="stat-value" id="totalHivReactive">0</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-label">Reactive HBsAg</div>
-          <div class="stat-value" id="totalHbsagReactive">0</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-label">Reactive HCV</div>
-          <div class="stat-value" id="totalHcvReactive">0</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-label">Reactive Syphilis</div>
-          <div class="stat-value" id="totalSyphilisReactive">0</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-label">Reactive Malaria</div>
-          <div class="stat-value" id="totalMalariaReactive">0</div>
+          <p>Quarter summary and HBsAg detailed listing</p>
         </div>
       </section>
 
       <section class="content-card">
         <div class="card-title-row">
-          <h4>Summary Notes</h4>
+          <h4>Filter</h4>
         </div>
-        <div class="summary-list">
-          <div>Total non-reactive and reactive counts update automatically.</div>
-          <div>This page is view-only for both roles.</div>
-          <div>Master deletion from Tracking affects these totals in real time.</div>
+
+        <div class="tracking-filter-grid">
+          <select id="yearFilter">
+            <option value="">All Years</option>
+          </select>
+
+          <select id="quarterFilter">
+            <option value="">All Quarters</option>
+            <option value="Q1">Q1 (Jan-Mar)</option>
+            <option value="Q2">Q2 (Apr-Jun)</option>
+            <option value="Q3">Q3 (Jul-Sep)</option>
+            <option value="Q4">Q4 (Oct-Dec)</option>
+          </select>
+        </div>
+
+        <div class="tracking-filter-grid">
+          <button type="button" id="applyBtn" class="primary-btn">Apply Filter</button>
+          <button type="button" id="clearBtn" class="secondary-btn">Clear Filter</button>
+        </div>
+      </section>
+
+      <section class="content-card">
+        <div class="card-title-row">
+          <h4>Quarter Summary Per Analyte</h4>
+        </div>
+
+        <div class="table-wrap">
+          <table class="records-table">
+            <thead>
+              <tr>
+                <th>Quarter</th>
+                <th>HIV</th>
+                <th>HBsAg</th>
+                <th>HCV</th>
+                <th>Syphilis</th>
+                <th>Malaria</th>
+              </tr>
+            </thead>
+            <tbody id="summaryTableBody">
+              <tr>
+                <td colspan="6">No data</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="content-card">
+        <div class="card-title-row">
+          <h4>HBsAg Detailed Statistics</h4>
+        </div>
+
+        <div class="table-wrap">
+          <table class="records-table">
+            <thead>
+              <tr>
+                <th>Serial Number</th>
+                <th>Date Tested</th>
+                <th>OD</th>
+                <th>Repeat 1</th>
+                <th>Repeat 2</th>
+                <th>Interpretation</th>
+                <th>Referral</th>
+              </tr>
+            </thead>
+            <tbody id="hbsagTableBody">
+              <tr>
+                <td colspan="7">No data</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
     </main>
@@ -97,11 +133,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getAuth,
-      onAuthStateChanged,
-      signOut
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import {
       getFirestore,
       collection,
@@ -123,16 +155,211 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
+    let allRecords = [];
+
     const sidebarEmail = document.getElementById("sidebarEmail");
     const sidebarRole = document.getElementById("sidebarRole");
     const logoutBtn = document.getElementById("logoutBtn");
 
-    const totalRecords = document.getElementById("totalRecords");
-    const totalHivReactive = document.getElementById("totalHivReactive");
-    const totalHbsagReactive = document.getElementById("totalHbsagReactive");
-    const totalHcvReactive = document.getElementById("totalHcvReactive");
-    const totalSyphilisReactive = document.getElementById("totalSyphilisReactive");
-    const totalMalariaReactive = document.getElementById("totalMalariaReactive");
+    const yearFilter = document.getElementById("yearFilter");
+    const quarterFilter = document.getElementById("quarterFilter");
+    const applyBtn = document.getElementById("applyBtn");
+    const clearBtn = document.getElementById("clearBtn");
+
+    const summaryTableBody = document.getElementById("summaryTableBody");
+    const hbsagTableBody = document.getElementById("hbsagTableBody");
+
+    function safe(val) {
+      return val === undefined || val === null ? "" : String(val);
+    }
+
+    function parseDateFromRecord(record) {
+      const screening = record.screening || {};
+      const patientInfo = record.patientInfo || {};
+
+      const candidates = [
+        screening?.hbsag?.dateTested,
+        screening?.hiv?.dateTested,
+        screening?.hcv?.dateTested,
+        screening?.syphilis?.dateTested,
+        screening?.malaria?.dateTested,
+        patientInfo?.collectionDate
+      ];
+
+      for (const c of candidates) {
+        if (c) {
+          const d = new Date(c);
+          if (!isNaN(d.getTime())) return d;
+        }
+      }
+      return null;
+    }
+
+    function getQuarter(dateObj) {
+      const month = dateObj.getMonth() + 1;
+      if (month >= 1 && month <= 3) return "Q1";
+      if (month >= 4 && month <= 6) return "Q2";
+      if (month >= 7 && month <= 9) return "Q3";
+      return "Q4";
+    }
+
+    function isReactiveRegular(testObj, cutoffValue) {
+      if (!testObj) return false;
+
+      const od = parseFloat(testObj.od);
+      const r1 = parseFloat(testObj.repeat1);
+      const r2 = parseFloat(testObj.repeat2);
+      const cutoff = parseFloat(cutoffValue);
+
+      if ([od, r1, r2, cutoff].some(v => isNaN(v))) return false;
+
+      return od > cutoff && r1 > cutoff && r2 > cutoff;
+    }
+
+    function isReactiveMalaria(testObj, llValue, ulValue) {
+      if (!testObj) return false;
+
+      const od = parseFloat(testObj.od);
+      const r1 = parseFloat(testObj.repeat1);
+      const r2 = parseFloat(testObj.repeat2);
+      const ll = parseFloat(llValue);
+      const ul = parseFloat(ulValue);
+
+      if ([od, r1, r2, ll, ul].some(v => isNaN(v))) return false;
+
+      const outside = (v) => v < ll || v > ul;
+
+      return outside(od) && outside(r1) && outside(r2);
+    }
+
+    function renderYearOptions(records) {
+      const years = new Set();
+
+      records.forEach(record => {
+        const d = parseDateFromRecord(record);
+        if (d) years.add(d.getFullYear());
+      });
+
+      const sortedYears = [...years].sort((a, b) => b - a);
+
+      yearFilter.innerHTML = `<option value="">All Years</option>`;
+      sortedYears.forEach(y => {
+        yearFilter.innerHTML += `<option value="${y}">${y}</option>`;
+      });
+    }
+
+    function getFilteredRecords() {
+      const selectedYear = yearFilter.value;
+      const selectedQuarter = quarterFilter.value;
+
+      return allRecords.filter(record => {
+        const d = parseDateFromRecord(record);
+        if (!d) return false;
+
+        const yearMatch = !selectedYear || String(d.getFullYear()) === selectedYear;
+        const quarterMatch = !selectedQuarter || getQuarter(d) === selectedQuarter;
+
+        return yearMatch && quarterMatch;
+      });
+    }
+
+    function renderSummary(records) {
+      const grouped = {
+        Q1: { hiv: 0, hbsag: 0, hcv: 0, syphilis: 0, malaria: 0 },
+        Q2: { hiv: 0, hbsag: 0, hcv: 0, syphilis: 0, malaria: 0 },
+        Q3: { hiv: 0, hbsag: 0, hcv: 0, syphilis: 0, malaria: 0 },
+        Q4: { hiv: 0, hbsag: 0, hcv: 0, syphilis: 0, malaria: 0 }
+      };
+
+      records.forEach(record => {
+        const d = parseDateFromRecord(record);
+        if (!d) return;
+
+        const q = getQuarter(d);
+        const s = record.screening || {};
+        const cutoff = s.cutoff;
+        const ll = s.malariaLowerLimit;
+        const ul = s.malariaUpperLimit;
+
+        if (isReactiveRegular(s.hiv, cutoff)) grouped[q].hiv++;
+        if (isReactiveRegular(s.hbsag, cutoff)) grouped[q].hbsag++;
+        if (isReactiveRegular(s.hcv, cutoff)) grouped[q].hcv++;
+        if (isReactiveRegular(s.syphilis, cutoff)) grouped[q].syphilis++;
+        if (isReactiveMalaria(s.malaria, ll, ul)) grouped[q].malaria++;
+      });
+
+      const rows = ["Q1", "Q2", "Q3", "Q4"]
+        .map(q => `
+          <tr>
+            <td>${q}</td>
+            <td>${grouped[q].hiv}</td>
+            <td>${grouped[q].hbsag}</td>
+            <td>${grouped[q].hcv}</td>
+            <td>${grouped[q].syphilis}</td>
+            <td>${grouped[q].malaria}</td>
+          </tr>
+        `)
+        .join("");
+
+      summaryTableBody.innerHTML = rows || `<tr><td colspan="6">No data</td></tr>`;
+    }
+
+    function badgeClass(text) {
+      if (text === "🔴 Reactive") return "table-badge-reactive";
+      if (text === "🟠 Initially Reactive") return "table-badge-initially-reactive";
+      if (text === "🟢 Non-Reactive") return "table-badge-nonreactive";
+      return "table-badge-neutral";
+    }
+
+    function referralClass(value) {
+      return value === "Yes" ? "referral-yes" : "referral-no";
+    }
+
+    function renderHBsAgTable(records) {
+      const rows = records
+        .map(record => {
+          const patientInfo = record.patientInfo || {};
+          const hbsag = record.screening?.hbsag || {};
+          const referral = safe(record.referralStatus) || "No";
+
+          return {
+            serialNumber: safe(patientInfo.serialNumber),
+            dateTested: safe(hbsag.dateTested),
+            od: safe(hbsag.od),
+            repeat1: safe(hbsag.repeat1),
+            repeat2: safe(hbsag.repeat2),
+            interpretation: safe(hbsag.interpretation),
+            referral
+          };
+        })
+        .filter(row =>
+          row.serialNumber || row.dateTested || row.od || row.repeat1 || row.repeat2 || row.interpretation
+        )
+        .sort((a, b) => (b.dateTested || "").localeCompare(a.dateTested || ""));
+
+      if (!rows.length) {
+        hbsagTableBody.innerHTML = `<tr><td colspan="7">No data</td></tr>`;
+        return;
+      }
+
+      hbsagTableBody.innerHTML = rows.map(row => `
+        <tr>
+          <td>${row.serialNumber || "--"}</td>
+          <td>${row.dateTested || "--"}</td>
+          <td>${row.od || "--"}</td>
+          <td>${row.repeat1 || "--"}</td>
+          <td>${row.repeat2 || "--"}</td>
+          <td><span class="table-result-badge ${badgeClass(row.interpretation)}">${row.interpretation || "--"}</span></td>
+          <td><span class="referral-status-badge ${referralClass(row.referral)}">${row.referral}</span></td>
+        </tr>
+      `).join("");
+    }
+
+    function renderAll() {
+      const filtered = getFilteredRecords();
+      renderSummary(filtered);
+      renderHBsAgTable(filtered);
+    }
 
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -149,32 +376,23 @@
         sidebarRole.textContent = "no role";
       }
 
-      onSnapshot(collection(db, "tti_records"), (snapShot) => {
-        let total = 0;
-        let hivReactive = 0;
-        let hbsagReactive = 0;
-        let hcvReactive = 0;
-        let syphilisReactive = 0;
-        let malariaReactive = 0;
+      onSnapshot(collection(db, "tti_records"), (snapshot) => {
+        allRecords = snapshot.docs.map(d => ({
+          id: d.id,
+          ...d.data()
+        }));
 
-        snapShot.forEach((d) => {
-          const data = d.data();
-          total++;
-
-          if (data.hiv === "Reactive") hivReactive++;
-          if (data.hbsag === "Reactive") hbsagReactive++;
-          if (data.hcv === "Reactive") hcvReactive++;
-          if (data.syphilis === "Reactive") syphilisReactive++;
-          if (data.malaria === "Reactive") malariaReactive++;
-        });
-
-        totalRecords.textContent = total;
-        totalHivReactive.textContent = hivReactive;
-        totalHbsagReactive.textContent = hbsagReactive;
-        totalHcvReactive.textContent = hcvReactive;
-        totalSyphilisReactive.textContent = syphilisReactive;
-        totalMalariaReactive.textContent = malariaReactive;
+        renderYearOptions(allRecords);
+        renderAll();
       });
+    });
+
+    applyBtn.addEventListener("click", renderAll);
+
+    clearBtn.addEventListener("click", () => {
+      yearFilter.value = "";
+      quarterFilter.value = "";
+      renderAll();
     });
 
     logoutBtn.onclick = async () => {
