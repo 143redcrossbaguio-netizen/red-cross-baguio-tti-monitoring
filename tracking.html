@@ -158,10 +158,6 @@
       return "overall-neutral";
     }
 
-    function referralClass(value) {
-      return value === "Yes" ? "referral-yes" : "referral-no";
-    }
-
     function interpretationBadge(text) {
       let cls = "table-badge-neutral";
       if (text === "🔴 Reactive") cls = "table-badge-reactive";
@@ -229,6 +225,15 @@
       const referral = getReferralStatus(record);
       const confirmatory = getConfirmatoryStatus(record);
 
+      const confirmatoryOptions = [
+        "",
+        "Pending",
+        "Sent",
+        "Done",
+        "Positive",
+        "Negative"
+      ];
+
       const rows = [
         ["HIV", s.hiv || {}],
         ["HBsAg", s.hbsag || {}],
@@ -271,7 +276,7 @@
                       index === 0
                         ? `
                           <td rowspan="5" class="merge-cell">
-                            <select class="inline-select referral-select" data-id="${record.id}">
+                            <select class="inline-select referral-select stop-collapse" data-id="${record.id}">
                               <option value="No" ${referral === "No" ? "selected" : ""}>No</option>
                               <option value="Yes" ${referral === "Yes" ? "selected" : ""}>Yes</option>
                             </select>
@@ -280,14 +285,13 @@
                             ${
                               referral === "Yes"
                                 ? `
-                                  <input
-                                    type="text"
-                                    class="confirmatory-input"
-                                    data-id="${record.id}"
-                                    value="${confirmatory}"
-                                    placeholder="Enter confirmatory"
-                                  />
-                                  <button class="secondary-btn saveConfirmatoryBtn mini-btn" data-id="${record.id}">Save</button>
+                                  <select class="inline-select confirmatory-select stop-collapse" data-id="${record.id}">
+                                    ${confirmatoryOptions.map(opt => `
+                                      <option value="${opt}" ${confirmatory === opt ? "selected" : ""}>
+                                        ${opt || "Select"}
+                                      </option>
+                                    `).join("")}
+                                  </select>
                                 `
                                 : `<span class="muted-text">--</span>`
                             }
@@ -322,7 +326,6 @@
       const s = getScreening(record);
 
       const lines = [];
-
       lines.push(["Field", "Value"]);
       lines.push(["Surname", safe(p.surname)]);
       lines.push(["First Name", safe(p.firstName)]);
@@ -529,7 +532,6 @@
         const donorName = fullName(record) || "Unnamed Record";
         const serial = safe(p.serialNumber) || "--";
         const overall = getOverallStatus(record) || "--";
-        const referral = getReferralStatus(record);
 
         const section = document.createElement("section");
         section.className = "content-card tracking-list-card";
@@ -546,12 +548,12 @@
 
             <div class="tracking-list-right">
               <span class="tracking-overall-badge ${overallClass(overall)}">${overall}</span>
-              <button class="secondary-btn printRecordBtn" data-id="${record.id}">Print</button>
-              <button class="secondary-btn exportCsvBtn" data-id="${record.id}">Export CSV</button>
+              <button class="secondary-btn printRecordBtn no-toggle" data-id="${record.id}">Print</button>
+              <button class="secondary-btn exportCsvBtn no-toggle" data-id="${record.id}">Export CSV</button>
               ${
                 currentRole === "master"
-                  ? `<button class="secondary-btn editRecordBtn" data-id="${record.id}">Edit</button>
-                     <button class="table-action-btn deleteRecordBtn" data-id="${record.id}">Delete</button>`
+                  ? `<button class="secondary-btn editRecordBtn no-toggle" data-id="${record.id}">Edit</button>
+                     <button class="table-action-btn deleteRecordBtn no-toggle" data-id="${record.id}">Delete</button>`
                   : ""
               }
             </div>
@@ -573,7 +575,7 @@
       await updateDoc(doc(db, "tti_records", id), payload);
     }
 
-    async function saveConfirmatoryStatus(id, value) {
+    async function setConfirmatoryStatus(id, value) {
       await updateDoc(doc(db, "tti_records", id), {
         confirmatoryStatus: value
       });
@@ -630,8 +632,9 @@
     });
 
     document.addEventListener("click", async (e) => {
-      const toggleId = e.target.getAttribute("data-toggle");
-      if (toggleId) {
+      const toggleEl = e.target.closest("[data-toggle]");
+      if (toggleEl && !e.target.closest(".no-toggle") && !e.target.closest(".stop-collapse")) {
+        const toggleId = toggleEl.getAttribute("data-toggle");
         const details = document.getElementById(`details-${toggleId}`);
         const btn = document.querySelector(`.collapse-toggle[data-toggle="${toggleId}"]`);
         if (details) {
@@ -653,19 +656,6 @@
         const id = e.target.getAttribute("data-id");
         const record = allRecords.find(r => r.id === id);
         if (record) downloadCSV(record);
-        return;
-      }
-
-      if (e.target.classList.contains("saveConfirmatoryBtn")) {
-        const id = e.target.getAttribute("data-id");
-        const input = document.querySelector(`.confirmatory-input[data-id="${id}"]`);
-        const value = input ? input.value.trim() : "";
-        try {
-          await saveConfirmatoryStatus(id, value);
-          alert("Confirmatory saved.");
-        } catch (error) {
-          alert(error.message);
-        }
         return;
       }
 
@@ -697,6 +687,17 @@
         const value = e.target.value;
         try {
           await setReferralStatus(id, value);
+        } catch (error) {
+          alert(error.message);
+        }
+        return;
+      }
+
+      if (e.target.classList.contains("confirmatory-select")) {
+        const id = e.target.getAttribute("data-id");
+        const value = e.target.value;
+        try {
+          await setConfirmatoryStatus(id, value);
         } catch (error) {
           alert(error.message);
         }
