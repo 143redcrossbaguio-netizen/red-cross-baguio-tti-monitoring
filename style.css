@@ -860,3 +860,36 @@ textarea {
   background: #f2f4f7;
   color: #667085;
 }
+.merge-cell {
+  vertical-align: middle;
+  text-align: center;
+}
+
+.inline-select {
+  width: 100%;
+  min-width: 90px;
+  padding: 8px 10px;
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.confirmatory-input {
+  width: 100%;
+  min-width: 140px;
+  padding: 8px 10px;
+  border: 1px solid #d0d5dd;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.mini-btn {
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.muted-text {
+  color: #667085;
+  font-size: 13px;
+}
