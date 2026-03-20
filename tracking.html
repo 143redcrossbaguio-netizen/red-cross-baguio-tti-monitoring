@@ -1,51 +1,73 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Tracking</title>
-<link rel="stylesheet" href="style.css">
-</head>
-
-<body>
-
-<header class="main-header">
-  <img src="logo.png" class="logo-small">
-  <h2>TRACKING</h2>
-</header>
-
-<div class="container card">
-<table>
-<thead>
-<tr><th>Date</th><th>Name</th><th>ID</th><th>HIV</th></tr>
-</thead>
-<tbody id="body"></tbody>
-</table>
-
-<button onclick="back()">⬅ Back</button>
-</div>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, onSnapshot }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, onAuthStateChanged }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getFirestore, collection, onSnapshot,
+  deleteDoc, doc, getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const app = initializeApp({ apiKey:"AIza...", authDomain:"...", projectId:"..."});
+const firebaseConfig = {
+  apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
+  authDomain: "red-cross-baguio-tti-monitor.firebaseapp.com",
+  projectId: "red-cross-baguio-tti-monitor"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db = getFirestore(app);
 
-onSnapshot(collection(db,"tti_records"), snap=>{
- body.innerHTML="";
- snap.forEach(d=>{
-  body.innerHTML+=`<tr>
-  <td>${d.data().date}</td>
-  <td>${d.data().donorName}</td>
-  <td>${d.data().donorId}</td>
-  <td>${d.data().hiv}</td>
-  </tr>`;
- });
+let currentRole = "";
+
+// CHECK USER + ROLE
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    alert("Login required");
+    window.location.href = "index.html";
+    return;
+  }
+
+  const snap = await getDoc(doc(db, "users", user.uid));
+  if (snap.exists()) {
+    currentRole = snap.data().role;
+  }
+
+  // LOAD DATA
+  onSnapshot(collection(db, "tti_records"), (snap) => {
+    body.innerHTML = "";
+
+    snap.forEach((d) => {
+      const data = d.data();
+
+      body.innerHTML += `
+      <tr>
+        <td>${data.date}</td>
+        <td>${data.donorName}</td>
+        <td>${data.donorId}</td>
+        <td>${data.hiv}</td>
+        <td>
+          ${
+            currentRole === "master"
+              ? `<button onclick="del('${d.id}')">Delete</button>`
+              : ""
+          }
+        </td>
+      </tr>`;
+    });
+  });
 });
 
-window.back=()=>location.href="index.html";
-</script>
+// DELETE (MASTER ONLY)
+window.del = async (id) => {
+  if (currentRole !== "master") {
+    alert("No permission");
+    return;
+  }
 
-</body>
-</html>
+  if (!confirm("Delete this record?")) return;
+
+  await deleteDoc(doc(db, "tti_records", id));
+};
+
+window.back = () => location.href = "index.html";
+</script>
