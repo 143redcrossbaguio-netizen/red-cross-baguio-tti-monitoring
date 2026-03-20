@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Hubing Results</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header class="top-header">
+  <div class="top-header-inner centered-header">
+    <img src="logo.png" class="header-logo">
+    <div class="header-text">
+      <h1>PHILIPPINE RED CROSS BAGUIO CITY CHAPTER</h1>
+      <h2>TTI MONITORING</h2>
+    </div>
+  </div>
+</header>
+
+<div class="app-shell">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <nav class="sidebar-nav">
+    <a href="data-input.html" class="nav-link">Data Input</a>
+    <a href="tracking.html" class="nav-link">Tracking</a>
+    <a href="statistics.html" class="nav-link">Statistics</a>
+    <a href="hubing-results.html" class="nav-link active">Hubing Results</a>
+  </nav>
+
+  <button onclick="logout()" class="logout-btn">Logout</button>
+</aside>
+
+<!-- MAIN -->
+<main class="main-content">
+
+<h3>Hubing Results</h3>
+
+<div class="content-card">
+
+<input id="serial" placeholder="Serial Number">
+
+<label>Cutoff:</label>
+<input id="cutoff" type="number" step="0.01">
+
+<div class="summary-box">
+  Overall: <span id="overall">--</span>
+</div>
+
+<div class="tti-grid">
+
+<!-- HIV -->
+<div class="tti-item">
+  <div class="tti-header-btn" onclick="toggle('hiv')">HIV</div>
+  <div id="hiv" class="tti-panel hidden">
+    <div class="tti-row">
+      <input id="hiv_od" placeholder="OD" oninput="compute('hiv')">
+      <input placeholder="R1">
+      <input placeholder="R2">
+    </div>
+    <div id="hiv_res" class="result-box">--</div>
+  </div>
+</div>
+
+<!-- HBsAg -->
+<div class="tti-item">
+  <div class="tti-header-btn" onclick="toggle('hbsag')">HBsAg</div>
+  <div id="hbsag" class="tti-panel hidden">
+    <div class="tti-row">
+      <input id="hbsag_od" placeholder="OD" oninput="compute('hbsag')">
+      <input placeholder="R1">
+      <input placeholder="R2">
+    </div>
+    <div id="hbsag_res" class="result-box">--</div>
+  </div>
+</div>
+
+<!-- HCV -->
+<div class="tti-item">
+  <div class="tti-header-btn" onclick="toggle('hcv')">HCV</div>
+  <div id="hcv" class="tti-panel hidden">
+    <div class="tti-row">
+      <input id="hcv_od" placeholder="OD" oninput="compute('hcv')">
+      <input placeholder="R1">
+      <input placeholder="R2">
+    </div>
+    <div id="hcv_res" class="result-box">--</div>
+  </div>
+</div>
+
+<!-- Syphilis -->
+<div class="tti-item">
+  <div class="tti-header-btn" onclick="toggle('syphilis')">Syphilis</div>
+  <div id="syphilis" class="tti-panel hidden">
+    <div class="tti-row">
+      <input id="syphilis_od" placeholder="OD" oninput="compute('syphilis')">
+      <input placeholder="R1">
+      <input placeholder="R2">
+    </div>
+    <div id="syphilis_res" class="result-box">--</div>
+  </div>
+</div>
+
+<!-- Malaria -->
+<div class="tti-item">
+  <div class="tti-header-btn" onclick="toggle('malaria')">Malaria</div>
+  <div id="malaria" class="tti-panel hidden">
+    <div class="tti-row">
+      <input id="malaria_od" placeholder="OD" oninput="compute('malaria')">
+      <input placeholder="R1">
+      <input placeholder="R2">
+    </div>
+    <div id="malaria_res" class="result-box">--</div>
+  </div>
+</div>
+
+</div>
+
+<button onclick="save()">SAVE</button>
+<p id="msg"></p>
+
+</div>
+
+</main>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey:"AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
+  projectId:"red-cross-baguio-tti-monitor"
+});
+
+const db = getFirestore(app);
+
+window.toggle = id=>{
+  document.getElementById(id).classList.toggle("hidden");
+};
+
+window.compute = test=>{
+  const cutoff = parseFloat(cutoff.value)||0;
+  const od = parseFloat(document.getElementById(test+"_od").value);
+
+  const box = document.getElementById(test+"_res");
+
+  if(isNaN(od)) return;
+
+  if(od>cutoff){
+    box.textContent="🔴 Reactive";
+    box.className="result-box reactive";
+  }else{
+    box.textContent="🟢 Non-Reactive";
+    box.className="result-box nonreactive";
+  }
+
+  updateOverall();
+};
+
+function updateOverall(){
+  let tests=["hiv","hbsag","hcv","syphilis","malaria"];
+  let result="🟢 Non-Reactive";
+
+  for(let t of tests){
+    if(document.getElementById(t+"_res").textContent.includes("Reactive")){
+      result="🔴 Reactive";
+      break;
+    }
+  }
+
+  overall.textContent=result;
+}
+
+window.save=async()=>{
+  await addDoc(collection(db,"hubing_results"),{
+    serial: serial.value,
+    overall: overall.textContent
+  });
+  msg.textContent="Saved!";
+};
+
+window.logout=()=>location.href="index.html";
+</script>
+
+</body>
+</html>
