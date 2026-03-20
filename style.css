@@ -16,7 +16,7 @@ header {
 }
 
 .container {
-  max-width: 700px;
+  max-width: 1100px;
   margin: 40px auto;
   padding: 20px;
 }
@@ -89,6 +89,52 @@ button:hover {
   background: #fafafa;
   border: 1px solid #ddd;
   border-radius: 8px;
+}
+
+.table-box {
+  margin-top: 25px;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+th {
+  background: #b30000;
+  color: white;
+  padding: 10px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+td {
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+  font-size: 13px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+tr:hover {
+  background: #f9f9f9;
+}
+
+.deleteBtn {
+  background: #d32f2f;
+  border: none;
+  color: white;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  width: auto;
+  margin-top: 0;
+}
+
+.deleteBtn:hover {
+  background: #9a0007;
 }
 
 .logout {
