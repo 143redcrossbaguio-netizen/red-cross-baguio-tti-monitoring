@@ -1,3 +1,7 @@
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   font-family: Arial, sans-serif;
@@ -28,11 +32,12 @@ header {
   display: none;
 }
 
-input, button {
+input,
+button {
   width: 100%;
   padding: 12px;
   margin-top: 10px;
-  box-sizing: border-box;
+  font-size: 16px;
 }
 
 button {
@@ -41,10 +46,18 @@ button {
   color: white;
   font-weight: bold;
   cursor: pointer;
+  border-radius: 6px;
+  position: relative;
+  z-index: 5;
+}
+
+button:hover {
+  background: #8f0000;
 }
 
 #loginMsg {
   margin-top: 12px;
   color: #b30000;
   font-weight: bold;
+  min-height: 20px;
 }
