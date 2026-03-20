@@ -194,10 +194,11 @@
                   <th>Repeat 2</th>
                   <th>Interpretation</th>
                   <th>Referral</th>
+                  <th>Confirmatory</th>
                 </tr>
               </thead>
               <tbody id="hbsagTableBody">
-                <tr><td colspan="7">No data</td></tr>
+                <tr><td colspan="8">No data</td></tr>
               </tbody>
             </table>
           </div>
@@ -563,7 +564,8 @@
             repeat1: safe(hbsag.repeat1),
             repeat2: safe(hbsag.repeat2),
             interpretation: safe(hbsag.interpretation),
-            referral: safe(record.referralStatus) === "Yes"
+            referral: safe(record.referralStatus) === "Yes",
+            confirmatory: safe(record.confirmatoryStatus) || "--"
           };
         })
         .filter(row =>
@@ -572,7 +574,7 @@
         .sort((a, b) => (b.dateTested || "").localeCompare(a.dateTested || ""));
 
       if (!rows.length) {
-        hbsagTableBody.innerHTML = `<tr><td colspan="7">No data</td></tr>`;
+        hbsagTableBody.innerHTML = `<tr><td colspan="8">No data</td></tr>`;
         return;
       }
 
@@ -595,6 +597,7 @@
               <span>${row.referral ? "Referred" : "No"}</span>
             </label>
           </td>
+          <td>${row.confirmatory}</td>
         </tr>
       `).join("");
     }
@@ -673,6 +676,7 @@
         const vals = tds.slice(0, 6).map(td => textToCsvCell(td.textContent));
         const chk = tr.querySelector(".referral-checkbox");
         vals.push(textToCsvCell(chk && chk.checked ? "Referred" : "No"));
+        vals.push(textToCsvCell(tds[7] ? tds[7].textContent : ""));
         return vals.join(",");
       });
 
@@ -694,7 +698,7 @@
         ...referralRows,
         "",
         "HBsAg Detailed Statistics",
-        `"Serial Number","Date Tested","OD","Repeat 1","Repeat 2","Interpretation","Referral"`,
+        `"Serial Number","Date Tested","OD","Repeat 1","Repeat 2","Interpretation","Referral","Confirmatory"`,
         ...hbsagRows,
         "",
         "Hubbing Summary",
