@@ -5,6 +5,76 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TTI Monitoring - Data Input</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    .serial-entry-wrap{
+      display:flex;
+      gap:0;
+      width:100%;
+      margin-bottom:14px;
+    }
+
+    .serial-prefix-box{
+      min-width:170px;
+      background:#f1f3f5;
+      border:1px solid #cfd4da;
+      border-right:none;
+      border-radius:8px 0 0 8px;
+      padding:12px 14px;
+      font-weight:700;
+      color:#7a0000;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      white-space:nowrap;
+    }
+
+    .serial-manual-box{
+      border-radius:0 8px 8px 0 !important;
+      margin-bottom:0 !important;
+    }
+
+    .grid-5{
+      display:grid;
+      grid-template-columns:repeat(5, 1fr);
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .grid-3{
+      display:grid;
+      grid-template-columns:repeat(3, 1fr);
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    @media (max-width: 1000px){
+      .grid-5{
+        grid-template-columns:repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 700px){
+      .grid-5,
+      .grid-3{
+        grid-template-columns:1fr;
+      }
+
+      .serial-entry-wrap{
+        flex-direction:column;
+      }
+
+      .serial-prefix-box{
+        border-right:1px solid #cfd4da;
+        border-bottom:none;
+        border-radius:8px 8px 0 0;
+        justify-content:flex-start;
+      }
+
+      .serial-manual-box{
+        border-radius:0 0 8px 8px !important;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -56,6 +126,12 @@
           <h4>Patient Information</h4>
         </div>
 
+        <label class="section-label">Serial Number</label>
+        <div class="serial-entry-wrap">
+          <div class="serial-prefix-box" id="serialPrefixBox">PRC2600-2600</div>
+          <input type="text" id="serialNumber" class="serial-manual-box" placeholder="Manual Entry" />
+        </div>
+
         <label class="section-label">Name</label>
         <div class="grid-4">
           <input type="text" id="surname" placeholder="Surname" />
@@ -64,21 +140,7 @@
           <input type="text" id="suffix" placeholder="Suffix" />
         </div>
 
-        <input type="text" id="serialNumber" placeholder="Serial Number" />
-
-        <div class="grid-2">
-          <input type="text" id="bloodType" placeholder="Blood Type" />
-          <select id="civilStatus">
-            <option value="">Civil Status</option>
-            <option value="Single">Single</option>
-            <option value="Married">Married</option>
-            <option value="Separated">Separated</option>
-            <option value="Widow">Widow</option>
-            <option value="Divorced">Divorced</option>
-          </select>
-        </div>
-
-        <div class="grid-2">
+        <div class="grid-5">
           <div>
             <label class="field-label">Birthday</label>
             <input type="date" id="birthday" />
@@ -87,21 +149,54 @@
             <label class="field-label">Age</label>
             <input type="text" id="age" placeholder="Age" readonly />
           </div>
+          <div>
+            <label class="field-label">Blood Type</label>
+            <input type="text" id="bloodType" placeholder="Blood Type" />
+          </div>
+          <div>
+            <label class="field-label">Civil Status</label>
+            <select id="civilStatus">
+              <option value="">Civil Status</option>
+              <option value="Single">Single</option>
+              <option value="Married">Married</option>
+              <option value="Separated">Separated</option>
+              <option value="Widow">Widow</option>
+              <option value="Divorced">Divorced</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Sex</label>
+            <select id="sex">
+              <option value="">Sex</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
         </div>
 
-        <select id="sex">
-          <option value="">Sex</option>
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-        </select>
-
-        <input type="text" id="contactInfo" placeholder="Contact Info" />
-        <input type="text" id="address" placeholder="Address" />
-        <input type="text" id="occupation" placeholder="Occupation" />
+        <div class="grid-3">
+          <div>
+            <label class="field-label">Contact Number</label>
+            <input type="text" id="contactInfo" placeholder="Contact Number" />
+          </div>
+          <div>
+            <label class="field-label">Address</label>
+            <input type="text" id="address" placeholder="Address" />
+          </div>
+          <div>
+            <label class="field-label">Occupation</label>
+            <input type="text" id="occupation" placeholder="Occupation" />
+          </div>
+        </div>
 
         <div>
-          <label class="field-label">Collection Date</label>
+          <label class="field-label">Collected Date</label>
           <input type="date" id="collectionDate" />
+        </div>
+
+        <div style="margin-top:14px;">
+          <label class="field-label">Date Tested</label>
+          <input type="date" id="dateTestedMain" />
         </div>
 
         <label class="section-label">Type of Donor</label>
@@ -310,10 +405,51 @@
     const overallStatus = document.getElementById("overallStatus");
     const pageTitle = document.getElementById("pageTitle");
     const pageSubtitle = document.getElementById("pageSubtitle");
+    const serialPrefixBox = document.getElementById("serialPrefixBox");
+    const serialNumberInput = document.getElementById("serialNumber");
+    const dateTestedMain = document.getElementById("dateTestedMain");
 
     const tests = ["hiv", "hbsag", "hcv", "syphilis", "malaria"];
     const params = new URLSearchParams(window.location.search);
     editingId = params.get("edit");
+
+    function getSerialPrefixByYear(year) {
+      const yy = String(year).slice(-2);
+      return `PRC2600-${yy}00`;
+    }
+
+    function updateSerialPrefix() {
+      let year = new Date().getFullYear();
+
+      if (document.getElementById("collectionDate").value) {
+        year = new Date(document.getElementById("collectionDate").value).getFullYear();
+      }
+
+      serialPrefixBox.textContent = getSerialPrefixByYear(year);
+    }
+
+    function getFullSerialNumber() {
+      const prefix = serialPrefixBox.textContent.trim();
+      const manual = serialNumberInput.value.trim();
+      return manual ? `${prefix}${manual}` : prefix;
+    }
+
+    function setSerialFromSaved(fullSerial) {
+      if (!fullSerial) {
+        updateSerialPrefix();
+        serialNumberInput.value = "";
+        return;
+      }
+
+      const match = fullSerial.match(/^(PRC2600-\d{4})(.*)$/);
+      if (match) {
+        serialPrefixBox.textContent = match[1];
+        serialNumberInput.value = match[2] || "";
+      } else {
+        updateSerialPrefix();
+        serialNumberInput.value = fullSerial;
+      }
+    }
 
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
@@ -332,6 +468,8 @@
         currentRole = "";
         sidebarRole.textContent = "no role";
       }
+
+      updateSerialPrefix();
 
       if (editingId) {
         pageTitle.textContent = "Edit Record";
@@ -358,6 +496,8 @@
       if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
       ageInput.value = age >= 0 ? age : "";
     });
+
+    document.getElementById("collectionDate").addEventListener("change", updateSerialPrefix);
 
     function updateRepeatDateVisibility() {
       repeatDateWrap.classList.toggle("hidden", !repeatDonorRadio.checked);
@@ -583,7 +723,7 @@
         document.getElementById("firstname").value = p.firstName || "";
         document.getElementById("middlename").value = p.middleName || "";
         document.getElementById("suffix").value = p.suffix || "";
-        document.getElementById("serialNumber").value = p.serialNumber || "";
+        setSerialFromSaved(p.serialNumber || "");
         document.getElementById("bloodType").value = p.bloodType || "";
         document.getElementById("civilStatus").value = p.civilStatus || "";
         document.getElementById("birthday").value = p.birthday || "";
@@ -594,10 +734,12 @@
         document.getElementById("occupation").value = p.occupation || "";
         document.getElementById("collectionDate").value = p.collectionDate || "";
         document.getElementById("repeatDate").value = p.repeatDate || "";
+        document.getElementById("dateTestedMain").value = p.dateTestedMain || "";
 
         setCheckedRadioValue("donorType", p.donorType || "");
         setCheckedRadioValue("donationFrequency", p.donationFrequency || "");
         updateRepeatDateVisibility();
+        updateSerialPrefix();
 
         cutoffInput.value = s.cutoff || "";
         malariaLowerLimit.value = s.malariaLowerLimit || "";
@@ -615,6 +757,30 @@
       }
     }
 
+    function setupEnterToNextField() {
+      const focusableSelectors = 'input, select, textarea';
+      const allFields = Array.from(document.querySelectorAll(focusableSelectors)).filter(el => {
+        return !el.disabled && el.type !== "hidden" && el.offsetParent !== null;
+      });
+
+      allFields.forEach((field, index) => {
+        field.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+
+            const visibleFields = Array.from(document.querySelectorAll(focusableSelectors)).filter(el => {
+              return !el.disabled && el.type !== "hidden" && el.offsetParent !== null;
+            });
+
+            const currentIndex = visibleFields.indexOf(field);
+            if (currentIndex > -1 && currentIndex < visibleFields.length - 1) {
+              visibleFields[currentIndex + 1].focus();
+            }
+          }
+        });
+      });
+    }
+
     saveBtn.onclick = async () => {
       msg.textContent = "";
 
@@ -630,7 +796,7 @@
             firstName: document.getElementById("firstname").value.trim(),
             middleName: document.getElementById("middlename").value.trim(),
             suffix: document.getElementById("suffix").value.trim(),
-            serialNumber: document.getElementById("serialNumber").value.trim(),
+            serialNumber: getFullSerialNumber(),
             bloodType: document.getElementById("bloodType").value.trim(),
             civilStatus: document.getElementById("civilStatus").value,
             birthday: document.getElementById("birthday").value,
@@ -640,6 +806,7 @@
             address: document.getElementById("address").value.trim(),
             occupation: document.getElementById("occupation").value.trim(),
             collectionDate: document.getElementById("collectionDate").value,
+            dateTestedMain: document.getElementById("dateTestedMain").value,
             donorType: getCheckedRadioValue("donorType"),
             donationFrequency: getCheckedRadioValue("donationFrequency"),
             repeatDate: document.getElementById("repeatDate").value
@@ -673,6 +840,8 @@
         msg.textContent = error.message;
       }
     };
+
+    setupEnterToNextField();
   </script>
 </body>
 </html>
