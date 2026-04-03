@@ -5,6 +5,182 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TTI Monitoring - Tracking</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    .tracking-filter-grid.three-inline {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      align-items: center;
+    }
+
+    .tracking-filter-grid.action-inline {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+    }
+
+    .summary-box-card {
+      background: #fff;
+      border: 1px solid #e3e3e3;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .summary-box-card .label {
+      display: block;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .summary-box-card .value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #7a0000;
+    }
+
+    .group-card {
+      margin-bottom: 16px;
+    }
+
+    .group-header,
+    .month-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      cursor: pointer;
+      padding: 14px 16px;
+      border-radius: 12px;
+      background: #fafafa;
+      border: 1px solid #e4e4e4;
+    }
+
+    .group-header {
+      background: linear-gradient(180deg, #fff7f7 0%, #fff 100%);
+      border-left: 5px solid #b30000;
+    }
+
+    .month-header {
+      margin-top: 10px;
+      background: #fcfcfc;
+      border-left: 4px solid #d6d6d6;
+    }
+
+    .group-title-wrap,
+    .month-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .group-toggle,
+    .month-toggle {
+      width: 34px;
+      height: 34px;
+      border: none;
+      border-radius: 50%;
+      background: #b30000;
+      color: #fff;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .month-toggle {
+      background: #666;
+    }
+
+    .group-title,
+    .month-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #222;
+    }
+
+    .group-meta,
+    .month-meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .meta-pill {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .group-body,
+    .month-body {
+      margin-top: 10px;
+      padding-left: 12px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .tracking-list-card {
+      margin-top: 10px;
+    }
+
+    @media (max-width: 1200px) {
+      .summary-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 900px) {
+      .tracking-filter-grid.three-inline {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .group-header,
+      .month-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .group-meta,
+      .month-meta {
+        justify-content: flex-start;
+      }
+
+      .tracking-filter-grid.action-inline {
+        flex-direction: column;
+      }
+
+      .tracking-filter-grid.action-inline button {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 <body>
   <header class="top-header">
@@ -58,14 +234,14 @@
         <div class="tracking-filter-grid">
           <input type="text" id="searchInput" placeholder="Search donor name, serial number, blood type, address, contact, occupation, status..." />
           <select id="statusFilter">
-            <option value="">All Overall Status</option>
+            <option value="">All Status</option>
             <option value="🔴 Reactive">Reactive</option>
             <option value="🟠 Initially Reactive">Initially Reactive</option>
             <option value="🟢 Non-Reactive">Non-Reactive</option>
           </select>
         </div>
 
-        <div class="tracking-filter-grid">
+        <div class="tracking-filter-grid three-inline">
           <input type="date" id="collectionDateFilter" />
           <select id="monthFilter">
             <option value="">All Months</option>
@@ -82,23 +258,34 @@
             <option value="11">November</option>
             <option value="12">December</option>
           </select>
-        </div>
-
-        <div class="tracking-filter-grid">
           <select id="testFilter">
-            <option value="">All Tests</option>
+            <option value="">Overall Status</option>
             <option value="HIV">HIV</option>
             <option value="HBsAg">HBsAg</option>
             <option value="HCV">HCV</option>
             <option value="Syphilis">Syphilis</option>
             <option value="Malaria">Malaria</option>
           </select>
-          <button type="button" id="clearFilterBtn" class="secondary-btn">Clear Filters</button>
         </div>
 
-        <div class="tracking-filter-grid">
+        <div class="tracking-filter-grid action-inline">
           <button type="button" id="printFilteredBtn" class="secondary-btn">Print</button>
-          <button type="button" id="exportFilteredCsvBtn" class="secondary-btn">Export to CSV</button>
+          <button type="button" id="exportFilteredCsvBtn" class="secondary-btn">Export CSV</button>
+          <button type="button" id="clearFilterBtn" class="secondary-btn">Clear Filters</button>
+        </div>
+      </section>
+
+      <section class="content-card compact-card">
+        <div class="card-title-row">
+          <h4>Summary</h4>
+        </div>
+        <div class="summary-grid">
+          <div class="summary-box-card"><span class="label">Total Entries</span><span class="value" id="summaryTotal">0</span></div>
+          <div class="summary-box-card"><span class="label">Male</span><span class="value" id="summaryMale">0</span></div>
+          <div class="summary-box-card"><span class="label">Female</span><span class="value" id="summaryFemale">0</span></div>
+          <div class="summary-box-card"><span class="label" id="statusLabelReactive">Reactive</span><span class="value" id="summaryReactive">0</span></div>
+          <div class="summary-box-card"><span class="label" id="statusLabelInitial">Initially Reactive</span><span class="value" id="summaryInitial">0</span></div>
+          <div class="summary-box-card"><span class="label" id="statusLabelNonReactive">Non-Reactive</span><span class="value" id="summaryNonReactive">0</span></div>
         </div>
       </section>
 
@@ -155,6 +342,16 @@
     const exportFilteredCsvBtn = document.getElementById("exportFilteredCsvBtn");
     const recordsContainer = document.getElementById("recordsContainer");
     const recordCount = document.getElementById("recordCount");
+
+    const summaryTotal = document.getElementById("summaryTotal");
+    const summaryMale = document.getElementById("summaryMale");
+    const summaryFemale = document.getElementById("summaryFemale");
+    const summaryReactive = document.getElementById("summaryReactive");
+    const summaryInitial = document.getElementById("summaryInitial");
+    const summaryNonReactive = document.getElementById("summaryNonReactive");
+    const statusLabelReactive = document.getElementById("statusLabelReactive");
+    const statusLabelInitial = document.getElementById("statusLabelInitial");
+    const statusLabelNonReactive = document.getElementById("statusLabelNonReactive");
 
     function safe(val) {
       return val === undefined || val === null ? "" : String(val);
@@ -217,14 +414,14 @@
         safe(p.occupation),
         safe(p.collectionDate),
         safe(s.overallStatus),
-        safe(record.referralStatus),
-        safe(record.confirmatoryStatus),
-        safe(record.createdBy),
         safe(s.hiv?.interpretation),
         safe(s.hbsag?.interpretation),
         safe(s.hcv?.interpretation),
         safe(s.syphilis?.interpretation),
-        safe(s.malaria?.interpretation)
+        safe(s.malaria?.interpretation),
+        safe(record.referralStatus),
+        safe(record.confirmatoryStatus),
+        safe(record.createdBy)
       ].join(" ").toLowerCase();
     }
 
@@ -235,17 +432,44 @@
       return date.split("-")[1] || "";
     }
 
-    function recordMatchesTest(record, selectedTest) {
-      if (!selectedTest) return true;
+    function getRecordYear(record) {
+      const p = getPatientInfo(record);
+      const date = safe(p.collectionDate);
+      if (!date || !date.includes("-")) return "No Year";
+      return date.split("-")[0] || "No Year";
+    }
+
+    function monthName(month) {
+      const months = {
+        "01": "January",
+        "02": "February",
+        "03": "March",
+        "04": "April",
+        "05": "May",
+        "06": "June",
+        "07": "July",
+        "08": "August",
+        "09": "September",
+        "10": "October",
+        "11": "November",
+        "12": "December"
+      };
+      return months[month] || "No Month";
+    }
+
+    function getSelectedTestStatus(record) {
+      const selected = testFilter.value;
       const s = getScreening(record);
 
-      if (selectedTest === "HIV") return !!s.hiv;
-      if (selectedTest === "HBsAg") return !!s.hbsag;
-      if (selectedTest === "HCV") return !!s.hcv;
-      if (selectedTest === "Syphilis") return !!s.syphilis;
-      if (selectedTest === "Malaria") return !!s.malaria;
+      if (!selected) return safe(s.overallStatus);
 
-      return true;
+      if (selected === "HIV") return safe(s.hiv?.interpretation);
+      if (selected === "HBsAg") return safe(s.hbsag?.interpretation);
+      if (selected === "HCV") return safe(s.hcv?.interpretation);
+      if (selected === "Syphilis") return safe(s.syphilis?.interpretation);
+      if (selected === "Malaria") return safe(s.malaria?.interpretation);
+
+      return safe(s.overallStatus);
     }
 
     function renderPatientInfo(record) {
@@ -371,6 +595,10 @@
 
     function sortRecords(records) {
       return records.sort((a, b) => {
+        const aDate = safe(getPatientInfo(a).collectionDate);
+        const bDate = safe(getPatientInfo(b).collectionDate);
+        if (aDate && bDate && aDate !== bDate) return bDate.localeCompare(aDate);
+
         const aSec = a.createdAt?.seconds || 0;
         const bSec = b.createdAt?.seconds || 0;
         return bSec - aSec;
@@ -458,65 +686,41 @@
     function createFilteredCSV(records) {
       const lines = [];
       lines.push([
+        "Year",
+        "Month",
+        "Collection Date",
         "Serial Number",
         "Surname",
         "First Name",
         "Middle Name",
         "Suffix",
-        "Blood Type",
-        "Civil Status",
-        "Birthday",
-        "Age",
         "Sex",
-        "Contact Info",
-        "Address",
-        "Occupation",
-        "Collection Date",
-        "Donor Type",
-        "Donation Frequency",
-        "Repeat Date",
-        "Overall Status",
+        "Blood Type",
+        "Status Basis",
+        "Status",
         "Referral Status",
         "Confirmatory",
-        "Encoded By",
-        "HIV",
-        "HBsAg",
-        "HCV",
-        "Syphilis",
-        "Malaria"
+        "Encoded By"
       ]);
 
       records.forEach((record) => {
         const p = getPatientInfo(record);
-        const s = getScreening(record);
-
         lines.push([
+          getRecordYear(record),
+          monthName(getRecordMonth(record)),
+          safe(p.collectionDate),
           safe(p.serialNumber),
           safe(p.surname),
           safe(p.firstName),
           safe(p.middleName),
           safe(p.suffix),
-          safe(p.bloodType),
-          safe(p.civilStatus),
-          safe(p.birthday),
-          safe(p.age),
           safe(p.sex),
-          safe(p.contactInfo),
-          safe(p.address),
-          safe(p.occupation),
-          safe(p.collectionDate),
-          safe(p.donorType),
-          safe(p.donationFrequency),
-          safe(p.repeatDate),
-          safe(s.overallStatus),
+          safe(p.bloodType),
+          testFilter.value || "Overall",
+          getSelectedTestStatus(record),
           getReferralStatus(record),
           getConfirmatoryStatus(record),
-          safe(record.createdBy),
-          safe(s.hiv?.interpretation),
-          safe(s.hbsag?.interpretation),
-          safe(s.hcv?.interpretation),
-          safe(s.syphilis?.interpretation),
-          safe(s.malaria?.interpretation)
+          safe(record.createdBy)
         ]);
       });
 
@@ -645,19 +849,16 @@
     function printFilteredRecords(records) {
       const rows = records.map((record) => {
         const p = getPatientInfo(record);
-        const s = getScreening(record);
         return `
           <tr>
+            <td>${getRecordYear(record)}</td>
+            <td>${monthName(getRecordMonth(record))}</td>
+            <td>${safe(p.collectionDate) || "--"}</td>
             <td>${safe(p.serialNumber) || "--"}</td>
             <td>${fullName(record) || "--"}</td>
+            <td>${safe(p.sex) || "--"}</td>
             <td>${safe(p.bloodType) || "--"}</td>
-            <td>${safe(p.collectionDate) || "--"}</td>
-            <td>${safe(s.overallStatus) || "--"}</td>
-            <td>${safe(s.hiv?.interpretation) || "--"}</td>
-            <td>${safe(s.hbsag?.interpretation) || "--"}</td>
-            <td>${safe(s.hcv?.interpretation) || "--"}</td>
-            <td>${safe(s.syphilis?.interpretation) || "--"}</td>
-            <td>${safe(s.malaria?.interpretation) || "--"}</td>
+            <td>${getSelectedTestStatus(record) || "--"}</td>
           </tr>
         `;
       }).join("");
@@ -678,23 +879,22 @@
             <h2>PHILIPPINE RED CROSS BAGUIO CITY CHAPTER</h2>
             <h3>TTI MONITORING</h3>
             <h1>Filtered Tracking Records</h1>
+            <h3>Status Basis: ${testFilter.value || "Overall Status"}</h3>
             <table>
               <thead>
                 <tr>
+                  <th>Year</th>
+                  <th>Month</th>
+                  <th>Collection Date</th>
                   <th>Serial Number</th>
                   <th>Name</th>
+                  <th>Sex</th>
                   <th>Blood Type</th>
-                  <th>Collection Date</th>
-                  <th>Overall Status</th>
-                  <th>HIV</th>
-                  <th>HBsAg</th>
-                  <th>HCV</th>
-                  <th>Syphilis</th>
-                  <th>Malaria</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                ${rows || `<tr><td colspan="10">No records found.</td></tr>`}
+                ${rows || `<tr><td colspan="8">No records found.</td></tr>`}
               </tbody>
             </table>
           </body>
@@ -714,48 +914,111 @@
       const statusValue = statusFilter.value;
       const dateValue = collectionDateFilter.value;
       const monthValue = monthFilter.value;
-      const testValue = testFilter.value;
 
       return allRecords.filter((record) => {
         const p = getPatientInfo(record);
-        const overall = getOverallStatus(record);
+        const selectedStatus = getSelectedTestStatus(record);
 
         const matchSearch = !searchTerm || searchBlob(record).includes(searchTerm);
-        const matchStatus = !statusValue || overall === statusValue;
+        const matchStatus = !statusValue || selectedStatus === statusValue;
         const matchDate = !dateValue || safe(p.collectionDate) === dateValue;
         const matchMonth = !monthValue || getRecordMonth(record) === monthValue;
-        const matchTest = recordMatchesTest(record, testValue);
 
-        return matchSearch && matchStatus && matchDate && matchMonth && matchTest;
+        return matchSearch && matchStatus && matchDate && matchMonth;
       });
     }
 
-    function renderRecords() {
-      const filtered = getFilteredRecords();
-      filteredRecordsCache = filtered;
+    function computeSummary(records) {
+      let male = 0;
+      let female = 0;
+      let reactive = 0;
+      let initial = 0;
+      let nonreactive = 0;
 
-      recordCount.textContent = filtered.length;
-      recordsContainer.innerHTML = "";
-
-      if (!filtered.length) {
-        recordsContainer.innerHTML = `
-          <section class="content-card">
-            <div class="empty-state">No records found.</div>
-          </section>
-        `;
-        return;
-      }
-
-      filtered.forEach((record) => {
+      records.forEach((record) => {
         const p = getPatientInfo(record);
-        const donorName = fullName(record) || "Unnamed Record";
-        const serial = safe(p.serialNumber) || "--";
-        const overall = getOverallStatus(record) || "--";
+        const sex = safe(p.sex).toLowerCase();
+        const selectedStatus = getSelectedTestStatus(record);
 
-        const section = document.createElement("section");
-        section.className = "content-card tracking-list-card";
+        if (sex === "male") male++;
+        if (sex === "female") female++;
 
-        section.innerHTML = `
+        if (selectedStatus === "🔴 Reactive") reactive++;
+        if (selectedStatus === "🟠 Initially Reactive") initial++;
+        if (selectedStatus === "🟢 Non-Reactive") nonreactive++;
+      });
+
+      summaryTotal.textContent = records.length;
+      summaryMale.textContent = male;
+      summaryFemale.textContent = female;
+      summaryReactive.textContent = reactive;
+      summaryInitial.textContent = initial;
+      summaryNonReactive.textContent = nonreactive;
+
+      const basis = testFilter.value ? `${testFilter.value} Status` : "Overall Status";
+      statusLabelReactive.textContent = `Reactive (${basis})`;
+      statusLabelInitial.textContent = `Initially Reactive (${basis})`;
+      statusLabelNonReactive.textContent = `Non-Reactive (${basis})`;
+    }
+
+    function groupRecords(records) {
+      const grouped = {};
+
+      records.forEach((record) => {
+        const year = getRecordYear(record);
+        const month = getRecordMonth(record) || "00";
+
+        if (!grouped[year]) grouped[year] = {};
+        if (!grouped[year][month]) grouped[year][month] = [];
+        grouped[year][month].push(record);
+      });
+
+      const sortedYears = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+
+      return sortedYears.map((year) => {
+        const monthsObj = grouped[year];
+        const sortedMonths = Object.keys(monthsObj).sort((a, b) => b.localeCompare(a));
+
+        return {
+          year,
+          months: sortedMonths.map((month) => ({
+            month,
+            records: sortRecords(monthsObj[month])
+          }))
+        };
+      });
+    }
+
+    function getCounts(records) {
+      let male = 0;
+      let female = 0;
+      let reactive = 0;
+      let initial = 0;
+      let nonreactive = 0;
+
+      records.forEach((record) => {
+        const p = getPatientInfo(record);
+        const sex = safe(p.sex).toLowerCase();
+        const selectedStatus = getSelectedTestStatus(record);
+
+        if (sex === "male") male++;
+        if (sex === "female") female++;
+        if (selectedStatus === "🔴 Reactive") reactive++;
+        if (selectedStatus === "🟠 Initially Reactive") initial++;
+        if (selectedStatus === "🟢 Non-Reactive") nonreactive++;
+      });
+
+      return { male, female, reactive, initial, nonreactive, total: records.length };
+    }
+
+    function renderRecordCard(record) {
+      const p = getPatientInfo(record);
+      const donorName = fullName(record) || "Unnamed Record";
+      const serial = safe(p.serialNumber) || "--";
+      const selectedStatus = getSelectedTestStatus(record) || "--";
+
+      return `
+        <section class="content-card tracking-list-card">
           <div class="tracking-list-header">
             <div class="tracking-list-left clickable-header" data-toggle="${record.id}">
               <button class="collapse-toggle" type="button" data-toggle="${record.id}">+</button>
@@ -766,7 +1029,7 @@
             </div>
 
             <div class="tracking-list-right">
-              <span class="tracking-overall-badge ${overallClass(overall)}">${overall}</span>
+              <span class="tracking-overall-badge ${overallClass(selectedStatus)}">${selectedStatus}</span>
               <button class="secondary-btn printRecordBtn no-toggle" data-id="${record.id}">Print</button>
               <button class="secondary-btn exportCsvBtn no-toggle" data-id="${record.id}">Export CSV</button>
               ${
@@ -782,10 +1045,82 @@
             ${renderPatientInfo(record)}
             ${renderScreeningTable(record)}
           </div>
-        `;
+        </section>
+      `;
+    }
 
-        recordsContainer.appendChild(section);
-      });
+    function renderRecords() {
+      const filtered = getFilteredRecords();
+      filteredRecordsCache = filtered;
+      recordCount.textContent = filtered.length;
+      computeSummary(filtered);
+
+      recordsContainer.innerHTML = "";
+
+      if (!filtered.length) {
+        recordsContainer.innerHTML = `
+          <section class="content-card">
+            <div class="empty-state">No records found.</div>
+          </section>
+        `;
+        return;
+      }
+
+      const groups = groupRecords(filtered);
+
+      recordsContainer.innerHTML = groups.map((yearGroup) => {
+        const yearRecords = yearGroup.months.flatMap(m => m.records);
+        const yearCounts = getCounts(yearRecords);
+
+        return `
+          <section class="content-card group-card">
+            <div class="group-header" data-year-toggle="${yearGroup.year}">
+              <div class="group-title-wrap">
+                <button type="button" class="group-toggle" data-year-toggle="${yearGroup.year}">+</button>
+                <div class="group-title">${yearGroup.year}</div>
+              </div>
+              <div class="group-meta">
+                <span class="meta-pill">Entries: ${yearCounts.total}</span>
+                <span class="meta-pill">Male: ${yearCounts.male}</span>
+                <span class="meta-pill">Female: ${yearCounts.female}</span>
+                <span class="meta-pill">Reactive: ${yearCounts.reactive}</span>
+                <span class="meta-pill">Initial: ${yearCounts.initial}</span>
+                <span class="meta-pill">Non-Reactive: ${yearCounts.nonreactive}</span>
+              </div>
+            </div>
+
+            <div class="group-body hidden" id="year-body-${yearGroup.year}">
+              ${yearGroup.months.map((monthGroup) => {
+                const monthCounts = getCounts(monthGroup.records);
+                const monthKey = `${yearGroup.year}-${monthGroup.month}`;
+
+                return `
+                  <div class="month-group">
+                    <div class="month-header" data-month-toggle="${monthKey}">
+                      <div class="month-title-wrap">
+                        <button type="button" class="month-toggle" data-month-toggle="${monthKey}">+</button>
+                        <div class="month-title">${monthName(monthGroup.month)}</div>
+                      </div>
+                      <div class="month-meta">
+                        <span class="meta-pill">Entries: ${monthCounts.total}</span>
+                        <span class="meta-pill">Male: ${monthCounts.male}</span>
+                        <span class="meta-pill">Female: ${monthCounts.female}</span>
+                        <span class="meta-pill">Reactive: ${monthCounts.reactive}</span>
+                        <span class="meta-pill">Initial: ${monthCounts.initial}</span>
+                        <span class="meta-pill">Non-Reactive: ${monthCounts.nonreactive}</span>
+                      </div>
+                    </div>
+
+                    <div class="month-body hidden" id="month-body-${monthKey}">
+                      ${monthGroup.records.map(renderRecordCard).join("")}
+                    </div>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+          </section>
+        `;
+      }).join("");
     }
 
     async function setReferralStatus(id, value) {
@@ -863,6 +1198,32 @@
     });
 
     document.addEventListener("click", async (e) => {
+      const yearToggle = e.target.closest("[data-year-toggle]");
+      if (yearToggle) {
+        const year = yearToggle.getAttribute("data-year-toggle");
+        const body = document.getElementById(`year-body-${year}`);
+        const btn = document.querySelector(`.group-toggle[data-year-toggle="${year}"]`);
+        if (body) {
+          const isHidden = body.classList.contains("hidden");
+          body.classList.toggle("hidden");
+          if (btn) btn.textContent = isHidden ? "−" : "+";
+        }
+        return;
+      }
+
+      const monthToggle = e.target.closest("[data-month-toggle]");
+      if (monthToggle) {
+        const monthKey = monthToggle.getAttribute("data-month-toggle");
+        const body = document.getElementById(`month-body-${monthKey}`);
+        const btn = document.querySelector(`.month-toggle[data-month-toggle="${monthKey}"]`);
+        if (body) {
+          const isHidden = body.classList.contains("hidden");
+          body.classList.toggle("hidden");
+          if (btn) btn.textContent = isHidden ? "−" : "+";
+        }
+        return;
+      }
+
       const toggleEl = e.target.closest("[data-toggle]");
       if (toggleEl && !e.target.closest(".no-toggle") && !e.target.closest(".stop-collapse")) {
         const toggleId = toggleEl.getAttribute("data-toggle");
