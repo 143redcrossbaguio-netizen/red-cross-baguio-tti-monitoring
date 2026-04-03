@@ -67,7 +67,38 @@
 
         <div class="tracking-filter-grid">
           <input type="date" id="collectionDateFilter" />
+          <select id="monthFilter">
+            <option value="">All Months</option>
+            <option value="01">January</option>
+            <option value="02">February</option>
+            <option value="03">March</option>
+            <option value="04">April</option>
+            <option value="05">May</option>
+            <option value="06">June</option>
+            <option value="07">July</option>
+            <option value="08">August</option>
+            <option value="09">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+          </select>
+        </div>
+
+        <div class="tracking-filter-grid">
+          <select id="testFilter">
+            <option value="">All Tests</option>
+            <option value="HIV">HIV</option>
+            <option value="HBsAg">HBsAg</option>
+            <option value="HCV">HCV</option>
+            <option value="Syphilis">Syphilis</option>
+            <option value="Malaria">Malaria</option>
+          </select>
           <button type="button" id="clearFilterBtn" class="secondary-btn">Clear Filters</button>
+        </div>
+
+        <div class="tracking-filter-grid">
+          <button type="button" id="printFilteredBtn" class="secondary-btn">Print</button>
+          <button type="button" id="exportFilteredCsvBtn" class="secondary-btn">Export to CSV</button>
         </div>
       </section>
 
@@ -109,6 +140,7 @@
 
     let currentRole = "";
     let allRecords = [];
+    let filteredRecordsCache = [];
 
     const sidebarEmail = document.getElementById("sidebarEmail");
     const sidebarRole = document.getElementById("sidebarRole");
@@ -116,7 +148,11 @@
     const searchInput = document.getElementById("searchInput");
     const statusFilter = document.getElementById("statusFilter");
     const collectionDateFilter = document.getElementById("collectionDateFilter");
+    const monthFilter = document.getElementById("monthFilter");
+    const testFilter = document.getElementById("testFilter");
     const clearFilterBtn = document.getElementById("clearFilterBtn");
+    const printFilteredBtn = document.getElementById("printFilteredBtn");
+    const exportFilteredCsvBtn = document.getElementById("exportFilteredCsvBtn");
     const recordsContainer = document.getElementById("recordsContainer");
     const recordCount = document.getElementById("recordCount");
 
@@ -183,8 +219,33 @@
         safe(s.overallStatus),
         safe(record.referralStatus),
         safe(record.confirmatoryStatus),
-        safe(record.createdBy)
+        safe(record.createdBy),
+        safe(s.hiv?.interpretation),
+        safe(s.hbsag?.interpretation),
+        safe(s.hcv?.interpretation),
+        safe(s.syphilis?.interpretation),
+        safe(s.malaria?.interpretation)
       ].join(" ").toLowerCase();
+    }
+
+    function getRecordMonth(record) {
+      const p = getPatientInfo(record);
+      const date = safe(p.collectionDate);
+      if (!date || !date.includes("-")) return "";
+      return date.split("-")[1] || "";
+    }
+
+    function recordMatchesTest(record, selectedTest) {
+      if (!selectedTest) return true;
+      const s = getScreening(record);
+
+      if (selectedTest === "HIV") return !!s.hiv;
+      if (selectedTest === "HBsAg") return !!s.hbsag;
+      if (selectedTest === "HCV") return !!s.hcv;
+      if (selectedTest === "Syphilis") return !!s.syphilis;
+      if (selectedTest === "Malaria") return !!s.malaria;
+
+      return true;
     }
 
     function renderPatientInfo(record) {
@@ -394,6 +455,88 @@
       URL.revokeObjectURL(url);
     }
 
+    function createFilteredCSV(records) {
+      const lines = [];
+      lines.push([
+        "Serial Number",
+        "Surname",
+        "First Name",
+        "Middle Name",
+        "Suffix",
+        "Blood Type",
+        "Civil Status",
+        "Birthday",
+        "Age",
+        "Sex",
+        "Contact Info",
+        "Address",
+        "Occupation",
+        "Collection Date",
+        "Donor Type",
+        "Donation Frequency",
+        "Repeat Date",
+        "Overall Status",
+        "Referral Status",
+        "Confirmatory",
+        "Encoded By",
+        "HIV",
+        "HBsAg",
+        "HCV",
+        "Syphilis",
+        "Malaria"
+      ]);
+
+      records.forEach((record) => {
+        const p = getPatientInfo(record);
+        const s = getScreening(record);
+
+        lines.push([
+          safe(p.serialNumber),
+          safe(p.surname),
+          safe(p.firstName),
+          safe(p.middleName),
+          safe(p.suffix),
+          safe(p.bloodType),
+          safe(p.civilStatus),
+          safe(p.birthday),
+          safe(p.age),
+          safe(p.sex),
+          safe(p.contactInfo),
+          safe(p.address),
+          safe(p.occupation),
+          safe(p.collectionDate),
+          safe(p.donorType),
+          safe(p.donationFrequency),
+          safe(p.repeatDate),
+          safe(s.overallStatus),
+          getReferralStatus(record),
+          getConfirmatoryStatus(record),
+          safe(record.createdBy),
+          safe(s.hiv?.interpretation),
+          safe(s.hbsag?.interpretation),
+          safe(s.hcv?.interpretation),
+          safe(s.syphilis?.interpretation),
+          safe(s.malaria?.interpretation)
+        ]);
+      });
+
+      return lines.map(row => row.map(csvEscape).join(",")).join("\n");
+    }
+
+    function exportFilteredCSV(records) {
+      const csv = createFilteredCSV(records);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "tti_tracking_filtered_records.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
     function printDonor(record) {
       const p = getPatientInfo(record);
       const s = getScreening(record);
@@ -499,21 +642,97 @@
       printWindow.print();
     }
 
-    function renderRecords() {
+    function printFilteredRecords(records) {
+      const rows = records.map((record) => {
+        const p = getPatientInfo(record);
+        const s = getScreening(record);
+        return `
+          <tr>
+            <td>${safe(p.serialNumber) || "--"}</td>
+            <td>${fullName(record) || "--"}</td>
+            <td>${safe(p.bloodType) || "--"}</td>
+            <td>${safe(p.collectionDate) || "--"}</td>
+            <td>${safe(s.overallStatus) || "--"}</td>
+            <td>${safe(s.hiv?.interpretation) || "--"}</td>
+            <td>${safe(s.hbsag?.interpretation) || "--"}</td>
+            <td>${safe(s.hcv?.interpretation) || "--"}</td>
+            <td>${safe(s.syphilis?.interpretation) || "--"}</td>
+            <td>${safe(s.malaria?.interpretation) || "--"}</td>
+          </tr>
+        `;
+      }).join("");
+
+      const html = `
+        <html>
+          <head>
+            <title>Print Filtered Records</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 24px; color: #111; }
+              h1, h2, h3 { margin: 0 0 10px; text-align: center; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th, td { border: 1px solid #999; padding: 8px; font-size: 12px; text-align: center; }
+              th { background: #eee; }
+            </style>
+          </head>
+          <body>
+            <h2>PHILIPPINE RED CROSS BAGUIO CITY CHAPTER</h2>
+            <h3>TTI MONITORING</h3>
+            <h1>Filtered Tracking Records</h1>
+            <table>
+              <thead>
+                <tr>
+                  <th>Serial Number</th>
+                  <th>Name</th>
+                  <th>Blood Type</th>
+                  <th>Collection Date</th>
+                  <th>Overall Status</th>
+                  <th>HIV</th>
+                  <th>HBsAg</th>
+                  <th>HCV</th>
+                  <th>Syphilis</th>
+                  <th>Malaria</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows || `<tr><td colspan="10">No records found.</td></tr>`}
+              </tbody>
+            </table>
+          </body>
+        </html>
+      `;
+
+      const printWindow = window.open("", "_blank", "width=1200,height=800");
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+    }
+
+    function getFilteredRecords() {
       const searchTerm = searchInput.value.trim().toLowerCase();
       const statusValue = statusFilter.value;
       const dateValue = collectionDateFilter.value;
+      const monthValue = monthFilter.value;
+      const testValue = testFilter.value;
 
-      const filtered = allRecords.filter((record) => {
+      return allRecords.filter((record) => {
         const p = getPatientInfo(record);
         const overall = getOverallStatus(record);
 
         const matchSearch = !searchTerm || searchBlob(record).includes(searchTerm);
         const matchStatus = !statusValue || overall === statusValue;
         const matchDate = !dateValue || safe(p.collectionDate) === dateValue;
+        const matchMonth = !monthValue || getRecordMonth(record) === monthValue;
+        const matchTest = recordMatchesTest(record, testValue);
 
-        return matchSearch && matchStatus && matchDate;
+        return matchSearch && matchStatus && matchDate && matchMonth && matchTest;
       });
+    }
+
+    function renderRecords() {
+      const filtered = getFilteredRecords();
+      filteredRecordsCache = filtered;
 
       recordCount.textContent = filtered.length;
       recordsContainer.innerHTML = "";
@@ -623,12 +842,24 @@
     searchInput.addEventListener("input", renderRecords);
     statusFilter.addEventListener("change", renderRecords);
     collectionDateFilter.addEventListener("change", renderRecords);
+    monthFilter.addEventListener("change", renderRecords);
+    testFilter.addEventListener("change", renderRecords);
 
     clearFilterBtn.addEventListener("click", () => {
       searchInput.value = "";
       statusFilter.value = "";
       collectionDateFilter.value = "";
+      monthFilter.value = "";
+      testFilter.value = "";
       renderRecords();
+    });
+
+    printFilteredBtn.addEventListener("click", () => {
+      printFilteredRecords(filteredRecordsCache);
+    });
+
+    exportFilteredCsvBtn.addEventListener("click", () => {
+      exportFilteredCSV(filteredRecordsCache);
     });
 
     document.addEventListener("click", async (e) => {
