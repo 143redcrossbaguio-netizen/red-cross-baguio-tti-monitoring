@@ -331,9 +331,42 @@
 
     // Remember which year / month / donor sections are open so a live data
     // refresh (e.g. after choosing a dropdown option) does not collapse them.
+    // It is also saved in sessionStorage, so it survives going to "Edit" and coming back.
+    const UI_STATE_KEY = "trackingUiState_v1";
     const openYears = new Set();
     const openMonths = new Set();
     const openRecords = new Set();
+    let savedScrollY = 0;
+    let scrollRestored = false;
+
+    function saveUiState() {
+      try {
+        sessionStorage.setItem(UI_STATE_KEY, JSON.stringify({
+          years: [...openYears],
+          months: [...openMonths],
+          records: [...openRecords],
+          scrollY: window.scrollY
+        }));
+      } catch (e) { /* storage unavailable: ignore */ }
+    }
+
+    (function loadUiState() {
+      try {
+        const raw = sessionStorage.getItem(UI_STATE_KEY);
+        if (!raw) return;
+        const st = JSON.parse(raw);
+        (st.years || []).forEach(v => openYears.add(String(v)));
+        (st.months || []).forEach(v => openMonths.add(String(v)));
+        (st.records || []).forEach(v => openRecords.add(String(v)));
+        savedScrollY = Number(st.scrollY) || 0;
+      } catch (e) { /* ignore */ }
+    })();
+
+    window.addEventListener("pagehide", saveUiState);
+    window.addEventListener("scroll", () => {
+      clearTimeout(window.__scrollSaveTimer);
+      window.__scrollSaveTimer = setTimeout(saveUiState, 200);
+    }, { passive: true });
 
     const sidebarEmail = document.getElementById("sidebarEmail");
     const sidebarRole = document.getElementById("sidebarRole");
@@ -1118,7 +1151,13 @@
       const activeEl = document.activeElement;
       const searchWasFocused = activeEl === searchInput;
       renderRecordsInner();
-      window.scrollTo(0, scrollY);
+      if (!scrollRestored && savedScrollY > 0 && allRecords.length) {
+        scrollRestored = true;
+        window.scrollTo(0, savedScrollY);
+      } else {
+        window.scrollTo(0, scrollY);
+      }
+      scrollRestored = true;
       if (searchWasFocused) searchInput.focus();
     }
 
@@ -1284,6 +1323,7 @@
           const isHidden = body.classList.contains("hidden");
           body.classList.toggle("hidden");
           if (isHidden) openYears.add(String(year)); else openYears.delete(String(year));
+          saveUiState();
           if (btn) btn.textContent = isHidden ? "−" : "+";
         }
         return;
@@ -1298,6 +1338,7 @@
           const isHidden = body.classList.contains("hidden");
           body.classList.toggle("hidden");
           if (isHidden) openMonths.add(monthKey); else openMonths.delete(monthKey);
+          saveUiState();
           if (btn) btn.textContent = isHidden ? "−" : "+";
         }
         return;
@@ -1311,6 +1352,7 @@
         if (details) {
           const hidden = details.classList.contains("hidden");
           if (hidden) openRecords.add(toggleId); else openRecords.delete(toggleId);
+          saveUiState();
           details.classList.toggle("hidden");
           if (btn) btn.textContent = hidden ? "−" : "+";
         }
@@ -1333,6 +1375,8 @@
 
       if (e.target.classList.contains("editRecordBtn")) {
         const id = e.target.getAttribute("data-id");
+        openRecords.add(String(id));
+        saveUiState();
         window.location.href = `data-input.html?edit=${id}`;
         return;
       }
