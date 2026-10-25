@@ -329,6 +329,12 @@
     let allRecords = [];
     let filteredRecordsCache = [];
 
+    // Remember which year / month / donor sections are open so a live data
+    // refresh (e.g. after choosing a dropdown option) does not collapse them.
+    const openYears = new Set();
+    const openMonths = new Set();
+    const openRecords = new Set();
+
     const sidebarEmail = document.getElementById("sidebarEmail");
     const sidebarRole = document.getElementById("sidebarRole");
     const logoutBtn = document.getElementById("logoutBtn");
@@ -387,6 +393,10 @@
       return safe(record.referralStatus) || "No";
     }
 
+    function getCounselingStatus(record) {
+      return safe(record.counseling);
+    }
+
     function getConfirmatoryStatus(record) {
       return safe(record.confirmatoryStatus) || "";
     }
@@ -437,6 +447,9 @@
         safe(s.malaria?.interpretation),
         safe(record.referralStatus),
         safe(record.confirmatoryStatus),
+        safe(record.counseling),
+        safe(record.ritm?.referred),
+        safe(record.ritm?.sampleSent),
         safe(record.createdBy)
       ].join(" ").toLowerCase();
     }
@@ -517,6 +530,9 @@
             <div class="tracking-info-item"><span class="label">Repeat Date</span><span class="value">${safe(p.repeatDate) || "--"}</span></div>
             <div class="tracking-info-item"><span class="label">Blood Bag Brand</span><span class="value">${bagBrandText(p) || "--"}</span></div>
             <div class="tracking-info-item"><span class="label">Blood Bag Type</span><span class="value">${safe(p.bagType) || "--"}</span></div>
+            <div class="tracking-info-item"><span class="label">Referred to RITM</span><span class="value">${safe(record.ritm?.referred) || "--"}</span></div>
+            <div class="tracking-info-item"><span class="label">Sample Sent</span><span class="value">${safe(record.ritm?.sampleSent) || "--"}</span></div>
+            <div class="tracking-info-item"><span class="label">Date Sent</span><span class="value">${safe(record.ritm?.dateSent) || "--"}</span></div>
             <div class="tracking-info-item"><span class="label">Encoded By</span><span class="value">${safe(record.createdBy) || "--"}</span></div>
           </div>
         </div>
@@ -527,6 +543,7 @@
       const s = getScreening(record);
       const referral = getReferralStatus(record);
       const confirmatory = getConfirmatoryStatus(record);
+      const counseling = getCounselingStatus(record);
 
       const confirmatoryOptions = [
         "",
@@ -534,7 +551,8 @@
         "Sent",
         "Done",
         "Positive",
-        "Negative"
+        "Negative",
+        "Rejected"
       ];
 
       const rows = [
@@ -562,6 +580,7 @@
                   <th>Interpretation</th>
                   <th>Referral</th>
                   <th>Confirmatory</th>
+                  <th>Counseling</th>
                 </tr>
               </thead>
               <tbody>
@@ -598,6 +617,13 @@
                                 `
                                 : `<span class="muted-text">--</span>`
                             }
+                          </td>
+                          <td rowspan="5" class="merge-cell">
+                            <select class="inline-select counseling-select stop-collapse" data-id="${record.id}">
+                              <option value="" ${counseling === "" ? "selected" : ""}>Select</option>
+                              <option value="Yes" ${counseling === "Yes" ? "selected" : ""}>Yes</option>
+                              <option value="No" ${counseling === "No" ? "selected" : ""}>No</option>
+                            </select>
                           </td>
                         `
                         : ""
@@ -656,6 +682,10 @@
       lines.push(["Overall Status", safe(s.overallStatus)]);
       lines.push(["Referral Status", getReferralStatus(record)]);
       lines.push(["Confirmatory", getConfirmatoryStatus(record)]);
+      lines.push(["Counseling", getCounselingStatus(record)]);
+      lines.push(["Referred to RITM", safe(record.ritm?.referred)]);
+      lines.push(["Sample Sent", safe(record.ritm?.sampleSent)]);
+      lines.push(["Date Sent", safe(record.ritm?.dateSent)]);
       lines.push(["Encoded By", safe(record.createdBy)]);
       lines.push([]);
       lines.push(["Test", "OD", "Repeat 1", "Repeat 2", "Lot Number", "Expiration Date", "Date Tested", "Interpretation"]);
@@ -722,6 +752,7 @@
         "Status",
         "Referral Status",
         "Confirmatory",
+        "Counseling",
         "Encoded By"
       ]);
 
@@ -744,6 +775,7 @@
           getSelectedTestStatus(record),
           getReferralStatus(record),
           getConfirmatoryStatus(record),
+          getCounselingStatus(record),
           safe(record.createdBy)
         ]);
       });
@@ -836,6 +868,10 @@
                 <div class="item"><span class="label">Overall Status</span>${safe(s.overallStatus) || "--"}</div>
                 <div class="item"><span class="label">Referral Status</span>${getReferralStatus(record)}</div>
                 <div class="item"><span class="label">Confirmatory</span>${getConfirmatoryStatus(record) || "--"}</div>
+                <div class="item"><span class="label">Counseling</span>${getCounselingStatus(record) || "--"}</div>
+                <div class="item"><span class="label">Referred to RITM</span>${safe(record.ritm?.referred) || "--"}</div>
+                <div class="item"><span class="label">Sample Sent</span>${safe(record.ritm?.sampleSent) || "--"}</div>
+                <div class="item"><span class="label">Date Sent</span>${safe(record.ritm?.dateSent) || "--"}</div>
                 <div class="item"><span class="label">Encoded By</span>${safe(record.createdBy) || "--"}</div>
               </div>
             </div>
@@ -1049,7 +1085,7 @@
         <section class="content-card tracking-list-card">
           <div class="tracking-list-header">
             <div class="tracking-list-left clickable-header" data-toggle="${record.id}">
-              <button class="collapse-toggle" type="button" data-toggle="${record.id}">+</button>
+              <button class="collapse-toggle" type="button" data-toggle="${record.id}">${openRecords.has(record.id) ? "−" : "+"}</button>
               <div class="tracking-name-block">
                 <div class="tracking-name">${donorName}</div>
                 <div class="tracking-subline">Serial No: ${serial}${(bagBrandText(p) || p.bagType) ? ` &nbsp;|&nbsp; Bag: ${[bagBrandText(p), safe(p.bagType)].filter(Boolean).join(" / ")}` : ""}</div>
@@ -1069,7 +1105,7 @@
             </div>
           </div>
 
-          <div class="tracking-collapsed-body hidden" id="details-${record.id}">
+          <div class="tracking-collapsed-body ${openRecords.has(record.id) ? "" : "hidden"}" id="details-${record.id}">
             ${renderPatientInfo(record)}
             ${renderScreeningTable(record)}
           </div>
@@ -1078,6 +1114,15 @@
     }
 
     function renderRecords() {
+      const scrollY = window.scrollY;
+      const activeEl = document.activeElement;
+      const searchWasFocused = activeEl === searchInput;
+      renderRecordsInner();
+      window.scrollTo(0, scrollY);
+      if (searchWasFocused) searchInput.focus();
+    }
+
+    function renderRecordsInner() {
       const filtered = getFilteredRecords();
       filteredRecordsCache = filtered;
       recordCount.textContent = filtered.length;
@@ -1104,7 +1149,7 @@
           <section class="content-card group-card">
             <div class="group-header" data-year-toggle="${yearGroup.year}">
               <div class="group-title-wrap">
-                <button type="button" class="group-toggle" data-year-toggle="${yearGroup.year}">+</button>
+                <button type="button" class="group-toggle" data-year-toggle="${yearGroup.year}">${openYears.has(String(yearGroup.year)) ? "−" : "+"}</button>
                 <div class="group-title">${yearGroup.year}</div>
               </div>
               <div class="group-meta">
@@ -1117,7 +1162,7 @@
               </div>
             </div>
 
-            <div class="group-body hidden" id="year-body-${yearGroup.year}">
+            <div class="group-body ${openYears.has(String(yearGroup.year)) ? "" : "hidden"}" id="year-body-${yearGroup.year}">
               ${yearGroup.months.map((monthGroup) => {
                 const monthCounts = getCounts(monthGroup.records);
                 const monthKey = `${yearGroup.year}-${monthGroup.month}`;
@@ -1126,7 +1171,7 @@
                   <div class="month-group">
                     <div class="month-header" data-month-toggle="${monthKey}">
                       <div class="month-title-wrap">
-                        <button type="button" class="month-toggle" data-month-toggle="${monthKey}">+</button>
+                        <button type="button" class="month-toggle" data-month-toggle="${monthKey}">${openMonths.has(monthKey) ? "−" : "+"}</button>
                         <div class="month-title">${monthName(monthGroup.month)}</div>
                       </div>
                       <div class="month-meta">
@@ -1139,7 +1184,7 @@
                       </div>
                     </div>
 
-                    <div class="month-body hidden" id="month-body-${monthKey}">
+                    <div class="month-body ${openMonths.has(monthKey) ? "" : "hidden"}" id="month-body-${monthKey}">
                       ${monthGroup.records.map(renderRecordCard).join("")}
                     </div>
                   </div>
@@ -1155,6 +1200,10 @@
       const payload = { referralStatus: value };
       if (value === "No") payload.confirmatoryStatus = "";
       await updateDoc(doc(db, "tti_records", id), payload);
+    }
+
+    async function setCounselingStatus(id, value) {
+      await updateDoc(doc(db, "tti_records", id), { counseling: value });
     }
 
     async function setConfirmatoryStatus(id, value) {
@@ -1234,6 +1283,7 @@
         if (body) {
           const isHidden = body.classList.contains("hidden");
           body.classList.toggle("hidden");
+          if (isHidden) openYears.add(String(year)); else openYears.delete(String(year));
           if (btn) btn.textContent = isHidden ? "−" : "+";
         }
         return;
@@ -1247,6 +1297,7 @@
         if (body) {
           const isHidden = body.classList.contains("hidden");
           body.classList.toggle("hidden");
+          if (isHidden) openMonths.add(monthKey); else openMonths.delete(monthKey);
           if (btn) btn.textContent = isHidden ? "−" : "+";
         }
         return;
@@ -1259,6 +1310,7 @@
         const btn = document.querySelector(`.collapse-toggle[data-toggle="${toggleId}"]`);
         if (details) {
           const hidden = details.classList.contains("hidden");
+          if (hidden) openRecords.add(toggleId); else openRecords.delete(toggleId);
           details.classList.toggle("hidden");
           if (btn) btn.textContent = hidden ? "−" : "+";
         }
@@ -1307,6 +1359,16 @@
         const value = e.target.value;
         try {
           await setReferralStatus(id, value);
+        } catch (error) {
+          alert(error.message);
+        }
+        return;
+      }
+
+      if (e.target.classList.contains("counseling-select")) {
+        const id = e.target.getAttribute("data-id");
+        try {
+          await setCounselingStatus(id, e.target.value);
         } catch (error) {
           alert(error.message);
         }
