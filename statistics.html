@@ -108,6 +108,108 @@
       <div id="printArea">
         <section class="content-card">
           <div class="card-title-row">
+            <h4>Tracking Overview</h4>
+          </div>
+
+          <div class="table-wrap">
+            <table class="records-table" data-export-title="Tracking Overview">
+              <thead>
+                <tr><th>Category</th><th>Item</th><th>Count</th></tr>
+              </thead>
+              <tbody id="overviewBody">
+                <tr><td colspan="3">No data</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="content-card">
+          <div class="card-title-row">
+            <h4>Blood Type Distribution</h4>
+          </div>
+
+          <div class="table-wrap">
+            <table class="records-table" data-export-title="Blood Type Distribution">
+              <thead>
+                <tr><th>Blood Group</th><th>Positive</th><th>Negative</th><th>Rh Not Set</th><th>Total</th></tr>
+              </thead>
+              <tbody id="bloodTypeBody">
+                <tr><td colspan="5">No data</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="content-card">
+          <div class="card-title-row">
+            <h4>Blood Bag Brand and Type</h4>
+          </div>
+
+          <div class="table-wrap">
+            <table class="records-table" data-export-title="Blood Bag Brand and Type">
+              <thead>
+                <tr><th>Brand</th><th>Single</th><th>Double</th><th>Triple</th><th>Type Not Set</th><th>Total</th></tr>
+              </thead>
+              <tbody id="bloodBagBody">
+                <tr><td colspan="6">No data</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="content-card">
+          <div class="card-title-row">
+            <h4>Donor Type and Frequency</h4>
+          </div>
+
+          <div class="table-wrap">
+            <table class="records-table" data-export-title="Donor Type and Frequency">
+              <thead>
+                <tr><th>Donor Type</th><th>New</th><th>Repeat</th><th>Not Set</th><th>Total</th></tr>
+              </thead>
+              <tbody id="donorTypeBody">
+                <tr><td colspan="5">No data</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="content-card">
+          <div class="card-title-row">
+            <h4>Confirmatory and Counseling</h4>
+          </div>
+
+          <div class="table-wrap">
+            <table class="records-table" data-export-title="Confirmatory and Counseling">
+              <thead>
+                <tr><th>Confirmatory Status</th><th>Records</th><th>Counseling: Yes</th><th>Counseling: No</th><th>Counseling: Not Set</th></tr>
+              </thead>
+              <tbody id="confirmCounselBody">
+                <tr><td colspan="5">No data</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="content-card">
+          <div class="card-title-row">
+            <h4>RITM Referral and Samples Sent</h4>
+          </div>
+
+          <div class="table-wrap">
+            <table class="records-table" data-export-title="RITM Referral and Samples Sent">
+              <thead>
+                <tr><th>Sample Sent</th><th>Referred to RITM: Yes</th><th>Referred to RITM: No</th><th>Referred: Not Set</th><th>Total</th><th>Latest Date Sent</th></tr>
+              </thead>
+              <tbody id="ritmBody">
+                <tr><td colspan="6">No data</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="content-card">
+          <div class="card-title-row">
             <h4>Quarter Summary Per Analyte</h4>
           </div>
 
@@ -195,10 +297,11 @@
                   <th>Interpretation</th>
                   <th>Referral</th>
                   <th>Confirmatory</th>
+                  <th>Counseling</th>
                 </tr>
               </thead>
               <tbody id="hbsagTableBody">
-                <tr><td colspan="8">No data</td></tr>
+                <tr><td colspan="9">No data</td></tr>
               </tbody>
             </table>
           </div>
@@ -227,6 +330,23 @@
               </thead>
               <tbody id="hubbingSummaryBody">
                 <tr><td colspan="9">No data</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="content-card">
+          <div class="card-title-row">
+            <h4>Donor Records (From Tracking)</h4>
+          </div>
+
+          <div class="table-wrap">
+            <table class="records-table" data-export-title="Donor Records (From Tracking)">
+              <thead>
+                <tr><th>Serial Number</th><th>Collection Date</th><th>Name</th><th>Sex</th><th>Blood Type</th><th>Blood Bag</th><th>Donor Type</th><th>Frequency</th><th>Overall Status</th><th>Referral</th><th>Confirmatory</th><th>Counseling</th><th>RITM</th><th>Sample Sent</th><th>Date Sent</th></tr>
+              </thead>
+              <tbody id="trackingRecordsBody">
+                <tr><td colspan="15">No data</td></tr>
               </tbody>
             </table>
           </div>
@@ -284,9 +404,52 @@
     const hbsagTableBody = document.getElementById("hbsagTableBody");
     const hubbingSummaryBody = document.getElementById("hubbingSummaryBody");
     const hbsagMsg = document.getElementById("hbsagMsg");
+    const overviewBody = document.getElementById("overviewBody");
+    const bloodTypeBody = document.getElementById("bloodTypeBody");
+    const bloodBagBody = document.getElementById("bloodBagBody");
+    const donorTypeBody = document.getElementById("donorTypeBody");
+    const confirmCounselBody = document.getElementById("confirmCounselBody");
+    const ritmBody = document.getElementById("ritmBody");
+    const trackingRecordsBody = document.getElementById("trackingRecordsBody");
 
     function safe(val) {
       return val === undefined || val === null ? "" : String(val);
+    }
+
+    function fullSerial(p) {
+      p = p || {};
+      if (p.serialNumber) return safe(p.serialNumber);
+      if (p.serialPrefix !== undefined || p.serialSuffix !== undefined) {
+        return (p.usePrefix === false ? "" : safe(p.serialPrefix)) + safe(p.serialSuffix);
+      }
+      return "";
+    }
+
+    function parseBlood(value) {
+      const m = String(value || "").trim().match(/^(AB|A|B|O)\s*(\+|-|pos\w*|neg\w*)?/i);
+      if (!m) return { group: "", rh: "" };
+      const r = (m[2] || "").toLowerCase();
+      let rh = "";
+      if (r === "+" || r.startsWith("pos")) rh = "Positive";
+      else if (r === "-" || r.startsWith("neg")) rh = "Negative";
+      return { group: m[1].toUpperCase(), rh };
+    }
+
+    function bagBrandText(p) {
+      if (p.bagBrand === "Others" && p.bagBrandOther) return "Others (" + safe(p.bagBrandOther) + ")";
+      return safe(p.bagBrand);
+    }
+
+    function statusText(record) {
+      return safe(record.screening?.overallStatus);
+    }
+
+    function fullNameOf(p) {
+      return [p.surname, p.firstName, p.middleName, p.suffix].map(safe).filter(Boolean).join(" ");
+    }
+
+    function row(cells) {
+      return `<tr>${cells.map(c => `<td>${c}</td>`).join("")}</tr>`;
     }
 
     function parseDateFromTTIRecord(record) {
@@ -558,14 +721,15 @@
 
           return {
             id: record.id,
-            serialNumber: safe(patientInfo.serialNumber),
+            serialNumber: fullSerial(patientInfo),
             dateTested: safe(hbsag.dateTested),
             od: safe(hbsag.od),
             repeat1: safe(hbsag.repeat1),
             repeat2: safe(hbsag.repeat2),
             interpretation: safe(hbsag.interpretation),
             referral: safe(record.referralStatus) === "Yes",
-            confirmatory: safe(record.confirmatoryStatus) || "--"
+            confirmatory: safe(record.confirmatoryStatus) || "--",
+            counseling: safe(record.counseling) || "--"
           };
         })
         .filter(row =>
@@ -574,7 +738,7 @@
         .sort((a, b) => (b.dateTested || "").localeCompare(a.dateTested || ""));
 
       if (!rows.length) {
-        hbsagTableBody.innerHTML = `<tr><td colspan="8">No data</td></tr>`;
+        hbsagTableBody.innerHTML = `<tr><td colspan="9">No data</td></tr>`;
         return;
       }
 
@@ -598,6 +762,7 @@
             </label>
           </td>
           <td>${row.confirmatory}</td>
+          <td>${row.counseling}</td>
         </tr>
       `).join("");
     }
@@ -641,17 +806,184 @@
       `).join("");
     }
 
+    function renderOverview(records) {
+      let male = 0, female = 0, sexNotSet = 0;
+      let reactive = 0, initial = 0, nonReactive = 0, noResult = 0;
+      let refYes = 0, refNo = 0;
+      let cYes = 0, cNo = 0, cNone = 0;
+      let rYes = 0, rNo = 0, rNone = 0;
+
+      records.forEach(r => {
+        const p = r.patientInfo || {};
+        if (p.sex === "Male") male++; else if (p.sex === "Female") female++; else sexNotSet++;
+
+        const st = statusText(r);
+        if (st === "🔴 Reactive") reactive++;
+        else if (st === "🟠 Initially Reactive") initial++;
+        else if (st === "🟢 Non-Reactive") nonReactive++;
+        else noResult++;
+
+        if (safe(r.referralStatus) === "Yes") refYes++; else refNo++;
+
+        if (r.counseling === "Yes") cYes++; else if (r.counseling === "No") cNo++; else cNone++;
+
+        const ritm = r.ritm?.referred;
+        if (ritm === "Yes") rYes++; else if (ritm === "No") rNo++; else rNone++;
+      });
+
+      const rows = [
+        ["Donors", "Total records", records.length],
+        ["Donors", "Male", male],
+        ["Donors", "Female", female],
+        ["Donors", "Sex not set", sexNotSet],
+        ["Overall Status", "Reactive", reactive],
+        ["Overall Status", "Initially Reactive", initial],
+        ["Overall Status", "Non-Reactive", nonReactive],
+        ["Overall Status", "No result", noResult],
+        ["Referral", "Referred", refYes],
+        ["Referral", "Not referred", refNo],
+        ["Counseling", "Yes", cYes],
+        ["Counseling", "No", cNo],
+        ["Counseling", "Not set", cNone],
+        ["Referred to RITM", "Yes", rYes],
+        ["Referred to RITM", "No", rNo],
+        ["Referred to RITM", "Not set", rNone]
+      ];
+      overviewBody.innerHTML = rows.map(row).join("");
+    }
+
+    function renderBloodType(records) {
+      const groups = ["A", "B", "AB", "O", ""];
+      const t = {};
+      groups.forEach(g => t[g] = { Positive: 0, Negative: 0, "": 0 });
+      records.forEach(r => {
+        const b = parseBlood(r.patientInfo?.bloodType);
+        t[b.group][b.rh]++;
+      });
+      bloodTypeBody.innerHTML = groups.map(g => {
+        const v = t[g];
+        return row([g || "Not set", v.Positive, v.Negative, v[""], v.Positive + v.Negative + v[""]]);
+      }).join("");
+    }
+
+    function renderBloodBag(records) {
+      const brands = ["Karmi", "Terumo", "Others", ""];
+      const types = ["Single", "Double", "Triple", ""];
+      const t = {};
+      brands.forEach(b => { t[b] = {}; types.forEach(ty => t[b][ty] = 0); });
+      records.forEach(r => {
+        const p = r.patientInfo || {};
+        const b = brands.includes(p.bagBrand) ? p.bagBrand : "";
+        const ty = types.includes(p.bagType) ? p.bagType : "";
+        t[b][ty]++;
+      });
+      bloodBagBody.innerHTML = brands.map(b => {
+        const v = t[b];
+        const total = types.reduce((n, ty) => n + v[ty], 0);
+        return row([b || "Not set", v.Single, v.Double, v.Triple, v[""], total]);
+      }).join("");
+    }
+
+    function renderDonorType(records) {
+      const types = ["Patient Directed", "Walk-in", "MBD", ""];
+      const t = {};
+      types.forEach(x => t[x] = { New: 0, Repeat: 0, "": 0 });
+      records.forEach(r => {
+        const p = r.patientInfo || {};
+        const dt = types.includes(p.donorType) ? p.donorType : "";
+        const f = p.donationFrequency === "New" || p.donationFrequency === "Repeat" ? p.donationFrequency : "";
+        t[dt][f]++;
+      });
+      donorTypeBody.innerHTML = types.map(x => {
+        const v = t[x];
+        return row([x || "Not set", v.New, v.Repeat, v[""], v.New + v.Repeat + v[""]]);
+      }).join("");
+    }
+
+    function renderConfirmCounsel(records) {
+      const statuses = ["Pending", "Sent", "Done", "Positive", "Negative", "Rejected", ""];
+      const t = {};
+      statuses.forEach(x => t[x] = { n: 0, yes: 0, no: 0, none: 0 });
+      records.forEach(r => {
+        const st = statuses.includes(r.confirmatoryStatus) ? r.confirmatoryStatus : "";
+        t[st].n++;
+        if (r.counseling === "Yes") t[st].yes++;
+        else if (r.counseling === "No") t[st].no++;
+        else t[st].none++;
+      });
+      confirmCounselBody.innerHTML = statuses.map(x =>
+        row([x || "Not set", t[x].n, t[x].yes, t[x].no, t[x].none])
+      ).join("");
+    }
+
+    function renderRitm(records) {
+      const samples = ["FFP", "Whole Blood", "Aliquoted Sample", "Platelet", ""];
+      const t = {};
+      samples.forEach(x => t[x] = { yes: 0, no: 0, none: 0, latest: "" });
+      records.forEach(r => {
+        const ritm = r.ritm || {};
+        const sm = samples.includes(ritm.sampleSent) ? ritm.sampleSent : "";
+        if (ritm.referred === "Yes") t[sm].yes++;
+        else if (ritm.referred === "No") t[sm].no++;
+        else t[sm].none++;
+        if (ritm.dateSent && ritm.dateSent > t[sm].latest) t[sm].latest = ritm.dateSent;
+      });
+      ritmBody.innerHTML = samples.map(x => {
+        const v = t[x];
+        return row([x || "Not set", v.yes, v.no, v.none, v.yes + v.no + v.none, v.latest || "--"]);
+      }).join("");
+    }
+
+    function renderTrackingRecords(records) {
+      if (!records.length) {
+        trackingRecordsBody.innerHTML = `<tr><td colspan="15">No data</td></tr>`;
+        return;
+      }
+      const sorted = [...records].sort((a, b) =>
+        safe(b.patientInfo?.collectionDate).localeCompare(safe(a.patientInfo?.collectionDate))
+      );
+      trackingRecordsBody.innerHTML = sorted.map(r => {
+        const p = r.patientInfo || {};
+        const st = statusText(r);
+        const bag = [bagBrandText(p), safe(p.bagType)].filter(Boolean).join(" / ");
+        return row([
+          fullSerial(p) || "--",
+          safe(p.collectionDate) || "--",
+          fullNameOf(p) || "--",
+          safe(p.sex) || "--",
+          safe(p.bloodType) || "--",
+          bag || "--",
+          safe(p.donorType) || "--",
+          safe(p.donationFrequency) || "--",
+          st ? `<span class="table-result-badge ${badgeClass(st)}">${st}</span>` : "--",
+          safe(r.referralStatus) === "Yes" ? "Referred" : "No",
+          safe(r.confirmatoryStatus) || "--",
+          safe(r.counseling) || "--",
+          safe(r.ritm?.referred) || "--",
+          safe(r.ritm?.sampleSent) || "--",
+          safe(r.ritm?.dateSent) || "--"
+        ]);
+      }).join("");
+    }
+
     function renderAll() {
       const src = sourceFilter.value;
 
       currentFilteredTTIRecords = src === "hubbing" ? [] : getFilteredTTIRecords();
       currentFilteredHubbingRecords = src === "tti" ? [] : getFilteredHubbingRecords();
 
+      renderOverview(currentFilteredTTIRecords);
+      renderBloodType(currentFilteredTTIRecords);
+      renderBloodBag(currentFilteredTTIRecords);
+      renderDonorType(currentFilteredTTIRecords);
+      renderConfirmCounsel(currentFilteredTTIRecords);
+      renderRitm(currentFilteredTTIRecords);
       renderQuarterSummary(currentFilteredTTIRecords);
       renderMonthlySummary(currentFilteredTTIRecords);
       renderReferralSummary(currentFilteredTTIRecords);
       renderHBsAgTable(currentFilteredTTIRecords);
       renderHubbingSummary(currentFilteredHubbingRecords);
+      renderTrackingRecords(currentFilteredTTIRecords);
     }
 
     function textToCsvCell(value) {
@@ -677,6 +1009,7 @@
         const chk = tr.querySelector(".referral-checkbox");
         vals.push(textToCsvCell(chk && chk.checked ? "Referred" : "No"));
         vals.push(textToCsvCell(tds[7] ? tds[7].textContent : ""));
+        vals.push(textToCsvCell(tds[8] ? tds[8].textContent : ""));
         return vals.join(",");
       });
 
@@ -684,7 +1017,17 @@
         [...tr.children].map(td => textToCsvCell(td.textContent)).join(",")
       );
 
+      // Tables built from tracking data (every table marked data-export-title)
+      const trackingTables = [...document.querySelectorAll("table[data-export-title]")].flatMap(table => {
+        const head = [...table.querySelectorAll("thead th")].map(th => textToCsvCell(th.textContent)).join(",");
+        const body = [...table.querySelectorAll("tbody tr")].map(tr =>
+          [...tr.children].map(td => textToCsvCell(td.textContent.trim())).join(",")
+        );
+        return [table.getAttribute("data-export-title"), head, ...body, ""];
+      });
+
       const csv = [
+        ...trackingTables,
         "Quarter Summary Per Analyte",
         `"Quarter","HIV","HBsAg","HCV","Syphilis","Malaria"`,
         ...quarterRows,
@@ -698,7 +1041,7 @@
         ...referralRows,
         "",
         "HBsAg Detailed Statistics",
-        `"Serial Number","Date Tested","OD","Repeat 1","Repeat 2","Interpretation","Referral","Confirmatory"`,
+        `"Serial Number","Date Tested","OD","Repeat 1","Repeat 2","Interpretation","Referral","Confirmatory","Counseling"`,
         ...hbsagRows,
         "",
         "Hubbing Summary",
