@@ -1044,7 +1044,8 @@
 
         if (editingId) {
           await updateDoc(doc(db, "tti_records", editingId), record);
-          msg.textContent = "Record updated successfully.";
+          msg.textContent = "Record updated successfully. Returning to Tracking...";
+          setTimeout(() => { window.location.href = "tracking.html"; }, 800);
         } else {
           record.createdAt = serverTimestamp();
           await addDoc(collection(db, "tti_records"), record);
