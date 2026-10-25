@@ -14,18 +14,52 @@
     }
 
     .serial-prefix-box{
+      width:200px !important;
       min-width:170px;
-      background:#f1f3f5;
-      border:1px solid #cfd4da;
-      border-right:none;
-      border-radius:8px 0 0 8px;
+      flex:0 0 auto;
+      background:#f1f3f5 !important;
+      border:1px solid #cfd4da !important;
+      border-right:none !important;
+      border-radius:8px 0 0 8px !important;
       padding:12px 14px;
       font-weight:700;
       color:#7a0000;
+      text-align:center;
+      margin-bottom:0 !important;
+    }
+
+    .serial-prefix-box:disabled{
+      opacity:.45;
+      text-decoration:line-through;
+      cursor:not-allowed;
+    }
+
+    .serial-options{
       display:flex;
       align-items:center;
-      justify-content:center;
-      white-space:nowrap;
+      gap:18px;
+      flex-wrap:wrap;
+      margin:-4px 0 14px;
+      font-size:14px;
+    }
+
+    .serial-preview{
+      color:#555;
+    }
+
+    .serial-preview strong{
+      color:#7a0000;
+      letter-spacing:.3px;
+    }
+
+    .serial-reset-btn{
+      border:none;
+      background:none;
+      color:#7a0000;
+      text-decoration:underline;
+      cursor:pointer;
+      font-size:13px;
+      padding:0;
     }
 
     .serial-manual-box{
@@ -64,10 +98,11 @@
       }
 
       .serial-prefix-box{
-        border-right:1px solid #cfd4da;
-        border-bottom:none;
-        border-radius:8px 8px 0 0;
-        justify-content:flex-start;
+        width:100% !important;
+        border-right:1px solid #cfd4da !important;
+        border-bottom:none !important;
+        border-radius:8px 8px 0 0 !important;
+        text-align:left;
       }
 
       .serial-manual-box{
@@ -128,8 +163,13 @@
 
         <label class="section-label">Serial Number</label>
         <div class="serial-entry-wrap">
-          <div class="serial-prefix-box" id="serialPrefixBox">PRC2600-2600</div>
+          <input type="text" id="serialPrefixBox" class="serial-prefix-box" value="PRC2600-2600" placeholder="Prefix (e.g. PRC2500)" autocomplete="off" />
           <input type="text" id="serialNumber" class="serial-manual-box" placeholder="Manual Entry" />
+        </div>
+        <div class="serial-options">
+          <label class="check-item"><input type="checkbox" id="usePrefix" checked /> Use prefix</label>
+          <button type="button" id="resetPrefixBtn" class="serial-reset-btn">Reset prefix to default</button>
+          <span class="serial-preview">Full serial number: <strong id="serialPreview">--</strong></span>
         </div>
 
         <label class="section-label">Name</label>
@@ -174,7 +214,7 @@
           </div>
         </div>
 
-        <div class="grid-3">
+        <div class="grid-5">
           <div>
             <label class="field-label">Contact Number</label>
             <input type="text" id="contactInfo" placeholder="Contact Number" />
@@ -186,6 +226,25 @@
           <div>
             <label class="field-label">Occupation</label>
             <input type="text" id="occupation" placeholder="Occupation" />
+          </div>
+          <div>
+            <label class="field-label">Brand of Blood Bag</label>
+            <select id="bagBrand">
+              <option value="">Select Brand</option>
+              <option value="Karmi">Karmi</option>
+              <option value="Terumo">Terumo</option>
+              <option value="Others">Others</option>
+            </select>
+            <input type="text" id="bagBrandOther" class="hidden" placeholder="Specify brand" style="margin-top:8px;" />
+          </div>
+          <div>
+            <label class="field-label">Blood Bag Type</label>
+            <select id="bagType">
+              <option value="">Select Type</option>
+              <option value="Single">Single</option>
+              <option value="Double">Double</option>
+              <option value="Triple">Triple</option>
+            </select>
           </div>
         </div>
 
@@ -407,6 +466,16 @@
     const pageSubtitle = document.getElementById("pageSubtitle");
     const serialPrefixBox = document.getElementById("serialPrefixBox");
     const serialNumberInput = document.getElementById("serialNumber");
+    const usePrefixCheckbox = document.getElementById("usePrefix");
+    const resetPrefixBtn = document.getElementById("resetPrefixBtn");
+    const serialPreview = document.getElementById("serialPreview");
+    const bagBrandSelect = document.getElementById("bagBrand");
+    const bagBrandOther = document.getElementById("bagBrandOther");
+    const bagTypeSelect = document.getElementById("bagType");
+
+    // true once the user typed their own prefix (or one was loaded from a saved record),
+    // so changing the collection date no longer overwrites it
+    let prefixEdited = false;
     const dateTestedMain = document.getElementById("dateTestedMain");
 
     const tests = ["hiv", "hbsag", "hcv", "syphilis", "malaria"];
@@ -418,37 +487,75 @@
       return `PRC2600-${yy}00`;
     }
 
-    function updateSerialPrefix() {
+    function getDefaultPrefix() {
       let year = new Date().getFullYear();
+      const cd = document.getElementById("collectionDate").value;
+      if (cd) year = new Date(cd).getFullYear();
+      return getSerialPrefixByYear(year);
+    }
 
-      if (document.getElementById("collectionDate").value) {
-        year = new Date(document.getElementById("collectionDate").value).getFullYear();
-      }
-
-      serialPrefixBox.textContent = getSerialPrefixByYear(year);
+    function updateSerialPrefix() {
+      if (prefixEdited) return;
+      serialPrefixBox.value = getDefaultPrefix();
+      updateSerialPreview();
     }
 
     function getFullSerialNumber() {
-      const prefix = serialPrefixBox.textContent.trim();
+      const prefix = usePrefixCheckbox.checked ? serialPrefixBox.value.trim() : "";
       const manual = serialNumberInput.value.trim();
-      return manual ? `${prefix}${manual}` : prefix;
+      return `${prefix}${manual}`;
     }
 
-    function setSerialFromSaved(fullSerial) {
-      if (!fullSerial) {
-        updateSerialPrefix();
-        serialNumberInput.value = "";
+    function updateSerialPreview() {
+      serialPreview.textContent = getFullSerialNumber() || "--";
+    }
+
+    function applyUsePrefixState() {
+      serialPrefixBox.disabled = !usePrefixCheckbox.checked;
+      updateSerialPreview();
+    }
+
+    function setSerialFromSaved(p) {
+      const full = p.serialNumber || "";
+
+      // New-style records store the parts separately
+      if (p.serialPrefix !== undefined || p.serialSuffix !== undefined) {
+        prefixEdited = true;
+        usePrefixCheckbox.checked = p.usePrefix !== false;
+        serialPrefixBox.value = p.serialPrefix || "";
+        serialNumberInput.value = p.serialSuffix || "";
+        applyUsePrefixState();
         return;
       }
 
-      const match = fullSerial.match(/^(PRC2600-\d{4})(.*)$/);
+      if (!full) {
+        prefixEdited = false;
+        usePrefixCheckbox.checked = true;
+        serialNumberInput.value = "";
+        updateSerialPrefix();
+        applyUsePrefixState();
+        return;
+      }
+
+      // Older records: only the full string was saved
+      const match = full.match(/^(PRC2600-\d{4})(.*)$/);
+      prefixEdited = true;
       if (match) {
-        serialPrefixBox.textContent = match[1];
+        usePrefixCheckbox.checked = true;
+        serialPrefixBox.value = match[1];
         serialNumberInput.value = match[2] || "";
       } else {
-        updateSerialPrefix();
-        serialNumberInput.value = fullSerial;
+        usePrefixCheckbox.checked = false;
+        serialPrefixBox.value = getDefaultPrefix();
+        serialNumberInput.value = full;
       }
+      applyUsePrefixState();
+    }
+
+    function updateBagBrandOther() {
+      const isOthers = bagBrandSelect.value === "Others";
+      bagBrandOther.classList.toggle("hidden", !isOthers);
+      if (!isOthers) bagBrandOther.value = "";
     }
 
     onAuthStateChanged(auth, async (user) => {
@@ -498,6 +605,20 @@
     });
 
     document.getElementById("collectionDate").addEventListener("change", updateSerialPrefix);
+
+    serialPrefixBox.addEventListener("input", () => {
+      prefixEdited = true;
+      updateSerialPreview();
+    });
+    serialNumberInput.addEventListener("input", updateSerialPreview);
+    usePrefixCheckbox.addEventListener("change", applyUsePrefixState);
+    resetPrefixBtn.addEventListener("click", () => {
+      prefixEdited = false;
+      usePrefixCheckbox.checked = true;
+      updateSerialPrefix();
+      applyUsePrefixState();
+    });
+    bagBrandSelect.addEventListener("change", updateBagBrandOther);
 
     function updateRepeatDateVisibility() {
       repeatDateWrap.classList.toggle("hidden", !repeatDonorRadio.checked);
@@ -723,7 +844,7 @@
         document.getElementById("firstname").value = p.firstName || "";
         document.getElementById("middlename").value = p.middleName || "";
         document.getElementById("suffix").value = p.suffix || "";
-        setSerialFromSaved(p.serialNumber || "");
+        setSerialFromSaved(p);
         document.getElementById("bloodType").value = p.bloodType || "";
         document.getElementById("civilStatus").value = p.civilStatus || "";
         document.getElementById("birthday").value = p.birthday || "";
@@ -732,6 +853,11 @@
         document.getElementById("contactInfo").value = p.contactInfo || "";
         document.getElementById("address").value = p.address || "";
         document.getElementById("occupation").value = p.occupation || "";
+        bagBrandSelect.value = p.bagBrand || "";
+        bagBrandOther.value = p.bagBrandOther || "";
+        updateBagBrandOther();
+        bagBrandOther.value = p.bagBrandOther || "";
+        bagTypeSelect.value = p.bagType || "";
         document.getElementById("collectionDate").value = p.collectionDate || "";
         document.getElementById("repeatDate").value = p.repeatDate || "";
         document.getElementById("dateTestedMain").value = p.dateTestedMain || "";
@@ -797,6 +923,9 @@
             middleName: document.getElementById("middlename").value.trim(),
             suffix: document.getElementById("suffix").value.trim(),
             serialNumber: getFullSerialNumber(),
+            serialPrefix: serialPrefixBox.value.trim(),
+            serialSuffix: serialNumberInput.value.trim(),
+            usePrefix: usePrefixCheckbox.checked,
             bloodType: document.getElementById("bloodType").value.trim(),
             civilStatus: document.getElementById("civilStatus").value,
             birthday: document.getElementById("birthday").value,
@@ -805,6 +934,9 @@
             contactInfo: document.getElementById("contactInfo").value.trim(),
             address: document.getElementById("address").value.trim(),
             occupation: document.getElementById("occupation").value.trim(),
+            bagBrand: bagBrandSelect.value,
+            bagBrandOther: bagBrandSelect.value === "Others" ? bagBrandOther.value.trim() : "",
+            bagType: bagTypeSelect.value,
             collectionDate: document.getElementById("collectionDate").value,
             dateTestedMain: document.getElementById("dateTestedMain").value,
             donorType: getCheckedRadioValue("donorType"),
@@ -841,6 +973,7 @@
       }
     };
 
+    updateSerialPreview();
     setupEnterToNextField();
   </script>
 </body>
