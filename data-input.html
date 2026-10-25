@@ -67,6 +67,16 @@
       margin-bottom:0 !important;
     }
 
+    .blood-type-pair{
+      display:flex;
+      gap:6px;
+    }
+
+    .blood-type-pair select{
+      min-width:0;
+      flex:1;
+    }
+
     .grid-5{
       display:grid;
       grid-template-columns:repeat(5, 1fr);
@@ -191,7 +201,20 @@
           </div>
           <div>
             <label class="field-label">Blood Type</label>
-            <input type="text" id="bloodType" placeholder="Blood Type" />
+            <div class="blood-type-pair">
+              <select id="bloodGroup">
+                <option value="">Group</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="AB">AB</option>
+                <option value="O">O</option>
+              </select>
+              <select id="bloodRh">
+                <option value="">Rh</option>
+                <option value="Positive">Positive</option>
+                <option value="Negative">Negative</option>
+              </select>
+            </div>
           </div>
           <div>
             <label class="field-label">Civil Status</label>
@@ -417,6 +440,36 @@
       </section>
 
       <section class="content-card">
+        <div class="card-title-row">
+          <h4>RITM Referral</h4>
+        </div>
+        <div class="grid-3">
+          <div>
+            <label class="field-label">Referred to RITM</label>
+            <select id="ritmReferred">
+              <option value="">Select</option>
+              <option value="Yes">Yes</option>
+              <option value="No">No</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Sample Sent</label>
+            <select id="sampleSent">
+              <option value="">Select Sample</option>
+              <option value="FFP">FFP</option>
+              <option value="Whole Blood">Whole Blood</option>
+              <option value="Aliquoted Sample">Aliquoted Sample</option>
+              <option value="Platelet">Platelet</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Date Sent</label>
+            <input type="date" id="dateSent" />
+          </div>
+        </div>
+      </section>
+
+      <section class="content-card">
         <div class="action-row">
           <button id="saveBtn" class="primary-btn" type="button">Save Record</button>
         </div>
@@ -550,6 +603,26 @@
         serialNumberInput.value = full;
       }
       applyUsePrefixState();
+    }
+
+    function setBloodTypeFromSaved(value) {
+      const group = document.getElementById("bloodGroup");
+      const rh = document.getElementById("bloodRh");
+      group.value = "";
+      rh.value = "";
+      const m = String(value || "").trim().match(/^(AB|A|B|O)\s*(\+|-|pos\w*|neg\w*)?/i);
+      if (!m) return;
+      group.value = m[1].toUpperCase();
+      const r = (m[2] || "").toLowerCase();
+      if (r === "+" || r.startsWith("pos")) rh.value = "Positive";
+      else if (r === "-" || r.startsWith("neg")) rh.value = "Negative";
+    }
+
+    function getBloodTypeValue() {
+      const g = document.getElementById("bloodGroup").value;
+      const r = document.getElementById("bloodRh").value;
+      if (!g) return "";
+      return g + (r === "Positive" ? "+" : r === "Negative" ? "-" : "");
     }
 
     function updateBagBrandOther() {
@@ -845,7 +918,11 @@
         document.getElementById("middlename").value = p.middleName || "";
         document.getElementById("suffix").value = p.suffix || "";
         setSerialFromSaved(p);
-        document.getElementById("bloodType").value = p.bloodType || "";
+        setBloodTypeFromSaved(p.bloodType);
+        const ritm = record.ritm || {};
+        document.getElementById("ritmReferred").value = ritm.referred || "";
+        document.getElementById("sampleSent").value = ritm.sampleSent || "";
+        document.getElementById("dateSent").value = ritm.dateSent || "";
         document.getElementById("civilStatus").value = p.civilStatus || "";
         document.getElementById("birthday").value = p.birthday || "";
         document.getElementById("age").value = p.age || "";
@@ -926,7 +1003,7 @@
             serialPrefix: serialPrefixBox.value.trim(),
             serialSuffix: serialNumberInput.value.trim(),
             usePrefix: usePrefixCheckbox.checked,
-            bloodType: document.getElementById("bloodType").value.trim(),
+            bloodType: getBloodTypeValue(),
             civilStatus: document.getElementById("civilStatus").value,
             birthday: document.getElementById("birthday").value,
             age: document.getElementById("age").value.trim(),
@@ -953,6 +1030,11 @@
             syphilis: getTestData("syphilis"),
             malaria: getTestData("malaria"),
             overallStatus: overallStatus.textContent
+          },
+          ritm: {
+            referred: document.getElementById("ritmReferred").value,
+            sampleSent: document.getElementById("sampleSent").value,
+            dateSent: document.getElementById("dateSent").value
           },
           createdBy: currentUser.email,
           createdByUid: currentUser.uid,
