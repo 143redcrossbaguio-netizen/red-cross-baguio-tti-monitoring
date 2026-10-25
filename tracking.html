@@ -232,7 +232,7 @@
         </div>
 
         <div class="tracking-filter-grid">
-          <input type="text" id="searchInput" placeholder="Search donor name, serial number, blood type, address, contact, occupation, status..." />
+          <input type="text" id="searchInput" placeholder="Search donor name, serial number, blood type, blood bag, address, contact, occupation, status..." />
           <select id="statusFilter">
             <option value="">All Status</option>
             <option value="🔴 Reactive">Reactive</option>
@@ -361,6 +361,20 @@
       return record.patientInfo || {};
     }
 
+    // Full serial code = prefix + manual part (falls back to the saved full string)
+    function fullSerial(p) {
+      if (p.serialNumber) return safe(p.serialNumber);
+      if (p.serialPrefix !== undefined || p.serialSuffix !== undefined) {
+        return (p.usePrefix === false ? "" : safe(p.serialPrefix)) + safe(p.serialSuffix);
+      }
+      return "";
+    }
+
+    function bagBrandText(p) {
+      if (p.bagBrand === "Others" && p.bagBrandOther) return "Others (" + safe(p.bagBrandOther) + ")";
+      return safe(p.bagBrand);
+    }
+
     function getScreening(record) {
       return record.screening || {};
     }
@@ -407,11 +421,13 @@
         safe(p.firstName),
         safe(p.middleName),
         safe(p.suffix),
-        safe(p.serialNumber),
+        fullSerial(p),
         safe(p.bloodType),
         safe(p.address),
         safe(p.contactInfo),
         safe(p.occupation),
+        bagBrandText(p),
+        safe(p.bagType),
         safe(p.collectionDate),
         safe(s.overallStatus),
         safe(s.hiv?.interpretation),
@@ -483,7 +499,7 @@
             <div class="tracking-info-item"><span class="label">Middle Name</span><span class="value">${safe(p.middleName) || "--"}</span></div>
             <div class="tracking-info-item"><span class="label">Suffix</span><span class="value">${safe(p.suffix) || "--"}</span></div>
 
-            <div class="tracking-info-item"><span class="label">Serial Number</span><span class="value">${safe(p.serialNumber) || "--"}</span></div>
+            <div class="tracking-info-item"><span class="label">Serial Number</span><span class="value">${fullSerial(p) || "--"}</span></div>
             <div class="tracking-info-item"><span class="label">Blood Type</span><span class="value">${safe(p.bloodType) || "--"}</span></div>
             <div class="tracking-info-item"><span class="label">Civil Status</span><span class="value">${safe(p.civilStatus) || "--"}</span></div>
             <div class="tracking-info-item"><span class="label">Birthday</span><span class="value">${safe(p.birthday) || "--"}</span></div>
@@ -499,6 +515,8 @@
             <div class="tracking-info-item"><span class="label">Donation Frequency</span><span class="value">${safe(p.donationFrequency) || "--"}</span></div>
 
             <div class="tracking-info-item"><span class="label">Repeat Date</span><span class="value">${safe(p.repeatDate) || "--"}</span></div>
+            <div class="tracking-info-item"><span class="label">Blood Bag Brand</span><span class="value">${bagBrandText(p) || "--"}</span></div>
+            <div class="tracking-info-item"><span class="label">Blood Bag Type</span><span class="value">${safe(p.bagType) || "--"}</span></div>
             <div class="tracking-info-item"><span class="label">Encoded By</span><span class="value">${safe(record.createdBy) || "--"}</span></div>
           </div>
         </div>
@@ -620,7 +638,7 @@
       lines.push(["First Name", safe(p.firstName)]);
       lines.push(["Middle Name", safe(p.middleName)]);
       lines.push(["Suffix", safe(p.suffix)]);
-      lines.push(["Serial Number", safe(p.serialNumber)]);
+      lines.push(["Serial Number", fullSerial(p)]);
       lines.push(["Blood Type", safe(p.bloodType)]);
       lines.push(["Civil Status", safe(p.civilStatus)]);
       lines.push(["Birthday", safe(p.birthday)]);
@@ -629,6 +647,8 @@
       lines.push(["Contact Info", safe(p.contactInfo)]);
       lines.push(["Address", safe(p.address)]);
       lines.push(["Occupation", safe(p.occupation)]);
+      lines.push(["Blood Bag Brand", bagBrandText(p)]);
+      lines.push(["Blood Bag Type", safe(p.bagType)]);
       lines.push(["Collection Date", safe(p.collectionDate)]);
       lines.push(["Donor Type", safe(p.donorType)]);
       lines.push(["Donation Frequency", safe(p.donationFrequency)]);
@@ -666,7 +686,7 @@
 
     function downloadCSV(record) {
       const p = getPatientInfo(record);
-      const serial = safe(p.serialNumber) || "record";
+      const serial = fullSerial(p) || "record";
       const donor = (fullName(record) || "donor").replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "_");
       const filename = `${serial}_${donor}_tracking.csv`;
 
@@ -696,6 +716,8 @@
         "Suffix",
         "Sex",
         "Blood Type",
+        "Blood Bag Brand",
+        "Blood Bag Type",
         "Status Basis",
         "Status",
         "Referral Status",
@@ -709,13 +731,15 @@
           getRecordYear(record),
           monthName(getRecordMonth(record)),
           safe(p.collectionDate),
-          safe(p.serialNumber),
+          fullSerial(p),
           safe(p.surname),
           safe(p.firstName),
           safe(p.middleName),
           safe(p.suffix),
           safe(p.sex),
           safe(p.bloodType),
+          bagBrandText(p),
+          safe(p.bagType),
           testFilter.value || "Overall",
           getSelectedTestStatus(record),
           getReferralStatus(record),
@@ -794,7 +818,7 @@
             <div class="section">
               <h3>${donorName}</h3>
               <div class="grid">
-                <div class="item"><span class="label">Serial Number</span>${safe(p.serialNumber) || "--"}</div>
+                <div class="item"><span class="label">Serial Number</span>${fullSerial(p) || "--"}</div>
                 <div class="item"><span class="label">Blood Type</span>${safe(p.bloodType) || "--"}</div>
                 <div class="item"><span class="label">Civil Status</span>${safe(p.civilStatus) || "--"}</div>
                 <div class="item"><span class="label">Birthday</span>${safe(p.birthday) || "--"}</div>
@@ -803,6 +827,8 @@
                 <div class="item"><span class="label">Contact Info</span>${safe(p.contactInfo) || "--"}</div>
                 <div class="item"><span class="label">Address</span>${safe(p.address) || "--"}</div>
                 <div class="item"><span class="label">Occupation</span>${safe(p.occupation) || "--"}</div>
+                <div class="item"><span class="label">Blood Bag Brand</span>${bagBrandText(p) || "--"}</div>
+                <div class="item"><span class="label">Blood Bag Type</span>${safe(p.bagType) || "--"}</div>
                 <div class="item"><span class="label">Collection Date</span>${safe(p.collectionDate) || "--"}</div>
                 <div class="item"><span class="label">Donor Type</span>${safe(p.donorType) || "--"}</div>
                 <div class="item"><span class="label">Donation Frequency</span>${safe(p.donationFrequency) || "--"}</div>
@@ -854,10 +880,11 @@
             <td>${getRecordYear(record)}</td>
             <td>${monthName(getRecordMonth(record))}</td>
             <td>${safe(p.collectionDate) || "--"}</td>
-            <td>${safe(p.serialNumber) || "--"}</td>
+            <td>${fullSerial(p) || "--"}</td>
             <td>${fullName(record) || "--"}</td>
             <td>${safe(p.sex) || "--"}</td>
             <td>${safe(p.bloodType) || "--"}</td>
+            <td>${[bagBrandText(p), safe(p.bagType)].filter(Boolean).join(" / ") || "--"}</td>
             <td>${getSelectedTestStatus(record) || "--"}</td>
           </tr>
         `;
@@ -890,11 +917,12 @@
                   <th>Name</th>
                   <th>Sex</th>
                   <th>Blood Type</th>
+                  <th>Blood Bag</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                ${rows || `<tr><td colspan="8">No records found.</td></tr>`}
+                ${rows || `<tr><td colspan="9">No records found.</td></tr>`}
               </tbody>
             </table>
           </body>
@@ -1014,7 +1042,7 @@
     function renderRecordCard(record) {
       const p = getPatientInfo(record);
       const donorName = fullName(record) || "Unnamed Record";
-      const serial = safe(p.serialNumber) || "--";
+      const serial = fullSerial(p) || "--";
       const selectedStatus = getSelectedTestStatus(record) || "--";
 
       return `
@@ -1024,7 +1052,7 @@
               <button class="collapse-toggle" type="button" data-toggle="${record.id}">+</button>
               <div class="tracking-name-block">
                 <div class="tracking-name">${donorName}</div>
-                <div class="tracking-subline">Serial No: ${serial}</div>
+                <div class="tracking-subline">Serial No: ${serial}${(bagBrandText(p) || p.bagType) ? ` &nbsp;|&nbsp; Bag: ${[bagBrandText(p), safe(p.bagType)].filter(Boolean).join(" / ")}` : ""}</div>
               </div>
             </div>
 
