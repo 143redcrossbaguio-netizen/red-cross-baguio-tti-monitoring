@@ -67,16 +67,6 @@
       margin-bottom:0 !important;
     }
 
-    .blood-type-pair{
-      display:flex;
-      gap:6px;
-    }
-
-    .blood-type-pair select{
-      min-width:0;
-      flex:1;
-    }
-
     .grid-5{
       display:grid;
       grid-template-columns:repeat(5, 1fr);
@@ -201,20 +191,17 @@
           </div>
           <div>
             <label class="field-label">Blood Type</label>
-            <div class="blood-type-pair">
-              <select id="bloodGroup">
-                <option value="">Group</option>
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="AB">AB</option>
-                <option value="O">O</option>
-              </select>
-              <select id="bloodRh">
-                <option value="">Rh</option>
-                <option value="Positive">Positive</option>
-                <option value="Negative">Negative</option>
-              </select>
-            </div>
+            <select id="bloodType">
+              <option value="">Blood Type</option>
+              <option value="A+">A+</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B-">B-</option>
+              <option value="AB+">AB+</option>
+              <option value="AB-">AB-</option>
+              <option value="O+">O+</option>
+              <option value="O-">O-</option>
+            </select>
           </div>
           <div>
             <label class="field-label">Civil Status</label>
@@ -606,23 +593,39 @@
     }
 
     function setBloodTypeFromSaved(value) {
-      const group = document.getElementById("bloodGroup");
-      const rh = document.getElementById("bloodRh");
-      group.value = "";
-      rh.value = "";
-      const m = String(value || "").trim().match(/^(AB|A|B|O)\s*(\+|-|pos\w*|neg\w*)?/i);
-      if (!m) return;
-      group.value = m[1].toUpperCase();
-      const r = (m[2] || "").toLowerCase();
-      if (r === "+" || r.startsWith("pos")) rh.value = "Positive";
-      else if (r === "-" || r.startsWith("neg")) rh.value = "Negative";
+      const sel = document.getElementById("bloodType");
+
+      // remove a leftover "unrecognised old value" option from a previously opened record
+      sel.querySelectorAll("option[data-temp]").forEach(o => o.remove());
+      sel.value = "";
+
+      const raw = String(value || "").trim();
+      if (!raw) return;
+
+      // understand "A+", "a +", "AB-", "O positive", "B negative" ...
+      const m = raw.match(/^(AB|A|B|O)\s*(\+|-|pos\w*|neg\w*)?\s*$/i);
+      if (m) {
+        const r = (m[2] || "").toLowerCase();
+        const rh = (r === "+" || r.startsWith("pos")) ? "+" : (r === "-" || r.startsWith("neg")) ? "-" : "";
+        const wanted = m[1].toUpperCase() + rh;
+        if ([...sel.options].some(o => o.value === wanted)) {
+          sel.value = wanted;
+          return;
+        }
+      }
+
+      // Older record with no Rh (just "A") or something unusual: keep it visible so
+      // saving does not erase it, and let the user pick the correct type from the list.
+      const keep = document.createElement("option");
+      keep.value = raw;
+      keep.textContent = raw + " (please choose Rh)";
+      keep.setAttribute("data-temp", "1");
+      sel.insertBefore(keep, sel.options[1] || null);
+      sel.value = raw;
     }
 
     function getBloodTypeValue() {
-      const g = document.getElementById("bloodGroup").value;
-      const r = document.getElementById("bloodRh").value;
-      if (!g) return "";
-      return g + (r === "Positive" ? "+" : r === "Negative" ? "-" : "");
+      return document.getElementById("bloodType").value || "";
     }
 
     function updateBagBrandOther() {
