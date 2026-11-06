@@ -381,13 +381,7 @@
       doc,
       getDoc
     } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import {
-      getStorage,
-      ref as sRef,
-      uploadBytesResumable,
-      getDownloadURL,
-      deleteObject
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
 
     const firebaseConfig = {
       apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
@@ -401,7 +395,15 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const storage = getStorage(app);
+    // Storage loads only when a file is used, so the page works even if Storage is not set up
+    let storageMods = null;
+    async function getStorageMods() {
+      if (!storageMods) {
+        const m = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js");
+        storageMods = { m, storage: m.getStorage(app) };
+      }
+      return storageMods;
+    }
 
     let currentRole = "";
     let allRecords = [];
@@ -773,7 +775,7 @@
       return `<div class="confirm-file-box"><span class="cf-title">Confirmatory result file</span>${body}</div>`;
     }
 
-    function uploadConfirmFile(id, file) {
+    async function uploadConfirmFile(id, file) {
       if (!(file.type.startsWith("image/") || file.type === "application/pdf")) {
         alert("Please choose an image or a PDF file.");
         return;
@@ -782,12 +784,15 @@
         alert("File is too large. Maximum size is 10 MB.");
         return;
       }
+      let sm;
+      try { sm = await getStorageMods(); } catch (e) { alert("Could not load file storage: " + e.message); return; }
+      const { m, storage } = sm;
       const path = `confirmatory/${id}/${Date.now()}_${file.name.replace(/[^\w.\-]+/g, "_")}`;
       const oldPath = allRecords.find(r => r.id === id)?.confirmatoryFile?.path;
       uploadState[id] = { name: file.name, pct: 0 };
       renderRecords();
 
-      const task = uploadBytesResumable(sRef(storage, path), file, { contentType: file.type });
+      const task = m.uploadBytesResumable(m.ref(storage, path), file, { contentType: file.type });
       task.on("state_changed", (snap) => {
         const pct = Math.round(snap.bytesTransferred / snap.totalBytes * 100);
         if (uploadState[id]) uploadState[id].pct = pct;
@@ -801,11 +806,11 @@
         alert("Upload failed: " + err.message);
       }, async () => {
         try {
-          const url = await getDownloadURL(task.snapshot.ref);
+          const url = await m.getDownloadURL(task.snapshot.ref);
           await updateDoc(doc(db, "tti_records", id), {
             confirmatoryFile: { name: file.name, type: file.type, size: file.size, url, path, uploadedAt: Date.now() }
           });
-          if (oldPath) deleteObject(sRef(storage, oldPath)).catch(() => {});
+          if (oldPath) m.deleteObject(m.ref(storage, oldPath)).catch(() => {});
         } catch (e) {
           alert("Saved the file but could not update the record: " + e.message);
         } finally {
@@ -820,7 +825,10 @@
       if (!f || !confirm("Remove this file?")) return;
       try {
         await updateDoc(doc(db, "tti_records", id), { confirmatoryFile: null });
-        if (f.path) deleteObject(sRef(storage, f.path)).catch(() => {});
+        if (f.path) {
+          const { m, storage } = await getStorageMods();
+          m.deleteObject(m.ref(storage, f.path)).catch(() => {});
+        }
       } catch (e) {
         alert(e.message);
       }
