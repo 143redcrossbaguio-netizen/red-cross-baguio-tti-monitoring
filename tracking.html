@@ -404,15 +404,6 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    // Storage loads only when a file is used, so the page works even if Storage is not set up
-    let storageMods = null;
-    async function getStorageMods() {
-      if (!storageMods) {
-        const m = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js");
-        storageMods = { m, storage: m.getStorage(app) };
-      }
-      return storageMods;
-    }
 
     let currentRole = "";
     let allRecords = [];
@@ -767,93 +758,128 @@
       const input = `<input type="file" class="cf-input" data-id="${record.id}" accept="image/*,.pdf" hidden>`;
       let body;
       if (up) {
-        body = `<div class="cf-uploading">Uploading ${esc(up.name)} <span data-pct="${record.id}">${up.pct}%</span>
-                  <div class="cf-progress"><span data-bar="${record.id}" style="width:${up.pct}%"></span></div></div>`;
-      } else if (f && f.url) {
+        body = `<div class="cf-uploading">Saving ${esc(up.name)}…
+                  <div class="cf-progress"><span style="width:60%"></span></div></div>`;
+      } else if (f && (f.data || f.url)) {
         const isImg = safe(f.type).startsWith("image/");
         body = `<div class="cf-file" data-view-file="${record.id}" title="Click to view">
-                  ${isImg ? `<img class="cf-thumb" src="${esc(f.url)}" alt="">` : `<span class="cf-pdf">PDF</span>`}
+                  ${isImg ? `<img class="cf-thumb" src="${esc(f.data || f.url)}" alt="">` : `<span class="cf-pdf">PDF</span>`}
                   <span>${esc(f.name)}</span>
                 </div>
                 <label class="cf-btn">Replace${input}</label>
                 <button type="button" class="cf-btn cf-remove" data-id="${record.id}">Remove</button>`;
       } else {
         body = `<label class="cf-btn cf-primary">Choose file${input}</label>
-                <span class="cf-hint">Image or PDF, up to 10 MB</span>`;
+                <span class="cf-hint">Photo or PDF. Large photos are shrunk automatically</span>`;
       }
       return `<div class="confirm-file-box"><span class="cf-title">Confirmatory result file</span>${body}</div>`;
     }
 
-    async function uploadConfirmFile(id, file) {
-      if (!(file.type.startsWith("image/") || file.type === "application/pdf")) {
-        alert("Please choose an image or a PDF file.");
-        return;
-      }
-      if (file.size > 10 * 1024 * 1024) {
-        alert("File is too large. Maximum size is 10 MB.");
-        return;
-      }
-      let sm;
-      try { sm = await getStorageMods(); } catch (e) { alert("Could not load file storage: " + e.message); return; }
-      const { m, storage } = sm;
-      const path = `confirmatory/${id}/${Date.now()}_${file.name.replace(/[^\w.\-]+/g, "_")}`;
-      const oldPath = allRecords.find(r => r.id === id)?.confirmatoryFile?.path;
-      uploadState[id] = { name: file.name, pct: 0 };
-      renderRecords();
+    const MAX_DATA = 850000; // keeps each record under Firestore's 1 MB limit
 
-      const task = m.uploadBytesResumable(m.ref(storage, path), file, { contentType: file.type });
-      task.on("state_changed", (snap) => {
-        const pct = Math.round(snap.bytesTransferred / snap.totalBytes * 100);
-        if (uploadState[id]) uploadState[id].pct = pct;
-        const t = document.querySelector(`[data-pct="${id}"]`);
-        const b = document.querySelector(`[data-bar="${id}"]`);
-        if (t) t.textContent = pct + "%";
-        if (b) b.style.width = pct + "%";
-      }, (err) => {
-        delete uploadState[id];
-        renderRecords();
-        alert("Upload failed: " + err.message);
-      }, async () => {
-        try {
-          const url = await m.getDownloadURL(task.snapshot.ref);
-          await updateDoc(doc(db, "tti_records", id), {
-            confirmatoryFile: { name: file.name, type: file.type, size: file.size, url, path, uploadedAt: Date.now() }
-          });
-          if (oldPath) m.deleteObject(m.ref(storage, oldPath)).catch(() => {});
-        } catch (e) {
-          alert("Saved the file but could not update the record: " + e.message);
-        } finally {
-          delete uploadState[id];
-          renderRecords();
-        }
+    function fileToDataUrl(file) {
+      return new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result);
+        r.onerror = () => rej(new Error("Could not read the file."));
+        r.readAsDataURL(file);
       });
     }
 
+    function loadImage(url) {
+      return new Promise((res, rej) => {
+        const img = new Image();
+        img.onload = () => res(img);
+        img.onerror = () => rej(new Error("This image format can't be read. Please use a JPG or PNG."));
+        img.src = url;
+      });
+    }
+
+    async function compressImage(file) {
+      const objUrl = URL.createObjectURL(file);
+      try {
+        const img = await loadImage(objUrl);
+        let maxDim = 1800, quality = 0.82;
+        for (let i = 0; i < 8; i++) {
+          const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+          const c = document.createElement("canvas");
+          c.width = Math.round(img.naturalWidth * scale);
+          c.height = Math.round(img.naturalHeight * scale);
+          const ctx = c.getContext("2d");
+          ctx.fillStyle = "#fff";
+          ctx.fillRect(0, 0, c.width, c.height);
+          ctx.drawImage(img, 0, 0, c.width, c.height);
+          const out = c.toDataURL("image/jpeg", quality);
+          if (out.length <= MAX_DATA) return out;
+          quality = Math.max(0.5, quality - 0.1);
+          maxDim = Math.round(maxDim * 0.8);
+        }
+        throw new Error("The image is still too large after shrinking it.");
+      } finally {
+        URL.revokeObjectURL(objUrl);
+      }
+    }
+
+    async function uploadConfirmFile(id, file) {
+      const isImg = file.type.startsWith("image/");
+      if (!(isImg || file.type === "application/pdf")) {
+        alert("Please choose a photo or a PDF file.");
+        return;
+      }
+      uploadState[id] = { name: file.name };
+      renderRecords();
+      try {
+        let data, type = file.type;
+        if (isImg) {
+          data = await compressImage(file);
+          type = "image/jpeg";
+        } else {
+          data = await fileToDataUrl(file);
+          if (data.length > MAX_DATA) {
+            throw new Error("This PDF is too large (the limit is about 600 KB). Please take a photo or screenshot of the page instead, or use a smaller PDF.");
+          }
+        }
+        await updateDoc(doc(db, "tti_records", id), {
+          confirmatoryFile: { name: file.name, type, data, uploadedAt: Date.now() }
+        });
+      } catch (e) {
+        alert(e.message);
+      } finally {
+        delete uploadState[id];
+        renderRecords();
+      }
+    }
+
     async function removeConfirmFile(id) {
-      const f = allRecords.find(r => r.id === id)?.confirmatoryFile;
-      if (!f || !confirm("Remove this file?")) return;
+      if (!confirm("Remove this file?")) return;
       try {
         await updateDoc(doc(db, "tti_records", id), { confirmatoryFile: null });
-        if (f.path) {
-          const { m, storage } = await getStorageMods();
-          m.deleteObject(m.ref(storage, f.path)).catch(() => {});
-        }
       } catch (e) {
         alert(e.message);
       }
     }
 
+    function dataToBlobUrl(d) {
+      const [head, b64] = d.split(",");
+      const mime = head.match(/:(.*?);/)[1];
+      const bin = atob(b64);
+      const arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      return URL.createObjectURL(new Blob([arr], { type: mime }));
+    }
+
     function openFileModal(id) {
       const f = allRecords.find(r => r.id === id)?.confirmatoryFile;
-      if (!f || !f.url) return;
+      if (!f || !(f.data || f.url)) return;
+      const src = f.data ? dataToBlobUrl(f.data) : f.url;
       const isImg = safe(f.type).startsWith("image/");
       const m = document.createElement("div");
       m.className = "file-modal";
       m.innerHTML = `<div class="file-modal-box">
         <div class="file-modal-head"><span>${esc(f.name)}</span>
-          <span><a href="${esc(f.url)}" target="_blank" rel="noopener" class="cf-btn">Open in new tab</a>
+          <span><a href="${esc(src)}" target="_blank" rel="noopener" class="cf-btn">Open in new tab</a>
           <button type="button" class="cf-btn fm-close">Close</button></span></div>
-        <div class="file-modal-body">${isImg ? `<img src="${esc(f.url)}" alt="">` : `<iframe src="${esc(f.url)}"></iframe>`}</div>
+        <div class="file-modal-body">${isImg ? `<img src="${esc(src)}" alt="">` : `<iframe src="${esc(src)}"></iframe>`}</div>
       </div>`;
       m.addEventListener("click", (e) => { if (e.target === m || e.target.classList.contains("fm-close")) m.remove(); });
       document.body.appendChild(m);
