@@ -5,6 +5,122 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TTI Monitoring - Hubbing Results</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    .serial-entry-wrap{
+      display:flex;
+      gap:0;
+      width:100%;
+      margin-bottom:14px;
+    }
+
+    .serial-prefix-box{
+      width:200px !important;
+      min-width:170px;
+      flex:0 0 auto;
+      background:#f1f3f5 !important;
+      border:1px solid #cfd4da !important;
+      border-right:none !important;
+      border-radius:8px 0 0 8px !important;
+      padding:12px 14px;
+      font-weight:700;
+      color:#7a0000;
+      text-align:center;
+      margin-bottom:0 !important;
+    }
+
+    .serial-prefix-box:disabled{
+      opacity:.45;
+      text-decoration:line-through;
+      cursor:not-allowed;
+    }
+
+    .serial-options{
+      display:flex;
+      align-items:center;
+      gap:18px;
+      flex-wrap:wrap;
+      margin:-4px 0 14px;
+      font-size:14px;
+    }
+
+    .serial-preview{
+      color:#555;
+    }
+
+    .serial-preview strong{
+      color:#7a0000;
+      letter-spacing:.3px;
+    }
+
+    .serial-reset-btn{
+      border:none;
+      background:none;
+      color:#7a0000;
+      text-decoration:underline;
+      cursor:pointer;
+      font-size:13px;
+      padding:0;
+    }
+
+    .serial-manual-box{
+      border-radius:0 8px 8px 0 !important;
+      margin-bottom:0 !important;
+    }
+
+    .grid-5{
+      display:grid;
+      grid-template-columns:repeat(5, 1fr);
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .grid-3{
+      display:grid;
+      grid-template-columns:repeat(3, 1fr);
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    @media (max-width: 1000px){
+      .grid-5{
+        grid-template-columns:repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 700px){
+      .grid-5,
+      .grid-3{
+        grid-template-columns:1fr;
+      }
+
+      .serial-entry-wrap{
+        flex-direction:column;
+      }
+
+      .serial-prefix-box{
+        width:100% !important;
+        border-right:1px solid #cfd4da !important;
+        border-bottom:none !important;
+        border-radius:8px 8px 0 0 !important;
+        text-align:left;
+      }
+
+      .serial-manual-box{
+        border-radius:0 0 8px 8px !important;
+      }
+    }
+  
+    .cutoff-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end;margin-bottom:10px}
+    .cutoff-row .cutoff-wrap,.cutoff-row .summary-box{margin:0}
+    @media (max-width:700px){.cutoff-row{grid-template-columns:1fr}}
+    .hub-search-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+    .hub-search-row input{flex:1 1 280px;margin:0}
+    .hub-count{font-size:13px;color:#555}
+    .hub-clear{border:none;background:none;color:#7a0000;text-decoration:underline;cursor:pointer;font-size:13px}
+    .hub-table-wrap{max-height:420px;overflow:auto}
+    #hubTable th,#hubTable td{padding:6px 8px;font-size:12px}
+    #hubTable mark{background:#ffe27a;padding:0}
+</style>
 </head>
 <body>
 
@@ -56,8 +172,19 @@
           <h4>Hubbing Information</h4>
         </div>
 
-        <div class="grid-2">
-          <input type="text" id="serialNumber" placeholder="Serial Number" />
+        <label class="section-label">Serial Number</label>
+        <div class="serial-entry-wrap">
+          <input type="text" id="serialPrefixBox" class="serial-prefix-box" value="PRC2600-2600" placeholder="Prefix (e.g. PRC2500)" autocomplete="off" />
+          <input type="text" id="serialNumber" class="serial-manual-box" placeholder="Manual Entry" />
+        </div>
+        <div class="serial-options">
+          <label class="check-item"><input type="checkbox" id="usePrefix" checked /> Use prefix</label>
+          <button type="button" id="resetPrefixBtn" class="serial-reset-btn">Reset prefix to default</button>
+          <span class="serial-preview">Full serial number: <strong id="serialPreview">--</strong></span>
+        </div>
+
+        <div>
+          <label class="field-label">Facility <span style="font-weight:400;color:#777">(remembers your usual facilities)</span></label>
           <input type="text" id="facility" placeholder="Facility" />
         </div>
 
@@ -75,24 +202,41 @@
           <h4>TTI Screening Results</h4>
         </div>
 
-        <div class="cutoff-wrap">
+        <div class="cutoff-row">
+          <div class="cutoff-wrap">
           <label class="field-label">Common Cutoff Value (HIV / HBsAg / HCV / Syphilis)</label>
           <input type="number" id="cutoff" step="0.01" placeholder="Enter cutoff value (e.g. 1.00)" />
         </div>
-
-        <div class="summary-box">
+          <div class="summary-box">
           Hubbing Overall Status:
           <span id="overallStatus" class="overall-neutral">--</span>
         </div>
+        </div>
 
-        <div class="tti-grid">
-
-          <div class="tti-item">
-            <button type="button" class="tti-header-btn" onclick="togglePanel('hivPanel', 'hiv')">
+        <div class="tti-tabs">
+<button type="button" class="tti-header-btn" data-test="hiv" onclick="togglePanel('hivPanel', 'hiv')">
               <span>HIV</span>
               <span id="hivBadge" class="test-badge neutral-badge">--</span>
             </button>
-            <div id="hivPanel" class="tti-panel hidden">
+<button type="button" class="tti-header-btn" data-test="hbsag" onclick="togglePanel('hbsagPanel', 'hbsag')">
+              <span>HBsAg</span>
+              <span id="hbsagBadge" class="test-badge neutral-badge">--</span>
+            </button>
+<button type="button" class="tti-header-btn" data-test="hcv" onclick="togglePanel('hcvPanel', 'hcv')">
+              <span>HCV</span>
+              <span id="hcvBadge" class="test-badge neutral-badge">--</span>
+            </button>
+<button type="button" class="tti-header-btn" data-test="syphilis" onclick="togglePanel('syphilisPanel', 'syphilis')">
+              <span>Syphilis</span>
+              <span id="syphilisBadge" class="test-badge neutral-badge">--</span>
+            </button>
+<button type="button" class="tti-header-btn" data-test="malaria" onclick="togglePanel('malariaPanel', 'malaria')">
+              <span>Malaria</span>
+              <span id="malariaBadge" class="test-badge neutral-badge">--</span>
+            </button>
+</div>
+<div class="tti-panels">
+<div id="hivPanel" class="tti-panel hidden">
               <div class="tti-row-label">Row 1</div>
               <div class="tti-row">
                 <input type="number" step="0.01" id="hiv_od" placeholder="OD" oninput="compute('hiv')" />
@@ -107,14 +251,7 @@
               </div>
               <div id="hiv_result" class="result-box neutral">--</div>
             </div>
-          </div>
-
-          <div class="tti-item">
-            <button type="button" class="tti-header-btn" onclick="togglePanel('hbsagPanel', 'hbsag')">
-              <span>HBsAg</span>
-              <span id="hbsagBadge" class="test-badge neutral-badge">--</span>
-            </button>
-            <div id="hbsagPanel" class="tti-panel hidden">
+<div id="hbsagPanel" class="tti-panel hidden">
               <div class="tti-row-label">Row 1</div>
               <div class="tti-row">
                 <input type="number" step="0.01" id="hbsag_od" placeholder="OD" oninput="compute('hbsag')" />
@@ -129,14 +266,7 @@
               </div>
               <div id="hbsag_result" class="result-box neutral">--</div>
             </div>
-          </div>
-
-          <div class="tti-item">
-            <button type="button" class="tti-header-btn" onclick="togglePanel('hcvPanel', 'hcv')">
-              <span>HCV</span>
-              <span id="hcvBadge" class="test-badge neutral-badge">--</span>
-            </button>
-            <div id="hcvPanel" class="tti-panel hidden">
+<div id="hcvPanel" class="tti-panel hidden">
               <div class="tti-row-label">Row 1</div>
               <div class="tti-row">
                 <input type="number" step="0.01" id="hcv_od" placeholder="OD" oninput="compute('hcv')" />
@@ -151,14 +281,7 @@
               </div>
               <div id="hcv_result" class="result-box neutral">--</div>
             </div>
-          </div>
-
-          <div class="tti-item">
-            <button type="button" class="tti-header-btn" onclick="togglePanel('syphilisPanel', 'syphilis')">
-              <span>Syphilis</span>
-              <span id="syphilisBadge" class="test-badge neutral-badge">--</span>
-            </button>
-            <div id="syphilisPanel" class="tti-panel hidden">
+<div id="syphilisPanel" class="tti-panel hidden">
               <div class="tti-row-label">Row 1</div>
               <div class="tti-row">
                 <input type="number" step="0.01" id="syphilis_od" placeholder="OD" oninput="compute('syphilis')" />
@@ -173,23 +296,14 @@
               </div>
               <div id="syphilis_result" class="result-box neutral">--</div>
             </div>
-          </div>
-
-          <div class="tti-item">
-            <button type="button" class="tti-header-btn" onclick="togglePanel('malariaPanel', 'malaria')">
-              <span>Malaria</span>
-              <span id="malariaBadge" class="test-badge neutral-badge">--</span>
-            </button>
-
-            <div id="malariaCovBox" class="malaria-cov-box hidden">
+<div id="malariaCovBox" class="malaria-cov-box hidden">
               <div class="screening-box-title">Malaria COV Range</div>
               <div class="grid-2">
                 <input type="number" id="malariaLowerLimit" step="0.01" placeholder="LL (Lower Limit)" oninput="compute('malaria')" />
                 <input type="number" id="malariaUpperLimit" step="0.01" placeholder="UL (Upper Limit)" oninput="compute('malaria')" />
               </div>
             </div>
-
-            <div id="malariaPanel" class="tti-panel hidden">
+<div id="malariaPanel" class="tti-panel hidden">
               <div class="tti-row-label">Row 1</div>
               <div class="tti-row">
                 <input type="number" step="0.01" id="malaria_od" placeholder="OD" oninput="compute('malaria')" />
@@ -204,9 +318,7 @@
               </div>
               <div id="malaria_result" class="result-box neutral">--</div>
             </div>
-          </div>
-
-        </div>
+</div>
       </section>
 
       <section class="content-card">
@@ -215,13 +327,255 @@
         </div>
         <p id="msg" class="message"></p>
       </section>
+
+      <section class="content-card">
+        <div class="card-title-row">
+          <h4>Saved Hubbing Records</h4>
+        </div>
+        <div class="hub-search-row">
+          <input type="text" id="hubSearch" placeholder="Live search: facility, serial number, date, result (e.g. reactive), HIV, number of samples..." autocomplete="off" />
+          <button type="button" id="hubSearchClear" class="hub-clear">Clear</button>
+          <span class="hub-count">Showing <strong id="hubShown">0</strong> of <strong id="hubTotal">0</strong></span>
+        </div>
+        <div class="table-wrap hub-table-wrap">
+          <table class="records-table" id="hubTable">
+            <thead>
+              <tr><th>Serial Number</th><th>Facility</th><th>Samples</th><th>Date Tested</th><th>HIV</th><th>HBsAg</th><th>HCV</th><th>Syphilis</th><th>Malaria</th><th>Overall</th></tr>
+            </thead>
+            <tbody id="hubBody"><tr><td colspan="10">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
     </main>
   </div>
+
+  <script>
+/* ===== TTI shared helpers: smart dates + smart suggestions ===== */
+(function () {
+  const protoValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+
+  /* ---------- SMART DATES ----------
+     Type 01121996 or 011296  ->  01-12-1996   (MM-DD-YYYY)
+     Shown as MM-DD-YYYY, stored/read as YYYY-MM-DD so saved data stays the same. */
+  const pad = (n) => String(n).padStart(2, "0");
+  function validDate(y, m, d) {
+    const dt = new Date(y, m - 1, d);
+    return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
+  }
+  function expandYear(yy, birthMode) {
+    const cur = new Date().getFullYear();
+    if (!birthMode) return 2000 + yy;
+    return 2000 + yy <= cur ? 2000 + yy : 1900 + yy;
+  }
+  function toISO(str, birthMode) {
+    str = String(str || "").trim();
+    if (!str) return "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {               // already ISO (saved data)
+      const [y, m, d] = str.split("-").map(Number);
+      return validDate(y, m, d) ? str : "";
+    }
+    let m, d, y;
+    const parts = str.split(/\D+/).filter(Boolean);
+    if (/\D/.test(str) && parts.length === 3) {          // 1/2/96, 1-2-1996 ...
+      m = +parts[0]; d = +parts[1]; y = +parts[2];
+      if (parts[2].length <= 2) y = expandYear(y, birthMode);
+      else if (parts[2].length !== 4) return "";
+    } else {
+      const dg = str.replace(/\D/g, "");
+      if (dg.length === 8) { m = +dg.slice(0, 2); d = +dg.slice(2, 4); y = +dg.slice(4); }
+      else if (dg.length === 6) { m = +dg.slice(0, 2); d = +dg.slice(2, 4); y = expandYear(+dg.slice(4), birthMode); }
+      else return "";
+    }
+    if (!validDate(y, m, d)) return "";
+    return `${y}-${pad(m)}-${pad(d)}`;
+  }
+  const isoToDisplay = (iso) => (iso ? `${iso.slice(5, 7)}-${iso.slice(8, 10)}-${iso.slice(0, 4)}` : "");
+
+  function liveFormat(raw) {
+    const segs = raw.split(/\D/);
+    if (segs.length > 1 && segs.slice(0, -1).some(s => s.length === 1)) return raw;   // typing with separators
+    const dg = raw.replace(/\D/g, "").slice(0, 8);
+    let out = dg.slice(0, 2);
+    if (dg.length > 2) out += "-" + dg.slice(2, 4);
+    if (dg.length > 4) out += "-" + dg.slice(4);
+    return out;
+  }
+
+  function initSmartDate(el) {
+    if (!el || el.__smartDate) return;
+    el.__smartDate = true;
+    const birthMode = /birth/i.test(el.id || "") || el.dataset.birth === "1";
+    const start = el.value;                                   // ISO from native date input
+    let iso = start || "";
+    el.type = "text";
+    el.inputMode = "numeric";
+    el.placeholder = "MM-DD-YYYY";
+    el.maxLength = 10;
+    el.autocomplete = "off";
+    el.classList.add("smart-date");
+    Object.defineProperty(el, "value", {
+      configurable: true,
+      get() { return iso; },
+      set(v) {
+        iso = toISO(v, birthMode);
+        protoValue.set.call(el, isoToDisplay(iso));
+        el.classList.remove("date-invalid");
+      }
+    });
+    protoValue.set.call(el, isoToDisplay(iso));
+
+    function commit() {
+      const raw = protoValue.get.call(el).trim();
+      const next = toISO(raw, birthMode);
+      const changed = next !== iso;
+      iso = next;
+      if (raw && !next) el.classList.add("date-invalid"); else el.classList.remove("date-invalid");
+      if (next) protoValue.set.call(el, isoToDisplay(next));
+      if (changed) el.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    el.addEventListener("input", () => {
+      const raw = protoValue.get.call(el);
+      const f = liveFormat(raw);
+      if (f !== raw) protoValue.set.call(el, f);
+      const dg = f.replace(/\D/g, "");
+      if (!/\D/.test(f.replace(/-/g, "")) && dg.length === 8) commit();
+      else if (!f) { if (iso) { iso = ""; el.dispatchEvent(new Event("change", { bubbles: true })); } }
+    });
+    el.addEventListener("blur", commit);
+    el.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === "Tab") commit(); }, true);
+  }
+  function initAllDates(root) {
+    (root || document).querySelectorAll('input[type="date"]').forEach(initSmartDate);
+  }
+
+  /* ---------- SMART SUGGESTIONS ---------- */
+  const OCCUPATIONS = ["Accountant","Actor","Administrative Aide","Agriculturist","Airline Pilot","Architect","Artist","Assistant Professor","Auditor","Baker","Bank Teller","Barangay Official","Barber","Bartender","Beautician","Boarder","Bookkeeper","Bus Driver","Businessman","Businesswoman","Call Center Agent","Carpenter","Cashier","Caregiver","Chef","Civil Engineer","Cook","Construction Worker","Consultant","Customer Service Representative","Dentist","Designer","Doctor","Driver","Electrician","Electrical Engineer","Employee","Engineer","Entrepreneur","Factory Worker","Farmer","Firefighter","Fisherman","Flight Attendant","Government Employee","Graphic Artist","Guidance Counselor","Hairdresser","Helper","Housekeeper","Housewife","Househusband","Hotel Staff","HR Officer","Janitor","Journalist","Judge","Laborer","Lawyer","Librarian","Machine Operator","Mason","Mechanic","Mechanical Engineer","Medical Technologist","Merchant","Messenger","Midwife","Military","Miner","Musician","Nurse","Nursing Aide","Nutritionist","Office Staff","Painter","Pastor","Pharmacist","Photographer","Physical Therapist","Plumber","Police Officer","Priest","Professor","Programmer","Psychologist","Radiologic Technologist","Real Estate Agent","Receptionist","Sales Agent","Sales Clerk","Sales Lady","Sales Representative","Salesman","Sailor","Seaman","Secretary","Security Guard","Self-Employed","Seafarer","Sidewalk Vendor","Social Worker","Soldier","Student","Surgeon","Tailor","Teacher","Technician","Tour Guide","Tricycle Driver","Jeepney Driver","Taxi Driver","Unemployed","Utility Worker","Vendor","Veterinarian","Waiter","Waitress","Welder","Web Developer","Writer"];
+
+  const store = {
+    get(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+  function remember(key, value) {
+    value = String(value || "").trim();
+    if (!value) return;
+    const m = store.get(key, {});
+    const k = value.toLowerCase();
+    m[k] = { text: value, n: ((m[k] && m[k].n) || 0) + 1, t: Date.now() };
+    store.set(key, m);
+  }
+  function remembered(key) {
+    return Object.values(store.get(key, {})).sort((a, b) => b.n - a.n || b.t - a.t).map(x => x.text);
+  }
+  function score(item, q) {
+    const s = item.toLowerCase();
+    if (s === q) return 0;
+    if (s.startsWith(q)) return 1;
+    if (s.split(/[\s\-\/(),.]+/).some(w => w.startsWith(q))) return 2;
+    if (s.includes(q)) return 3;
+    let i = 0; for (const c of s) if (c === q[i]) i++;       // letters in order: "dctr" -> Doctor
+    return i === q.length && q.length >= 3 ? 4 : 9;
+  }
+
+  /* attachSuggest(input, getItems, {showOnFocus}) : dropdown while typing; Tab / Enter / click accepts */
+  function attachSuggest(input, getItems, opts) {
+    opts = opts || {};
+    const box = document.createElement("div");
+    box.className = "sg-box hidden";
+    document.body.appendChild(box);
+    window.__sg = (window.__sg || []).filter(x => { if (!x.input.isConnected) { x.box.remove(); return false; } return true; });
+    window.__sg.push({ input, box });
+    let list = [], active = 0;
+
+    function place() {
+      const r = input.getBoundingClientRect();
+      box.style.left = (r.left + window.scrollX) + "px";
+      box.style.top = (r.bottom + window.scrollY + 2) + "px";
+      box.style.minWidth = r.width + "px";
+    }
+    function hide() { box.classList.add("hidden"); list = []; }
+    function pick(text) {
+      input.value = text;
+      hide();
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    function render() {
+      const q = input.value.trim().toLowerCase();
+      const seen = new Set();
+      const items = getItems().filter(x => x && !seen.has(x.toLowerCase()) && seen.add(x.toLowerCase()));
+      if (!q) list = opts.showOnFocus ? items.slice(0, 8) : [];
+      else list = items.map((t, i) => ({ t, s: score(t, q), i })).filter(x => x.s < 9 && x.t.toLowerCase() !== q)
+                       .sort((a, b) => a.s - b.s || a.i - b.i).slice(0, 8).map(x => x.t);
+      if (!list.length) { hide(); return; }
+      active = 0;
+      box.innerHTML = list.map((t, i) => {
+        let h = t.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+        if (q) { const at = t.toLowerCase().indexOf(q); if (at > -1) h = t.slice(0, at).replace(/&/g,"&amp;").replace(/</g,"&lt;") + "<b>" + t.slice(at, at + q.length).replace(/&/g,"&amp;").replace(/</g,"&lt;") + "</b>" + t.slice(at + q.length).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+        return `<div class="sg-item${i === 0 ? " on" : ""}" data-i="${i}">${h}</div>`;
+      }).join("");
+      place();
+      box.classList.remove("hidden");
+    }
+    function setActive(n) {
+      active = (n + list.length) % list.length;
+      box.querySelectorAll(".sg-item").forEach((el, i) => el.classList.toggle("on", i === active));
+    }
+    input.setAttribute("autocomplete", "off");
+    input.addEventListener("input", render);
+    input.addEventListener("focus", render);
+    input.addEventListener("blur", () => setTimeout(hide, 150));
+    input.addEventListener("keydown", (e) => {
+      if (box.classList.contains("hidden") || !list.length) return;
+      if (e.key === "ArrowDown") { e.preventDefault(); setActive(active + 1); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); setActive(active - 1); }
+      else if (e.key === "Tab" || e.key === "Enter") {
+        if (input.value.trim()) { e.preventDefault(); e.stopImmediatePropagation(); pick(list[active]); }
+      } else if (e.key === "Escape") hide();
+    }, true);
+    box.addEventListener("mousedown", (e) => {
+      const it = e.target.closest(".sg-item");
+      if (it) { e.preventDefault(); pick(list[+it.dataset.i]); }
+    });
+    window.addEventListener("resize", hide);
+  }
+
+  function attachOccupation(input) {
+    attachSuggest(input, () => remembered("tti_occupations").concat(OCCUPATIONS));
+    input.addEventListener("blur", () => {
+      const v = input.value.trim();
+      if (!v) return;
+      const hit = OCCUPATIONS.find(o => o.toLowerCase() === v.toLowerCase());
+      if (hit) input.value = hit;
+    });
+  }
+
+  const css = document.createElement("style");
+  css.textContent = `
+    .hidden{display:none !important}
+    .smart-date.date-invalid{border-color:#c00 !important;background:#fff5f5 !important}
+    .sg-box{position:absolute;z-index:99999;background:#fff;border:1px solid #cfd4da;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.15);max-height:260px;overflow-y:auto;font-size:14px}
+    .sg-item{padding:7px 12px;cursor:pointer;white-space:nowrap}
+    .sg-item b{color:#b30000}
+    .sg-item.on,.sg-item:hover{background:#fff0f0}
+    .tti-tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:8px}
+    .tti-tabs .tti-header-btn{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px 6px;margin:0;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-weight:700}
+    .tti-tabs .tti-header-btn .test-badge{font-size:11px;white-space:normal;text-align:center}
+    .tti-tabs .tti-header-btn.active{border-color:#b30000;background:#fff5f5;box-shadow:inset 0 -3px 0 #b30000}
+    .tti-panels .tti-panel{margin:0}
+    @media (max-width:700px){.tti-tabs{grid-template-columns:repeat(2,1fr)}}
+  `;
+  document.head.appendChild(css);
+
+  window.TTIUtil = { initSmartDate, initAllDates, attachSuggest, attachOccupation, remember, remembered, store, toISO, isoToDisplay, OCCUPATIONS };
+})();
+
+TTIUtil.initAllDates();
+</script>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, addDoc, collection, doc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, addDoc, collection, doc, getDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCuDknEG8pjbT0_yaEDZ77IFYdGYrtwCIE",
@@ -268,6 +622,7 @@
       } else {
         sidebarRole.textContent = "no role";
       }
+      startHubList();
     });
 
     logoutBtn.onclick = async () => {
@@ -428,10 +783,16 @@
 
     window.togglePanel = (id, testName) => {
       const panel = document.getElementById(id);
-      panel.classList.toggle("hidden");
-
-      if (testName === "malaria") {
-        updateMalariaCovVisibility();
+      const wasHidden = panel.classList.contains("hidden");
+      tests.forEach(t => document.getElementById(`${t}Panel`).classList.add("hidden"));
+      if (wasHidden) panel.classList.remove("hidden");
+      document.querySelectorAll(".tti-tabs .tti-header-btn").forEach(b => {
+        b.classList.toggle("active", wasHidden && b.dataset.test === testName);
+      });
+      updateMalariaCovVisibility();
+      if (wasHidden) {
+        const first = panel.querySelector("input");
+        if (first) setTimeout(() => first.focus(), 0);
       }
     };
 
@@ -447,6 +808,135 @@
       };
     }
 
+
+    /* ===== Serial prefix (same behaviour as Data Input) ===== */
+    const serialPrefixBox = document.getElementById("serialPrefixBox");
+    const serialNumberInput = document.getElementById("serialNumber");
+    const usePrefixCheckbox = document.getElementById("usePrefix");
+    const resetPrefixBtn = document.getElementById("resetPrefixBtn");
+    const serialPreview = document.getElementById("serialPreview");
+    const dateTestedInput = document.getElementById("dateTested");
+    let prefixEdited = false;
+
+    function getDefaultPrefix() {
+      let year = new Date().getFullYear();
+      if (dateTestedInput.value) year = new Date(dateTestedInput.value).getFullYear();
+      return `PRC2600-${String(year).slice(-2)}00`;
+    }
+    function getFullSerialNumber() {
+      const prefix = usePrefixCheckbox.checked ? serialPrefixBox.value.trim() : "";
+      return `${prefix}${serialNumberInput.value.trim()}`;
+    }
+    function updateSerialPreview() { serialPreview.textContent = getFullSerialNumber() || "--"; }
+    function updateSerialPrefix() {
+      if (prefixEdited) return;
+      serialPrefixBox.value = getDefaultPrefix();
+      updateSerialPreview();
+    }
+    function applyUsePrefixState() {
+      serialPrefixBox.disabled = !usePrefixCheckbox.checked;
+      updateSerialPreview();
+    }
+    const savedPrefix = window.TTIUtil.store.get("hub_prefix", "");
+    if (savedPrefix) { prefixEdited = true; serialPrefixBox.value = savedPrefix; } else { updateSerialPrefix(); }
+    serialPrefixBox.addEventListener("input", () => { prefixEdited = true; updateSerialPreview(); });
+    serialNumberInput.addEventListener("input", updateSerialPreview);
+    usePrefixCheckbox.addEventListener("change", applyUsePrefixState);
+    dateTestedInput.addEventListener("change", updateSerialPrefix);
+    resetPrefixBtn.addEventListener("click", () => {
+      prefixEdited = false;
+      window.TTIUtil.store.set("hub_prefix", "");
+      usePrefixCheckbox.checked = true;
+      updateSerialPrefix();
+      applyUsePrefixState();
+    });
+    updateSerialPreview();
+
+    /* ===== Facility memory ===== */
+    let facilityCounts = {};   // from saved records (shared by everyone)
+    window.TTIUtil.attachSuggest(document.getElementById("facility"), () => {
+      const fromDb = Object.entries(facilityCounts).sort((a, b) => b[1].n - a[1].n).map(x => x[1].text);
+      return window.TTIUtil.remembered("hub_facilities").concat(fromDb);
+    }, { showOnFocus: true });
+
+    /* ===== Enter = next field; after the last field of a test, open the next test ===== */
+    document.querySelector(".tti-panels").addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" || e.target.tagName !== "INPUT") return;
+      e.preventDefault();
+      const panel = e.target.closest(".tti-panel");
+      if (!panel) { document.getElementById("malaria_od").focus(); return; }
+      const inputs = [...panel.querySelectorAll("input")];
+      const i = inputs.indexOf(e.target);
+      if (i < inputs.length - 1) { inputs[i + 1].focus(); return; }
+      const next = tests[tests.indexOf(panel.id.replace("Panel", "")) + 1];
+      if (next) window.togglePanel(next + "Panel", next); else saveBtn.focus();
+    });
+
+    /* ===== Saved hubbing records + LIVE SEARCH ===== */
+    let hubRecords = [];
+    let hubStarted = false;
+    const hubSearch = document.getElementById("hubSearch");
+    const hubBody = document.getElementById("hubBody");
+    const esc = (v) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const dispDate = (iso) => window.TTIUtil.isoToDisplay(iso && /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : "") || (iso || "");
+    function badgeCls(t) {
+      if (t === "🔴 Reactive") return "table-badge-reactive";
+      if (t === "🟠 Initially Reactive") return "table-badge-initially-reactive";
+      if (t === "🟢 Non-Reactive") return "table-badge-nonreactive";
+      return "table-badge-neutral";
+    }
+    function hubSerial(r) {
+      if (r.serialNumber) return String(r.serialNumber);
+      return (r.usePrefix === false ? "" : (r.serialPrefix || "")) + (r.serialSuffix || "");
+    }
+    function hubBlob(r) {
+      const s = r.screening || {};
+      return [hubSerial(r), r.facility, r.numberOfSamples, r.dateTested, dispDate(r.dateTested),
+        s.hiv?.interpretation, s.hbsag?.interpretation, s.hcv?.interpretation, s.syphilis?.interpretation,
+        s.malaria?.interpretation, s.overallStatus, "hiv hbsag hcv syphilis malaria", r.createdBy].join(" ").toLowerCase();
+    }
+    function renderHubList() {
+      const terms = hubSearch.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+      const rows = hubRecords.filter(r => { const b = hubBlob(r); return terms.every(t => b.includes(t)); });
+      document.getElementById("hubTotal").textContent = hubRecords.length;
+      document.getElementById("hubShown").textContent = rows.length;
+      if (!rows.length) { hubBody.innerHTML = `<tr><td colspan="10">${hubRecords.length ? "No matching hubbing records." : "No hubbing records yet."}</td></tr>`; return; }
+      const mark = (txt) => {
+        let h = esc(txt);
+        terms.forEach(t => { if (t.length > 1 || /\d/.test(t)) { const re = new RegExp("(" + t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "ig"); h = h.replace(re, (m, g, off, str) => { const pre = str.slice(0, off); return (pre.lastIndexOf("<") > pre.lastIndexOf(">")) ? m : "<mark>" + g + "</mark>"; }); } });
+        return h;
+      };
+      const badge = (t) => `<span class="table-result-badge ${badgeCls(t)}">${esc(t || "--")}</span>`;
+      hubBody.innerHTML = rows.slice(0, 300).map(r => {
+        const s = r.screening || {};
+        return `<tr>
+          <td>${mark(hubSerial(r) || "--")}</td>
+          <td>${mark(r.facility || "--")}</td>
+          <td>${mark(r.numberOfSamples || "--")}</td>
+          <td>${mark(dispDate(r.dateTested) || "--")}</td>
+          <td>${badge(s.hiv?.interpretation)}</td><td>${badge(s.hbsag?.interpretation)}</td>
+          <td>${badge(s.hcv?.interpretation)}</td><td>${badge(s.syphilis?.interpretation)}</td>
+          <td>${badge(s.malaria?.interpretation)}</td><td>${badge(s.overallStatus)}</td></tr>`;
+      }).join("") + (rows.length > 300 ? `<tr><td colspan="10">Showing the first 300 matches. Type more to narrow down.</td></tr>` : "");
+    }
+    function startHubList() {
+      if (hubStarted) return;
+      hubStarted = true;
+      onSnapshot(collection(db, "hubing_results"), (snap) => {
+        hubRecords = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        hubRecords.sort((a, b) => String(b.dateTested || "").localeCompare(String(a.dateTested || "")) || ((b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
+        facilityCounts = {};
+        hubRecords.forEach(r => {
+          const f = String(r.facility || "").trim(); if (!f) return;
+          const k = f.toLowerCase();
+          facilityCounts[k] = { text: facilityCounts[k]?.text || f, n: (facilityCounts[k]?.n || 0) + 1 };
+        });
+        renderHubList();
+      }, (err) => { hubBody.innerHTML = `<tr><td colspan="10">${esc(err.message)}</td></tr>`; });
+    }
+    hubSearch.addEventListener("input", renderHubList);
+    document.getElementById("hubSearchClear").addEventListener("click", () => { hubSearch.value = ""; renderHubList(); hubSearch.focus(); });
+
     saveBtn.onclick = async () => {
       msg.textContent = "";
 
@@ -457,7 +947,10 @@
 
       try {
         const record = {
-          serialNumber: document.getElementById("serialNumber").value.trim(),
+          serialNumber: getFullSerialNumber(),
+          serialPrefix: serialPrefixBox.value.trim(),
+          serialSuffix: serialNumberInput.value.trim(),
+          usePrefix: usePrefixCheckbox.checked,
           facility: document.getElementById("facility").value.trim(),
           numberOfSamples: document.getElementById("numberOfSamples").value.trim(),
           dateTested: document.getElementById("dateTested").value,
@@ -479,6 +972,8 @@
         };
 
         await addDoc(collection(db, "hubing_results"), record);
+        window.TTIUtil.remember("hub_facilities", record.facility);
+        if (prefixEdited && usePrefixCheckbox.checked) window.TTIUtil.store.set("hub_prefix", serialPrefixBox.value.trim());
         msg.textContent = "Hubbing record saved successfully.";
       } catch (error) {
         msg.textContent = error.message;
