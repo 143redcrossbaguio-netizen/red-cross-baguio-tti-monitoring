@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TTI Monitoring - Statistics</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    .stat-search-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+    .stat-search-row input{flex:1 1 320px;margin:0}
+    .stat-search-count{font-size:13px;color:#555}
+    .search-hide-card{display:none !important}
+  </style>
 </head>
 <body>
 
@@ -54,6 +60,12 @@
       <section class="content-card">
         <div class="card-title-row">
           <h4>Filter</h4>
+        </div>
+
+        <div class="stat-search-row">
+          <input type="text" id="statSearch" placeholder="Live search all statistics &amp; hubbing tables: facility, serial number, month, status, blood type..." autocomplete="off" />
+          <button type="button" id="statSearchClear" class="secondary-btn">Clear Search</button>
+          <span class="stat-search-count" id="statSearchCount"></span>
         </div>
 
         <div class="tracking-filter-grid">
@@ -966,6 +978,38 @@
       }).join("");
     }
 
+
+    /* ===== LIVE SEARCH across every statistics table (incl. hubbing) ===== */
+    const statSearch = document.getElementById("statSearch");
+    const statSearchCount = document.getElementById("statSearchCount");
+    function searchTerms() {
+      return statSearch.value.trim().toLowerCase().split(/\s+/).filter(Boolean).map(t => {
+        const m = t.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);        // MM-DD-YYYY -> YYYY-MM-DD
+        return m ? `${m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}` : t;
+      });
+    }
+    function applyLiveSearch() {
+      const terms = searchTerms();
+      let shown = 0, total = 0;
+      document.querySelectorAll("#printArea .content-card").forEach(card => {
+        let visible = 0, rows = 0;
+        card.querySelectorAll("tbody tr").forEach(tr => {
+          const isEmptyRow = tr.children.length === 1 && tr.firstElementChild.colSpan > 1;
+          if (isEmptyRow) { tr.style.display = terms.length ? "none" : ""; return; }
+          rows++;
+          const txt = tr.textContent.toLowerCase();
+          const ok = terms.every(t => txt.includes(t));
+          tr.style.display = ok ? "" : "none";
+          if (ok) visible++;
+        });
+        total += rows; shown += visible;
+        card.classList.toggle("search-hide-card", terms.length > 0 && visible === 0);
+      });
+      statSearchCount.textContent = terms.length ? `${shown} of ${total} rows match` : "";
+    }
+    statSearch.addEventListener("input", applyLiveSearch);
+    document.getElementById("statSearchClear").addEventListener("click", () => { statSearch.value = ""; applyLiveSearch(); statSearch.focus(); });
+
     function renderAll() {
       const src = sourceFilter.value;
 
@@ -984,6 +1028,7 @@
       renderHBsAgTable(currentFilteredTTIRecords);
       renderHubbingSummary(currentFilteredHubbingRecords);
       renderTrackingRecords(currentFilteredTTIRecords);
+      applyLiveSearch();
     }
 
     function textToCsvCell(value) {
@@ -1072,6 +1117,7 @@
               body { font-family: Arial, sans-serif; padding: 20px; }
               h1, h2, h3, h4 { margin: 0 0 10px; }
               .content-card { margin-bottom: 24px; }
+              .search-hide-card { display: none !important; }
               table { width: 100%; border-collapse: collapse; margin-top: 10px; }
               th, td { border: 1px solid #999; padding: 8px; text-align: center; font-size: 12px; }
               th { background: #eee; }
