@@ -10,6 +10,54 @@
     .stat-search-row input{flex:1 1 320px;margin:0}
     .stat-search-count{font-size:13px;color:#555}
     .search-hide-card{display:none !important}
+
+    /* ===== compact layout ===== */
+    .stat-search-row{margin-bottom:8px}
+    .stat-filter-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    .stat-filter-bar select,.stat-filter-bar button{height:34px;margin:0;padding:0 12px;font-size:13px;width:auto;box-sizing:border-box}
+    .main-content .content-card{padding:10px 12px;margin-bottom:8px}
+    .main-content .card-title-row{margin-bottom:6px}
+    .card-title-row h4{font-size:14px;margin:0}
+
+    /* ===== title row (tabs) ===== */
+    .stat-tabs{display:flex;flex-wrap:wrap;gap:6px}
+    .stat-tab{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;font-size:12.5px;font-weight:700;color:#333;background:#fff;border:1px solid #ddd;border-radius:8px;cursor:pointer;margin:0;width:auto}
+    .stat-tab:hover{background:#fafafa}
+    .stat-tab.active{border-color:#b30000;background:#fff5f5;color:#7a0000;box-shadow:inset 0 -3px 0 #b30000}
+    .stat-tab.tab-empty{opacity:.4}
+    .stat-tab-count{font-size:11px;font-weight:700;color:#7a0000}
+    .stat-tab-count:empty{display:none}
+    .stat-hint{margin:8px 0 0;font-size:12.5px;color:#777}
+    .stat-nomatch{margin:8px 0 0;font-size:13px;color:#777}
+    .stat-legend{margin:0 0 6px;font-size:12px;color:#777}
+
+    /* ===== one section shown at a time ===== */
+    .stat-panel{display:none}
+    .stat-panel.is-active{display:block}
+    .stat-panel .table-wrap{max-height:540px;overflow:auto}
+    .stat-panel th,.stat-panel td{padding:6px 8px;font-size:12px}
+    .stat-panel thead th{position:sticky;top:0;z-index:1;background:#f4f4f4}
+    .stat-panel[data-panel="donors"] th,.stat-panel[data-panel="donors"] td,
+    .stat-panel[data-panel="hbsag"] th,.stat-panel[data-panel="hbsag"] td{white-space:nowrap}
+    .stat-panel .inline-select{padding:3px 6px;font-size:12px;min-width:92px}
+
+    /* ===== grayzone + month pills ===== */
+    .table-badge-grayzone{background:#fff6cc;color:#7a5b00;border:1px solid #e6c84d}
+    .mini-pill{display:inline-block;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid transparent;white-space:nowrap}
+    .mp-r{background:#fde8e8;color:#b30000;border-color:#f3b8b8}
+    .mp-ir{background:#fff0e0;color:#a85a00;border-color:#f1c999}
+    .mp-gz{background:#fff6cc;color:#7a5b00;border-color:#e6c84d}
+    .mp-nr{background:#e9f7ee;color:#1f6b3a;border-color:#b9e2c7}
+
+    /* ===== hubbing: one row per month, click to list serial numbers ===== */
+    .hub-month-row{cursor:pointer}
+    .hub-month-row:hover{background:#fafafa}
+    .hub-month-cell{text-align:left}
+    .hub-toggle{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:50%;background:#666;color:#fff;font-size:14px;margin-right:6px}
+    .hub-detail-row > td{padding:0 !important;background:#fffdfd}
+    .hub-detail-row.is-collapsed:not(.search-open){display:none}
+    .hub-items{max-height:320px;overflow:auto;margin:6px 8px 10px}
+    .hub-items table{margin:0}
   </style>
 </head>
 <body>
@@ -68,7 +116,7 @@
           <span class="stat-search-count" id="statSearchCount"></span>
         </div>
 
-        <div class="tracking-filter-grid">
+        <div class="stat-filter-bar">
           <select id="yearFilter">
             <option value="">All Years</option>
           </select>
@@ -80,9 +128,7 @@
             <option value="Q3">Q3 (Jul-Sep)</option>
             <option value="Q4">Q4 (Oct-Dec)</option>
           </select>
-        </div>
 
-        <div class="tracking-filter-grid">
           <select id="monthFilter">
             <option value="">All Months</option>
             <option value="1">January</option>
@@ -104,21 +150,34 @@
             <option value="tti">Data Input Only</option>
             <option value="hubbing">Hubbing Only</option>
           </select>
-        </div>
 
-        <div class="tracking-filter-grid">
           <button type="button" id="applyBtn" class="primary-btn">Apply Filter</button>
           <button type="button" id="clearBtn" class="secondary-btn">Clear Filter</button>
-        </div>
-
-        <div class="tracking-filter-grid">
           <button type="button" id="printStatsBtn" class="secondary-btn">Print</button>
           <button type="button" id="exportStatsBtn" class="secondary-btn">Export CSV</button>
         </div>
       </section>
 
+      <section class="content-card">
+        <div class="stat-tabs" id="statTabs">
+          <button type="button" class="stat-tab" data-tab="overview">Tracking Overview<span class="stat-tab-count"></span></button>
+          <button type="button" class="stat-tab" data-tab="bloodtype">Blood Type<span class="stat-tab-count"></span></button>
+          <button type="button" class="stat-tab" data-tab="bloodbag">Blood Bag<span class="stat-tab-count"></span></button>
+          <button type="button" class="stat-tab" data-tab="donortype">Donor Type<span class="stat-tab-count"></span></button>
+          <button type="button" class="stat-tab" data-tab="confirm">Confirmatory &amp; Counseling<span class="stat-tab-count"></span></button>
+          <button type="button" class="stat-tab" data-tab="ritm">RITM Referral<span class="stat-tab-count"></span></button>
+          <button type="button" class="stat-tab" data-tab="quarter">Quarter Summary<span class="stat-tab-count"></span></button>
+          <button type="button" class="stat-tab" data-tab="monthly">Monthly Summary<span class="stat-tab-count"></span></button>
+          <button type="button" class="stat-tab" data-tab="referral">Referral Summary<span class="stat-tab-count"></span></button>
+          <button type="button" class="stat-tab" data-tab="hbsag">HBsAg Detailed<span class="stat-tab-count"></span></button>
+          <button type="button" class="stat-tab" data-tab="hubbing">Hubbing Summary<span class="stat-tab-count"></span></button>
+          <button type="button" class="stat-tab" data-tab="donors">Donor Records<span class="stat-tab-count"></span></button>
+        </div>
+        <p class="stat-hint" id="statHint">Click a title above to show its data below.</p>
+      </section>
+
       <div id="printArea">
-        <section class="content-card">
+        <section class="content-card stat-panel" data-panel="overview">
           <div class="card-title-row">
             <h4>Tracking Overview</h4>
           </div>
@@ -135,7 +194,7 @@
           </div>
         </section>
 
-        <section class="content-card">
+        <section class="content-card stat-panel" data-panel="bloodtype">
           <div class="card-title-row">
             <h4>Blood Type Distribution</h4>
           </div>
@@ -152,7 +211,7 @@
           </div>
         </section>
 
-        <section class="content-card">
+        <section class="content-card stat-panel" data-panel="bloodbag">
           <div class="card-title-row">
             <h4>Blood Bag Brand and Type</h4>
           </div>
@@ -169,7 +228,7 @@
           </div>
         </section>
 
-        <section class="content-card">
+        <section class="content-card stat-panel" data-panel="donortype">
           <div class="card-title-row">
             <h4>Donor Type and Frequency</h4>
           </div>
@@ -186,7 +245,7 @@
           </div>
         </section>
 
-        <section class="content-card">
+        <section class="content-card stat-panel" data-panel="confirm">
           <div class="card-title-row">
             <h4>Confirmatory and Counseling</h4>
           </div>
@@ -203,7 +262,7 @@
           </div>
         </section>
 
-        <section class="content-card">
+        <section class="content-card stat-panel" data-panel="ritm">
           <div class="card-title-row">
             <h4>RITM Referral and Samples Sent</h4>
           </div>
@@ -220,7 +279,7 @@
           </div>
         </section>
 
-        <section class="content-card">
+        <section class="content-card stat-panel" data-panel="quarter">
           <div class="card-title-row">
             <h4>Quarter Summary Per Analyte</h4>
           </div>
@@ -244,7 +303,7 @@
           </div>
         </section>
 
-        <section class="content-card">
+        <section class="content-card stat-panel" data-panel="monthly">
           <div class="card-title-row">
             <h4>Monthly Summary Per Analyte</h4>
           </div>
@@ -268,7 +327,7 @@
           </div>
         </section>
 
-        <section class="content-card">
+        <section class="content-card stat-panel" data-panel="referral">
           <div class="card-title-row">
             <h4>Referral Summary for All Tests and Status</h4>
           </div>
@@ -280,19 +339,20 @@
                   <th>Test</th>
                   <th>Reactive</th>
                   <th>Initially Reactive</th>
+                  <th>Grayzone</th>
                   <th>Non-Reactive</th>
                   <th>Referred</th>
                   <th>Not Referred</th>
                 </tr>
               </thead>
               <tbody id="referralSummaryBody">
-                <tr><td colspan="6">No data</td></tr>
+                <tr><td colspan="7">No data</td></tr>
               </tbody>
             </table>
           </div>
         </section>
 
-        <section class="content-card">
+        <section class="content-card stat-panel" data-panel="hbsag">
           <div class="card-title-row">
             <h4>HBsAg Detailed Statistics</h4>
           </div>
@@ -320,24 +380,25 @@
           <p id="hbsagMsg" class="message"></p>
         </section>
 
-        <section class="content-card">
+        <section class="content-card stat-panel" data-panel="hubbing">
           <div class="card-title-row">
             <h4>Hubbing Summary</h4>
           </div>
+          <p class="stat-legend">One row per month. Click a month to list its serial numbers. R = Reactive, IR = Initially Reactive, GZ = Grayzone, NR = Non-Reactive.</p>
 
           <div class="table-wrap">
             <table class="records-table">
               <thead>
                 <tr>
-                  <th>Facility</th>
                   <th>Month</th>
-                  <th>No. of Samples</th>
+                  <th>Serial Nos.</th>
+                  <th>Samples</th>
                   <th>HIV</th>
                   <th>HBsAg</th>
                   <th>HCV</th>
                   <th>Syphilis</th>
                   <th>Malaria</th>
-                  <th>Overall Status</th>
+                  <th>Overall</th>
                 </tr>
               </thead>
               <tbody id="hubbingSummaryBody">
@@ -347,7 +408,7 @@
           </div>
         </section>
 
-        <section class="content-card">
+        <section class="content-card stat-panel" data-panel="donors">
           <div class="card-title-row">
             <h4>Donor Records (From Tracking)</h4>
           </div>
@@ -427,6 +488,76 @@
     function safe(val) {
       return val === undefined || val === null ? "" : String(val);
     }
+
+    /* ---- Interpretation rules (same as the Tracking page) ----
+       GRAYZONE       : OD from lo to hi (and not above the cutoff) = Grayzone (GZ). null = off for that test.
+       HBSAG_RR_LIMIT : HBsAg OD and repeats all at/above this = Reactive (RR), no referral needed. */
+    const REACT = "🔴 Reactive", INIT = "🟠 Initially Reactive", NON = "🟢 Non-Reactive", GRAY = "🟡 Grayzone";
+    const GRAYZONE = {
+      hiv:      { lo: 0.97, hi: 0.99 },
+      hbsag:    { lo: 0.97, hi: 0.99 },
+      hcv:      { lo: 0.97, hi: 0.99 },
+      syphilis: { lo: 0.97, hi: 0.99 },
+      malaria:  null
+    };
+    const HBSAG_RR_LIMIT = 5000;
+    const TEST_KEYS = ["hiv", "hbsag", "hcv", "syphilis", "malaria"];
+    const num = (v) => parseFloat(v);
+
+    function interpretValues(k, cutoff, od, r1, r2) {
+      if (isNaN(cutoff) || isNaN(od)) return "--";
+      if (od <= cutoff) {
+        const gz = GRAYZONE[k];
+        return (gz && od >= gz.lo && od <= gz.hi) ? GRAY : NON;
+      }
+      const r1Neg = !isNaN(r1) && r1 <= cutoff;
+      const r2Neg = !isNaN(r2) && r2 <= cutoff;
+      return (r1Neg || r2Neg) ? INIT : REACT;
+    }
+    function interpretMalariaValues(lo, hi, od, r1, r2) {
+      if (isNaN(lo) || isNaN(hi) || isNaN(od)) return "--";
+      const inR = (v) => v >= lo && v <= hi;
+      if (inR(od)) return NON;
+      const r1Normal = !isNaN(r1) && inR(r1);
+      const r2Normal = !isNaN(r2) && inR(r2);
+      return (r1Normal || r2Normal) ? INIT : REACT;
+    }
+    function overallOf(list) {
+      return list.includes(REACT) ? REACT : list.includes(INIT) ? INIT : list.includes(GRAY) ? GRAY : list.includes(NON) ? NON : "--";
+    }
+    function isHbsagRR(t) {
+      if (!t) return false;
+      const od = num(t.od), reps = [num(t.repeat1), num(t.repeat2)].filter(v => !isNaN(v));
+      return !isNaN(od) && od >= HBSAG_RR_LIMIT && reps.length > 0 && reps.every(v => v >= HBSAG_RR_LIMIT);
+    }
+    function noReferralNeeded(record) {
+      const sc = record.screening || {};
+      if (!isHbsagRR(sc.hbsag)) return false;
+      return ["hiv", "hcv", "syphilis", "malaria"].every(k => {
+        const i = safe(sc[k]?.interpretation);
+        return i !== REACT && i !== INIT && i !== GRAY;
+      });
+    }
+    // Re-reads saved Data Input records with the current rules (display only, nothing is written to the database)
+    function withDerived(record) {
+      const sc = record.screening;
+      if (!sc) return record;
+      const ns = { ...sc };
+      const cutoff = num(sc.cutoff);
+      TEST_KEYS.forEach(k => {
+        const t = sc[k];
+        if (!t) return;
+        const v = k === "malaria"
+          ? interpretMalariaValues(num(sc.malariaLowerLimit), num(sc.malariaUpperLimit), num(t.od), num(t.repeat1), num(t.repeat2))
+          : interpretValues(k, cutoff, num(t.od), num(t.repeat1), num(t.repeat2));
+        ns[k] = v === "--" ? t : { ...t, interpretation: v };
+      });
+      const over = overallOf(TEST_KEYS.map(k => safe(ns[k]?.interpretation)));
+      if (over !== "--") ns.overallStatus = over;
+      return { ...record, screening: ns };
+    }
+
+    const esc = (v) => safe(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
     function fullSerial(p) {
       p = p || {};
@@ -557,10 +688,12 @@
       });
 
       const sortedYears = [...years].sort((a, b) => b - a);
+      const keepYear = yearFilter.value;
       yearFilter.innerHTML = `<option value="">All Years</option>`;
       sortedYears.forEach(y => {
         yearFilter.innerHTML += `<option value="${y}">${y}</option>`;
       });
+      if (sortedYears.map(String).includes(keepYear)) yearFilter.value = keepYear;
     }
 
     function datePassesFilters(dateObj) {
@@ -676,11 +809,11 @@
 
     function renderReferralSummary(records) {
       const tests = {
-        HIV: { reactive: 0, initiallyReactive: 0, nonReactive: 0, referred: 0, notReferred: 0 },
-        HBsAg: { reactive: 0, initiallyReactive: 0, nonReactive: 0, referred: 0, notReferred: 0 },
-        HCV: { reactive: 0, initiallyReactive: 0, nonReactive: 0, referred: 0, notReferred: 0 },
-        Syphilis: { reactive: 0, initiallyReactive: 0, nonReactive: 0, referred: 0, notReferred: 0 },
-        Malaria: { reactive: 0, initiallyReactive: 0, nonReactive: 0, referred: 0, notReferred: 0 }
+        HIV: { reactive: 0, initiallyReactive: 0, grayzone: 0, nonReactive: 0, referred: 0, notReferred: 0 },
+        HBsAg: { reactive: 0, initiallyReactive: 0, grayzone: 0, nonReactive: 0, referred: 0, notReferred: 0 },
+        HCV: { reactive: 0, initiallyReactive: 0, grayzone: 0, nonReactive: 0, referred: 0, notReferred: 0 },
+        Syphilis: { reactive: 0, initiallyReactive: 0, grayzone: 0, nonReactive: 0, referred: 0, notReferred: 0 },
+        Malaria: { reactive: 0, initiallyReactive: 0, grayzone: 0, nonReactive: 0, referred: 0, notReferred: 0 }
       };
 
       records.forEach(record => {
@@ -699,6 +832,7 @@
 
           if (interpretation === "🔴 Reactive") tests[name].reactive++;
           else if (interpretation === "🟠 Initially Reactive") tests[name].initiallyReactive++;
+          else if (interpretation === "🟡 Grayzone") tests[name].grayzone++;
           else if (interpretation === "🟢 Non-Reactive") tests[name].nonReactive++;
 
           if (referred) tests[name].referred++;
@@ -711,6 +845,7 @@
           <td>${name}</td>
           <td>${v.reactive}</td>
           <td>${v.initiallyReactive}</td>
+          <td>${v.grayzone}</td>
           <td>${v.nonReactive}</td>
           <td>${v.referred}</td>
           <td>${v.notReferred}</td>
@@ -721,8 +856,27 @@
     function badgeClass(text) {
       if (text === "🔴 Reactive") return "table-badge-reactive";
       if (text === "🟠 Initially Reactive") return "table-badge-initially-reactive";
+      if (text === "🟡 Grayzone") return "table-badge-grayzone";
       if (text === "🟢 Non-Reactive") return "table-badge-nonreactive";
       return "table-badge-neutral";
+    }
+
+    const CONFIRM_OPTIONS = ["Pending", "Sent", "Rejected", "Done"];
+
+    function confirmSelectHtml(id, value) {
+      return `<select class="inline-select confirmatory-select" data-id="${esc(id)}">
+        ${value === "" ? `<option value="" selected disabled>Select</option>` : ""}
+        ${value && !CONFIRM_OPTIONS.includes(value) ? `<option value="${esc(value)}" selected disabled>${esc(value)}</option>` : ""}
+        ${CONFIRM_OPTIONS.map(o => `<option value="${o}" ${value === o ? "selected" : ""}>${o}</option>`).join("")}
+      </select>`;
+    }
+
+    function counselSelectHtml(id, value) {
+      return `<select class="inline-select counseling-select" data-id="${esc(id)}">
+        <option value="" ${value === "" ? "selected" : ""}>Select</option>
+        <option value="Yes" ${value === "Yes" ? "selected" : ""}>Yes</option>
+        <option value="No" ${value === "No" ? "selected" : ""}>No</option>
+      </select>`;
     }
 
     function renderHBsAgTable(records) {
@@ -739,9 +893,11 @@
             repeat1: safe(hbsag.repeat1),
             repeat2: safe(hbsag.repeat2),
             interpretation: safe(hbsag.interpretation),
+            rr: isHbsagRR(hbsag),
+            noReferral: noReferralNeeded(record),
             referral: safe(record.referralStatus) === "Yes",
-            confirmatory: safe(record.confirmatoryStatus) || "--",
-            counseling: safe(record.counseling) || "--"
+            confirmatory: safe(record.confirmatoryStatus),
+            counseling: safe(record.counseling)
           };
         })
         .filter(row =>
@@ -756,14 +912,16 @@
 
       hbsagTableBody.innerHTML = rows.map(row => `
         <tr>
-          <td>${row.serialNumber || "--"}</td>
+          <td>${esc(row.serialNumber) || "--"}</td>
           <td>${row.dateTested || "--"}</td>
           <td>${row.od || "--"}</td>
           <td>${row.repeat1 || "--"}</td>
           <td>${row.repeat2 || "--"}</td>
-          <td><span class="table-result-badge ${badgeClass(row.interpretation)}">${row.interpretation || "--"}</span></td>
+          <td><span class="table-result-badge ${badgeClass(row.interpretation)}">${row.interpretation || "--"}${row.rr ? " (RR)" : ""}</span></td>
           <td class="checkbox-cell">
-            <label class="referral-check-wrap">
+            ${row.noReferral
+              ? `<span class="muted-text">Not needed (RR)</span>`
+              : `<label class="referral-check-wrap">
               <input
                 type="checkbox"
                 class="referral-checkbox"
@@ -771,56 +929,137 @@
                 ${row.referral ? "checked" : ""}
               />
               <span>${row.referral ? "Referred" : "No"}</span>
-            </label>
+            </label>`}
           </td>
-          <td>${row.confirmatory}</td>
-          <td>${row.counseling}</td>
+          <td>${(row.referral && !row.noReferral) ? confirmSelectHtml(row.id, row.confirmatory) : "--"}</td>
+          <td>${counselSelectHtml(row.id, row.counseling)}</td>
         </tr>
       `).join("");
     }
 
-    function renderHubbingSummary(records) {
-      const rows = records
-        .map(record => {
-          const d = parseDateFromHubbingRecord(record);
-          return {
-            facility: safe(record.facility),
-            month: d ? getMonthLabel(d) : "--",
-            numberOfSamples: safe(record.numberOfSamples) || "--",
-            hiv: safe(record.screening?.hiv?.interpretation) || "--",
-            hbsag: safe(record.screening?.hbsag?.interpretation) || "--",
-            hcv: safe(record.screening?.hcv?.interpretation) || "--",
-            syphilis: safe(record.screening?.syphilis?.interpretation) || "--",
-            malaria: safe(record.screening?.malaria?.interpretation) || "--",
-            overall: safe(record.screening?.overallStatus) || "--",
-            sortKey: d ? d.getTime() : 0
-          };
-        })
-        .sort((a, b) => b.sortKey - a.sortKey);
+    const openHubMonths = new Set();
 
-      if (!rows.length) {
+    function newCounts() { return { r: 0, ir: 0, gz: 0, nr: 0 }; }
+    function tally(c, text) {
+      if (text === REACT) c.r++;
+      else if (text === INIT) c.ir++;
+      else if (text === GRAY) c.gz++;
+      else if (text === NON) c.nr++;
+    }
+    function countsText(c) {
+      const p = [];
+      if (c.r) p.push(`R ${c.r}`);
+      if (c.ir) p.push(`IR ${c.ir}`);
+      if (c.gz) p.push(`GZ ${c.gz}`);
+      if (c.nr) p.push(`NR ${c.nr}`);
+      return p.join(" / ") || "--";
+    }
+    function pillsHtml(c) {
+      const p = [];
+      if (c.r) p.push(`<span class="mini-pill mp-r" title="Reactive">R ${c.r}</span>`);
+      if (c.ir) p.push(`<span class="mini-pill mp-ir" title="Initially Reactive">IR ${c.ir}</span>`);
+      if (c.gz) p.push(`<span class="mini-pill mp-gz" title="Grayzone">GZ ${c.gz}</span>`);
+      if (c.nr) p.push(`<span class="mini-pill mp-nr" title="Non-Reactive">NR ${c.nr}</span>`);
+      return p.join(" ") || `<span class="muted-text">--</span>`;
+    }
+
+    // Compile hubbing records per month
+    function hubbingGroups(records) {
+      const map = {};
+      records.forEach(record => {
+        const d = parseDateFromHubbingRecord(record);
+        const key = d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` : "0000-00";
+        if (!map[key]) {
+          map[key] = {
+            key,
+            label: d ? getMonthLabel(d) : "No Date",
+            sortKey: d ? new Date(d.getFullYear(), d.getMonth(), 1).getTime() : 0,
+            items: [],
+            samples: 0,
+            tests: { hiv: newCounts(), hbsag: newCounts(), hcv: newCounts(), syphilis: newCounts(), malaria: newCounts() },
+            overall: newCounts()
+          };
+        }
+        const g = map[key];
+        const sc = record.screening || {};
+        const item = {
+          serial: fullSerial(record) || "--",
+          facility: safe(record.facility) || "--",
+          date: safe(record.dateTested) || "--",
+          samples: safe(record.numberOfSamples) || "--",
+          hiv: safe(sc.hiv?.interpretation) || "--",
+          hbsag: safe(sc.hbsag?.interpretation) || "--",
+          hcv: safe(sc.hcv?.interpretation) || "--",
+          syphilis: safe(sc.syphilis?.interpretation) || "--",
+          malaria: safe(sc.malaria?.interpretation) || "--",
+          overall: safe(sc.overallStatus) || "--",
+          sortKey: d ? d.getTime() : 0
+        };
+        g.items.push(item);
+        g.samples += parseInt(record.numberOfSamples, 10) || 0;
+        ["hiv", "hbsag", "hcv", "syphilis", "malaria"].forEach(k => tally(g.tests[k], item[k]));
+        tally(g.overall, item.overall);
+      });
+      const groups = Object.values(map).sort((a, b) => b.sortKey - a.sortKey);
+      groups.forEach(g => g.items.sort((a, b) => b.sortKey - a.sortKey || a.serial.localeCompare(b.serial)));
+      return groups;
+    }
+
+    function renderHubbingSummary(records) {
+      const groups = hubbingGroups(records);
+
+      if (!groups.length) {
         hubbingSummaryBody.innerHTML = `<tr><td colspan="9">No data</td></tr>`;
         return;
       }
 
-      hubbingSummaryBody.innerHTML = rows.map(row => `
-        <tr>
-          <td>${row.facility || "--"}</td>
-          <td>${row.month}</td>
-          <td>${row.numberOfSamples}</td>
-          <td><span class="table-result-badge ${badgeClass(row.hiv)}">${row.hiv}</span></td>
-          <td><span class="table-result-badge ${badgeClass(row.hbsag)}">${row.hbsag}</span></td>
-          <td><span class="table-result-badge ${badgeClass(row.hcv)}">${row.hcv}</span></td>
-          <td><span class="table-result-badge ${badgeClass(row.syphilis)}">${row.syphilis}</span></td>
-          <td><span class="table-result-badge ${badgeClass(row.malaria)}">${row.malaria}</span></td>
-          <td><span class="table-result-badge ${badgeClass(row.overall)}">${row.overall}</span></td>
+      const badge = (t) => `<span class="table-result-badge ${badgeClass(t)}">${esc(t)}</span>`;
+
+      hubbingSummaryBody.innerHTML = groups.map(g => {
+        const open = openHubMonths.has(g.key);
+        const items = g.items.map(it => `
+          <tr>
+            <td>${esc(it.serial)}</td>
+            <td>${esc(it.facility)}</td>
+            <td>${esc(it.date)}</td>
+            <td>${esc(it.samples)}</td>
+            <td>${badge(it.hiv)}</td>
+            <td>${badge(it.hbsag)}</td>
+            <td>${badge(it.hcv)}</td>
+            <td>${badge(it.syphilis)}</td>
+            <td>${badge(it.malaria)}</td>
+            <td>${badge(it.overall)}</td>
+          </tr>`).join("");
+        return `
+        <tr class="hub-month-row" data-hub-toggle="${g.key}" data-key="${g.key}" data-label="${esc(g.label)}">
+          <td class="hub-month-cell"><span class="hub-toggle">${open ? "−" : "+"}</span><strong>${esc(g.label)}</strong></td>
+          <td>${g.items.length}</td>
+          <td>${g.samples}</td>
+          <td>${pillsHtml(g.tests.hiv)}</td>
+          <td>${pillsHtml(g.tests.hbsag)}</td>
+          <td>${pillsHtml(g.tests.hcv)}</td>
+          <td>${pillsHtml(g.tests.syphilis)}</td>
+          <td>${pillsHtml(g.tests.malaria)}</td>
+          <td>${pillsHtml(g.overall)}</td>
         </tr>
-      `).join("");
+        <tr class="hub-detail-row${open ? "" : " is-collapsed"}" data-key="${g.key}">
+          <td colspan="9">
+            <div class="hub-items">
+              <table class="records-table">
+                <thead>
+                  <tr><th>Serial Number</th><th>Facility</th><th>Date Tested</th><th>Samples</th><th>HIV</th><th>HBsAg</th><th>HCV</th><th>Syphilis</th><th>Malaria</th><th>Overall</th></tr>
+                </thead>
+                <tbody>${items}</tbody>
+              </table>
+            </div>
+          </td>
+        </tr>`;
+      }).join("");
     }
 
     function renderOverview(records) {
       let male = 0, female = 0, sexNotSet = 0;
-      let reactive = 0, initial = 0, nonReactive = 0, noResult = 0;
+      let reactive = 0, initial = 0, gray = 0, nonReactive = 0, noResult = 0;
       let refYes = 0, refNo = 0;
       let cYes = 0, cNo = 0, cNone = 0;
       let rYes = 0, rNo = 0, rNone = 0;
@@ -832,6 +1071,7 @@
         const st = statusText(r);
         if (st === "🔴 Reactive") reactive++;
         else if (st === "🟠 Initially Reactive") initial++;
+        else if (st === "🟡 Grayzone") gray++;
         else if (st === "🟢 Non-Reactive") nonReactive++;
         else noResult++;
 
@@ -850,6 +1090,7 @@
         ["Donors", "Sex not set", sexNotSet],
         ["Overall Status", "Reactive", reactive],
         ["Overall Status", "Initially Reactive", initial],
+        ["Overall Status", "Grayzone", gray],
         ["Overall Status", "Non-Reactive", nonReactive],
         ["Overall Status", "No result", noResult],
         ["Referral", "Referred", refYes],
@@ -979,6 +1220,40 @@
     }
 
 
+    /* ===== TITLE ROW: click a title to show its data below ===== */
+    const TAB_KEY = "statsActiveTab_v1";
+    const PANEL_KEYS = [...document.querySelectorAll(".stat-tab")].map(btn => btn.dataset.tab);
+    let activeTab = "";
+    try { activeTab = sessionStorage.getItem(TAB_KEY) || ""; } catch (e) { /* ignore */ }
+    if (!PANEL_KEYS.includes(activeTab)) activeTab = "";
+
+    function setActiveTab(key) {
+      activeTab = key;
+      document.querySelectorAll(".stat-tab").forEach(btn => btn.classList.toggle("active", btn.dataset.tab === key));
+      document.querySelectorAll("#printArea .stat-panel").forEach(p => p.classList.toggle("is-active", p.dataset.panel === key));
+      document.getElementById("statHint").style.display = key ? "none" : "";
+      try { sessionStorage.setItem(TAB_KEY, key); } catch (e) { /* ignore */ }
+    }
+    document.getElementById("statTabs").addEventListener("click", (e) => {
+      const btn = e.target.closest(".stat-tab");
+      if (!btn) return;
+      setActiveTab(activeTab === btn.dataset.tab ? "" : btn.dataset.tab);
+    });
+
+    /* ===== Hubbing: click a month to show / hide its serial numbers ===== */
+    document.addEventListener("click", (e) => {
+      const row = e.target.closest("tr[data-hub-toggle]");
+      if (!row) return;
+      const key = row.dataset.hubToggle;
+      const det = document.querySelector(`tr.hub-detail-row[data-key="${key}"]`);
+      if (!det) return;
+      const willOpen = det.classList.contains("is-collapsed");
+      det.classList.toggle("is-collapsed", !willOpen);
+      if (willOpen) openHubMonths.add(key); else openHubMonths.delete(key);
+      const t = row.querySelector(".hub-toggle");
+      if (t) t.textContent = willOpen ? "−" : "+";
+    });
+
     /* ===== LIVE SEARCH across every statistics table (incl. hubbing) ===== */
     const statSearch = document.getElementById("statSearch");
     const statSearchCount = document.getElementById("statSearchCount");
@@ -988,27 +1263,93 @@
         return m ? `${m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}` : t;
       });
     }
+    // text of a row for searching: dropdowns count only their chosen value (not every option)
+    function rowSearchText(tr) {
+      let t = "";
+      tr.querySelectorAll(":scope > td").forEach(td => {
+        const sel = td.querySelector("select");
+        t += " " + (sel ? (sel.value || "") : td.textContent);
+      });
+      return t.toLowerCase();
+    }
+    function ensureNoMatch(card) {
+      let n = card.querySelector(":scope > .stat-nomatch");
+      if (!n) {
+        n = document.createElement("p");
+        n.className = "stat-nomatch";
+        n.textContent = "No matching rows in this section.";
+        n.style.display = "none";
+        card.appendChild(n);
+      }
+      return n;
+    }
+    function filterHubbing(card, terms) {
+      const body = card.querySelector("#hubbingSummaryBody");
+      let visible = 0, rows = 0;
+      body.querySelectorAll("tr").forEach(tr => {
+        if (!tr.classList.contains("hub-month-row") && !tr.classList.contains("hub-detail-row")) tr.style.display = terms.length ? "none" : "";
+      });
+      body.querySelectorAll("tr.hub-month-row").forEach(sum => {
+        const det = body.querySelector(`tr.hub-detail-row[data-key="${sum.dataset.key}"]`);
+        const items = det ? [...det.querySelectorAll(".hub-items tbody tr")] : [];
+        rows += items.length;
+        if (!terms.length) {
+          sum.style.display = "";
+          if (det) { det.style.display = ""; det.classList.remove("search-open"); }
+          items.forEach(it => { it.style.display = ""; });
+          return;
+        }
+        const label = (sum.dataset.label || "").toLowerCase();
+        let any = 0;
+        items.forEach(it => {
+          const txt = label + " " + it.textContent.toLowerCase();
+          const ok = terms.every(t => txt.includes(t));
+          it.style.display = ok ? "" : "none";
+          if (ok) any++;
+        });
+        visible += any;
+        sum.style.display = any ? "" : "none";
+        if (det) { det.style.display = any ? "" : "none"; det.classList.toggle("search-open", any > 0); }
+      });
+      return { visible, rows };
+    }
     function applyLiveSearch() {
       const terms = searchTerms();
       let shown = 0, total = 0;
-      document.querySelectorAll("#printArea .content-card").forEach(card => {
+      const counts = {};
+      document.querySelectorAll("#printArea .stat-panel").forEach(card => {
         let visible = 0, rows = 0;
-        card.querySelectorAll("tbody tr").forEach(tr => {
-          const isEmptyRow = tr.children.length === 1 && tr.firstElementChild.colSpan > 1;
-          if (isEmptyRow) { tr.style.display = terms.length ? "none" : ""; return; }
-          rows++;
-          const txt = tr.textContent.toLowerCase();
-          const ok = terms.every(t => txt.includes(t));
-          tr.style.display = ok ? "" : "none";
-          if (ok) visible++;
-        });
+        if (card.dataset.panel === "hubbing") {
+          ({ visible, rows } = filterHubbing(card, terms));
+        } else {
+          card.querySelectorAll("tbody tr").forEach(tr => {
+            const isEmptyRow = tr.children.length === 1 && tr.firstElementChild.colSpan > 1;
+            if (isEmptyRow) { tr.style.display = terms.length ? "none" : ""; return; }
+            rows++;
+            const txt = rowSearchText(tr);
+            const ok = terms.every(t => txt.includes(t));
+            tr.style.display = ok ? "" : "none";
+            if (ok) visible++;
+          });
+        }
+        counts[card.dataset.panel] = visible;
         total += rows; shown += visible;
-        card.classList.toggle("search-hide-card", terms.length > 0 && visible === 0);
+        ensureNoMatch(card).style.display = (terms.length && visible === 0) ? "" : "none";
       });
+      document.querySelectorAll(".stat-tab").forEach(btn => {
+        const c = counts[btn.dataset.tab] || 0;
+        btn.querySelector(".stat-tab-count").textContent = terms.length ? String(c) : "";
+        btn.classList.toggle("tab-empty", terms.length > 0 && c === 0);
+      });
+      if (terms.length && (!activeTab || !counts[activeTab])) {
+        const first = PANEL_KEYS.find(k => counts[k] > 0);
+        if (first && first !== activeTab) setActiveTab(first);
+      }
       statSearchCount.textContent = terms.length ? `${shown} of ${total} rows match` : "";
     }
     statSearch.addEventListener("input", applyLiveSearch);
     document.getElementById("statSearchClear").addEventListener("click", () => { statSearch.value = ""; applyLiveSearch(); statSearch.focus(); });
+    setActiveTab(activeTab);
 
     function renderAll() {
       const src = sourceFilter.value;
@@ -1050,17 +1391,25 @@
 
       const hbsagRows = [...document.querySelectorAll("#hbsagTableBody tr")].map(tr => {
         const tds = [...tr.children];
-        const vals = tds.slice(0, 6).map(td => textToCsvCell(td.textContent));
+        const vals = tds.slice(0, 6).map(td => textToCsvCell(td.textContent.trim()));
         const chk = tr.querySelector(".referral-checkbox");
-        vals.push(textToCsvCell(chk && chk.checked ? "Referred" : "No"));
-        vals.push(textToCsvCell(tds[7] ? tds[7].textContent : ""));
-        vals.push(textToCsvCell(tds[8] ? tds[8].textContent : ""));
+        vals.push(textToCsvCell(chk ? (chk.checked ? "Referred" : "No") : (tds[6] ? tds[6].textContent.trim() : "")));
+        const conf = tr.querySelector(".confirmatory-select");
+        vals.push(textToCsvCell(conf ? conf.value : (tds[7] ? tds[7].textContent.trim() : "")));
+        const cou = tr.querySelector(".counseling-select");
+        vals.push(textToCsvCell(cou ? cou.value : ""));
         return vals.join(",");
       });
 
-      const hubbingRows = [...document.querySelectorAll("#hubbingSummaryBody tr")].map(tr =>
-        [...tr.children].map(td => textToCsvCell(td.textContent)).join(",")
-      );
+      const hubGroups = hubbingGroups(currentFilteredHubbingRecords);
+      const hubMonthRows = hubGroups.map(g => [
+        g.label, g.items.length, g.samples,
+        countsText(g.tests.hiv), countsText(g.tests.hbsag), countsText(g.tests.hcv), countsText(g.tests.syphilis), countsText(g.tests.malaria),
+        countsText(g.overall)
+      ].map(textToCsvCell).join(","));
+      const hubRecordRows = hubGroups.flatMap(g => g.items.map(it => [
+        g.label, it.serial, it.facility, it.date, it.samples, it.hiv, it.hbsag, it.hcv, it.syphilis, it.malaria, it.overall
+      ].map(textToCsvCell).join(",")));
 
       // Tables built from tracking data (every table marked data-export-title)
       const trackingTables = [...document.querySelectorAll("table[data-export-title]")].flatMap(table => {
@@ -1082,16 +1431,20 @@
         ...monthRows,
         "",
         "Referral Summary for All Tests and Status",
-        `"Test","Reactive","Initially Reactive","Non-Reactive","Referred","Not Referred"`,
+        `"Test","Reactive","Initially Reactive","Grayzone","Non-Reactive","Referred","Not Referred"`,
         ...referralRows,
         "",
         "HBsAg Detailed Statistics",
         `"Serial Number","Date Tested","OD","Repeat 1","Repeat 2","Interpretation","Referral","Confirmatory","Counseling"`,
         ...hbsagRows,
         "",
-        "Hubbing Summary",
-        `"Facility","Month","No. of Samples","HIV","HBsAg","HCV","Syphilis","Malaria","Overall Status"`,
-        ...hubbingRows
+        "Hubbing Summary (Per Month)",
+        `"Month","Serial Nos.","Samples","HIV","HBsAg","HCV","Syphilis","Malaria","Overall"`,
+        ...hubMonthRows,
+        "",
+        "Hubbing Records",
+        `"Month","Serial Number","Facility","Date Tested","No. of Samples","HIV","HBsAg","HCV","Syphilis","Malaria","Overall Status"`,
+        ...hubRecordRows
       ].join("\n");
 
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -1121,6 +1474,10 @@
               table { width: 100%; border-collapse: collapse; margin-top: 10px; }
               th, td { border: 1px solid #999; padding: 8px; text-align: center; font-size: 12px; }
               th { background: #eee; }
+              .stat-nomatch, .hub-toggle { display: none; }
+              .mini-pill { border: 1px solid #999; border-radius: 10px; padding: 0 5px; margin-right: 3px; font-size: 11px; white-space: nowrap; }
+              .hub-detail-row > td { padding: 0; }
+              .hub-items table { margin: 4px 0 8px; }
             </style>
           </head>
           <body>
@@ -1162,7 +1519,7 @@
       }
 
       onSnapshot(collection(db, "tti_records"), (snapshot) => {
-        allTTIRecords = snapshot.docs.map(d => ({
+        allTTIRecords = snapshot.docs.map(d => withDerived({
           id: d.id,
           ...d.data()
         }));
@@ -1198,32 +1555,52 @@
       window.location.href = "index.html";
     };
 
+    function flashMsg(text, ms) {
+      hbsagMsg.textContent = text;
+      if (ms) setTimeout(() => { hbsagMsg.textContent = ""; }, ms);
+    }
+
     document.addEventListener("change", async (e) => {
-      if (!e.target.classList.contains("referral-checkbox")) return;
+      const t = e.target;
 
-      const id = e.target.getAttribute("data-id");
-      const isChecked = e.target.checked;
-      const label = e.target.closest(".referral-check-wrap")?.querySelector("span");
+      // Referral tick: Referred opens Confirmatory (like Tracking); un-ticking clears it
+      if (t.classList.contains("referral-checkbox")) {
+        const id = t.getAttribute("data-id");
+        const isChecked = t.checked;
+        const label = t.closest(".referral-check-wrap")?.querySelector("span");
 
-      try {
-        await updateDoc(doc(db, "tti_records", id), {
-          referralStatus: isChecked ? "Yes" : "No"
-        });
+        try {
+          const payload = { referralStatus: isChecked ? "Yes" : "No" };
+          if (!isChecked) payload.confirmatoryStatus = "";
+          await updateDoc(doc(db, "tti_records", id), payload);
 
-        if (label) {
-          label.textContent = isChecked ? "Referred" : "No";
+          if (label) label.textContent = isChecked ? "Referred" : "No";
+          flashMsg("Referral updated successfully.", 2000);
+        } catch (error) {
+          t.checked = !isChecked;
+          if (label) label.textContent = !isChecked ? "Referred" : "No";
+          flashMsg(error.message);
         }
+        return;
+      }
 
-        hbsagMsg.textContent = "Referral updated successfully.";
-        setTimeout(() => {
-          hbsagMsg.textContent = "";
-        }, 2000);
-      } catch (error) {
-        e.target.checked = !isChecked;
-        if (label) {
-          label.textContent = !isChecked ? "Referred" : "No";
+      if (t.classList.contains("confirmatory-select")) {
+        try {
+          await updateDoc(doc(db, "tti_records", t.getAttribute("data-id")), { confirmatoryStatus: t.value });
+          flashMsg("Confirmatory updated successfully.", 2000);
+        } catch (error) {
+          flashMsg(error.message);
         }
-        hbsagMsg.textContent = error.message;
+        return;
+      }
+
+      if (t.classList.contains("counseling-select")) {
+        try {
+          await updateDoc(doc(db, "tti_records", t.getAttribute("data-id")), { counseling: t.value });
+          flashMsg("Counseling updated successfully.", 2000);
+        } catch (error) {
+          flashMsg(error.message);
+        }
       }
     });
   </script>
