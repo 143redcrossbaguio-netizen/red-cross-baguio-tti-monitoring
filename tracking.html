@@ -927,6 +927,11 @@ TTIUtil.initAllDates();
         ["Malaria", s.malaria || {}]
       ];
 
+      // show only the tests that have a result value (OD / repeats) to save space
+      const hasVal = (d) => ["od", "repeat1", "repeat2"].some(k => safe(d[k]).trim() !== "");
+      const shownRows = rows.filter(([, d]) => hasVal(d));
+      rows.splice(0, rows.length, ...(shownRows.length ? shownRows : [["No test entered", {}]]));
+
       return `
         <div class="screening-box">
           <div class="screening-box-title">TTI Screening Results</div>
@@ -957,17 +962,17 @@ TTIUtil.initAllDates();
                     <td>${safe(d.lotNumber) || "--"}</td>
                     <td>${safe(d.expirationDate) || "--"}</td>
                     <td>${safe(d.dateTested) || "--"}</td>
-                    <td>${interpretationBadge(safe(d.interpretation), label === "HBsAg" && isHbsagRR(d) ? "RR" : "")}</td>
+                    <td>${interpretationBadge((safe(d.interpretation) && safe(d.interpretation) !== "--") ? safe(d.interpretation) : (safe(d.od).trim() ? (label === "Malaria" ? "No LL/UL" : "No cutoff") : ""), label === "HBsAg" && isHbsagRR(d) ? "RR" : "")}</td>
                     ${
                       index === 0
                         ? `
-                          <td rowspan="5" class="merge-cell">
+                          <td rowspan="${rows.length}" class="merge-cell">
                             ${noRef ? `<span class="muted-text">Not needed (RR)</span>` : `<select class="inline-select referral-select stop-collapse" data-id="${record.id}">
                               <option value="No" ${referral === "No" ? "selected" : ""}>No</option>
                               <option value="Yes" ${referral === "Yes" ? "selected" : ""}>Yes</option>
                             </select>`}
                           </td>
-                          <td rowspan="5" class="merge-cell">
+                          <td rowspan="${rows.length}" class="merge-cell">
                             ${
                               (referral === "Yes" && !noRef)
                                 ? `
@@ -984,7 +989,7 @@ TTIUtil.initAllDates();
                                 : `<span class="muted-text">--</span>`
                             }
                           </td>
-                          <td rowspan="5" class="merge-cell">
+                          <td rowspan="${rows.length}" class="merge-cell">
                             <select class="inline-select counseling-select stop-collapse" data-id="${record.id}">
                               <option value="" ${counseling === "" ? "selected" : ""}>Select</option>
                               <option value="Yes" ${counseling === "Yes" ? "selected" : ""}>Yes</option>
