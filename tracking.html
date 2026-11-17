@@ -200,7 +200,7 @@
     .filter-bar input,.filter-bar select,.filter-bar button{width:auto;height:34px;margin:0;padding:0 10px;font-size:13px;box-sizing:border-box}
     .count-inline{font-size:13px}
 
-    .summary-grid{grid-template-columns:repeat(6,1fr);gap:8px}
+    .summary-grid{grid-template-columns:repeat(7,1fr);gap:8px}
     .summary-box-card{padding:6px 10px;border-radius:8px;box-shadow:none}
     .summary-box-card .label{font-size:11px;margin-bottom:0}
     .summary-box-card .value{font-size:17px}
@@ -292,6 +292,11 @@
     .ef-actions button{padding:6px 16px;font-size:13px}
     .ef-msg{font-size:12px;color:#b30000}
     @media (max-width:700px){.ef-serial{grid-template-columns:1fr}}
+
+    /* ===== Grayzone (GZ) colours ===== */
+    .table-badge-grayzone{background:#fff6cc;color:#7a5b00;border:1px solid #e6c84d}
+    .overall-grayzone{background:#fff6cc;color:#7a5b00;border:1px solid #e6c84d}
+    .grayzone-badge{background:#fff6cc;color:#7a5b00;border-color:#e6c84d}
   </style>
 </head>
 <body>
@@ -346,6 +351,7 @@
             <option value="">All Status</option>
             <option value="🔴 Reactive">Reactive</option>
             <option value="🟠 Initially Reactive">Initially Reactive</option>
+            <option value="🟡 Grayzone">Grayzone</option>
             <option value="🟢 Non-Reactive">Non-Reactive</option>
           </select>
           <input type="date" id="collectionDateFilter" />
@@ -389,6 +395,7 @@
           <div class="summary-box-card"><span class="label">Female</span><span class="value" id="summaryFemale">0</span></div>
           <div class="summary-box-card"><span class="label" id="statusLabelReactive">Reactive</span><span class="value" id="summaryReactive">0</span></div>
           <div class="summary-box-card"><span class="label" id="statusLabelInitial">Initially Reactive</span><span class="value" id="summaryInitial">0</span></div>
+          <div class="summary-box-card"><span class="label" id="statusLabelGray">Grayzone</span><span class="value" id="summaryGray">0</span></div>
           <div class="summary-box-card"><span class="label" id="statusLabelNonReactive">Non-Reactive</span><span class="value" id="summaryNonReactive">0</span></div>
         </div>
       </section>
@@ -718,6 +725,8 @@ TTIUtil.initAllDates();
     const statusLabelReactive = document.getElementById("statusLabelReactive");
     const statusLabelInitial = document.getElementById("statusLabelInitial");
     const statusLabelNonReactive = document.getElementById("statusLabelNonReactive");
+    const summaryGray = document.getElementById("summaryGray");
+    const statusLabelGray = document.getElementById("statusLabelGray");
 
     function safe(val) {
       return val === undefined || val === null ? "" : String(val);
@@ -771,16 +780,18 @@ TTIUtil.initAllDates();
     function overallClass(value) {
       if (value === "🔴 Reactive") return "overall-reactive";
       if (value === "🟠 Initially Reactive") return "overall-initially-reactive";
+      if (value === "🟡 Grayzone") return "overall-grayzone";
       if (value === "🟢 Non-Reactive") return "overall-nonreactive";
       return "overall-neutral";
     }
 
-    function interpretationBadge(text) {
+    function interpretationBadge(text, tag) {
       let cls = "table-badge-neutral";
       if (text === "🔴 Reactive") cls = "table-badge-reactive";
       if (text === "🟠 Initially Reactive") cls = "table-badge-initially-reactive";
+      if (text === "🟡 Grayzone") cls = "table-badge-grayzone";
       if (text === "🟢 Non-Reactive") cls = "table-badge-nonreactive";
-      return `<span class="table-result-badge ${cls}">${text || "--"}</span>`;
+      return `<span class="table-result-badge ${cls}">${text || "--"}${tag ? ` (${tag})` : ""}</span>`;
     }
 
     function searchBlob(record) {
@@ -904,6 +915,7 @@ TTIUtil.initAllDates();
       const referral = getReferralStatus(record);
       const confirmatory = getConfirmatoryStatus(record);
       const counseling = getCounselingStatus(record);
+      const noRef = noReferralNeeded(record);   // HBsAg consistently >= 5000 (RR) and nothing else needs referral
 
       const confirmatoryOptions = ["Pending", "Sent", "Rejected", "Done"];
 
@@ -945,19 +957,19 @@ TTIUtil.initAllDates();
                     <td>${safe(d.lotNumber) || "--"}</td>
                     <td>${safe(d.expirationDate) || "--"}</td>
                     <td>${safe(d.dateTested) || "--"}</td>
-                    <td>${interpretationBadge(safe(d.interpretation))}</td>
+                    <td>${interpretationBadge(safe(d.interpretation), label === "HBsAg" && isHbsagRR(d) ? "RR" : "")}</td>
                     ${
                       index === 0
                         ? `
                           <td rowspan="5" class="merge-cell">
-                            <select class="inline-select referral-select stop-collapse" data-id="${record.id}">
+                            ${noRef ? `<span class="muted-text">Not needed (RR)</span>` : `<select class="inline-select referral-select stop-collapse" data-id="${record.id}">
                               <option value="No" ${referral === "No" ? "selected" : ""}>No</option>
                               <option value="Yes" ${referral === "Yes" ? "selected" : ""}>Yes</option>
-                            </select>
+                            </select>`}
                           </td>
                           <td rowspan="5" class="merge-cell">
                             ${
-                              referral === "Yes"
+                              (referral === "Yes" && !noRef)
                                 ? `
                                   <select class="inline-select confirmatory-select stop-collapse" data-id="${record.id}">
                                     ${confirmatory === "" ? `<option value="" selected disabled>Select</option>` : ""}
@@ -1488,6 +1500,7 @@ TTIUtil.initAllDates();
     }
 
     function computeSummary(records) {
+      let gray = 0;
       let male = 0;
       let female = 0;
       let reactive = 0;
@@ -1504,6 +1517,7 @@ TTIUtil.initAllDates();
 
         if (selectedStatus === "🔴 Reactive") reactive++;
         if (selectedStatus === "🟠 Initially Reactive") initial++;
+        if (selectedStatus === "🟡 Grayzone") gray++;
         if (selectedStatus === "🟢 Non-Reactive") nonreactive++;
       });
 
@@ -1513,11 +1527,13 @@ TTIUtil.initAllDates();
       summaryReactive.textContent = reactive;
       summaryInitial.textContent = initial;
       summaryNonReactive.textContent = nonreactive;
+      summaryGray.textContent = gray;
 
       const basis = testFilter.value ? `${testFilter.value} Status` : "Overall Status";
       statusLabelReactive.textContent = `Reactive (${basis})`;
       statusLabelInitial.textContent = `Initially Reactive (${basis})`;
       statusLabelNonReactive.textContent = `Non-Reactive (${basis})`;
+      statusLabelGray.textContent = `Grayzone (${basis})`;
     }
 
     function groupRecords(records) {
@@ -1549,6 +1565,7 @@ TTIUtil.initAllDates();
     }
 
     function getCounts(records) {
+      let gray = 0;
       let male = 0;
       let female = 0;
       let reactive = 0;
@@ -1564,15 +1581,30 @@ TTIUtil.initAllDates();
         if (sex === "female") female++;
         if (selectedStatus === "🔴 Reactive") reactive++;
         if (selectedStatus === "🟠 Initially Reactive") initial++;
+        if (selectedStatus === "🟡 Grayzone") gray++;
         if (selectedStatus === "🟢 Non-Reactive") nonreactive++;
       });
 
-      return { male, female, reactive, initial, nonreactive, total: records.length };
+      return { male, female, reactive, initial, gray, nonreactive, total: records.length };
     }
 
 
     /* ===================== INLINE EDIT (no more trip to Data Input) ===================== */
-    const REACT = "🔴 Reactive", INIT = "🟠 Initially Reactive", NON = "🟢 Non-Reactive";
+    const REACT = "🔴 Reactive", INIT = "🟠 Initially Reactive", NON = "🟢 Non-Reactive", GRAY = "🟡 Grayzone";
+
+    /* ---- Interpretation settings (edit these numbers to adjust per test) ----
+       GRAYZONE : an OD from lo to hi (and not above the cutoff) is read as Grayzone (GZ).
+                  Set a test to null to turn Grayzone off for it.
+       HBSAG_RR_LIMIT : HBsAg OD / Repeat 1 / Repeat 2 all at or above this = Reactive (RR),
+                        no referral needed. */
+    const GRAYZONE = {
+      hiv:      { lo: 0.97, hi: 0.99 },
+      hbsag:    { lo: 0.97, hi: 0.99 },
+      hcv:      { lo: 0.97, hi: 0.99 },
+      syphilis: { lo: 0.97, hi: 0.99 },
+      malaria:  null
+    };
+    const HBSAG_RR_LIMIT = 5000;
     const EDIT_TESTS = [["hiv", "HIV"], ["hbsag", "HBsAg"], ["hcv", "HCV"], ["syphilis", "Syphilis"], ["malaria", "Malaria"]];
     const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
     const num = (v) => parseFloat(v);
@@ -1607,27 +1639,75 @@ TTIUtil.initAllDates();
       return d;
     }
 
-    function interpretRegular(d, k) {
-      const cutoff = num(d.cutoff), od = num(d[k + "_od"]), r1 = num(d[k + "_repeat1"]), r2 = num(d[k + "_repeat2"]);
+    /* OD at/under cutoff  -> Non-Reactive (or Grayzone when inside the GZ range)
+       OD over cutoff      -> Initially Reactive (IR) if Repeat 1 OR Repeat 2 is negative, else Reactive */
+    function interpretValues(k, cutoff, od, r1, r2) {
       if (isNaN(cutoff) || isNaN(od)) return "--";
-      if (od <= cutoff) return NON;
-      return (!isNaN(r1) && r1 <= cutoff && !isNaN(r2) && r2 <= cutoff) ? INIT : REACT;
+      if (od <= cutoff) {
+        const gz = GRAYZONE[k];
+        return (gz && od >= gz.lo && od <= gz.hi) ? GRAY : NON;
+      }
+      const r1Neg = !isNaN(r1) && r1 <= cutoff;
+      const r2Neg = !isNaN(r2) && r2 <= cutoff;
+      return (r1Neg || r2Neg) ? INIT : REACT;
     }
-    function interpretMalaria(d) {
-      const lo = num(d.malariaLowerLimit), hi = num(d.malariaUpperLimit), od = num(d.malaria_od), r1 = num(d.malaria_repeat1), r2 = num(d.malaria_repeat2);
+    function interpretMalariaValues(lo, hi, od, r1, r2) {
       if (isNaN(lo) || isNaN(hi) || isNaN(od)) return "--";
       const inR = (v) => v >= lo && v <= hi;
       if (inR(od)) return NON;
-      return (!isNaN(r1) && inR(r1) && !isNaN(r2) && inR(r2)) ? INIT : REACT;
+      const r1Normal = !isNaN(r1) && inR(r1);
+      const r2Normal = !isNaN(r2) && inR(r2);
+      return (r1Normal || r2Normal) ? INIT : REACT;
+    }
+    function interpretRegular(d, k) {
+      return interpretValues(k, num(d.cutoff), num(d[k + "_od"]), num(d[k + "_repeat1"]), num(d[k + "_repeat2"]));
+    }
+    function interpretMalaria(d) {
+      return interpretMalariaValues(num(d.malariaLowerLimit), num(d.malariaUpperLimit), num(d.malaria_od), num(d.malaria_repeat1), num(d.malaria_repeat2));
+    }
+    function overallOf(list) {
+      return list.includes(REACT) ? REACT : list.includes(INIT) ? INIT : list.includes(GRAY) ? GRAY : list.includes(NON) ? NON : "--";
     }
     function computeAll(d) {
       const out = {};
       EDIT_TESTS.forEach(([k]) => { out[k] = k === "malaria" ? interpretMalaria(d) : interpretRegular(d, k); });
-      const vals = Object.values(out);
-      const over = vals.includes(REACT) ? REACT : vals.includes(INIT) ? INIT : vals.includes(NON) ? NON : "--";
-      return { out, over };
+      return { out, over: overallOf(Object.values(out)) };
     }
-    const testBadgeClass = (t) => t === REACT ? "reactive-badge" : t === INIT ? "initially-reactive-badge" : t === NON ? "nonreactive-badge" : "neutral-badge";
+
+    // HBsAg "RR": OD and every entered repeat are all at/above the limit (consistent, e.g. 5000 and above)
+    function isHbsagRR(t) {
+      if (!t) return false;
+      const od = num(t.od), reps = [num(t.repeat1), num(t.repeat2)].filter(v => !isNaN(v));
+      return !isNaN(od) && od >= HBSAG_RR_LIMIT && reps.length > 0 && reps.every(v => v >= HBSAG_RR_LIMIT);
+    }
+    // No referral when HBsAg is RR and no other test needs follow-up
+    function noReferralNeeded(record) {
+      const s = getScreening(record);
+      if (!isHbsagRR(s.hbsag)) return false;
+      return ["hiv", "hcv", "syphilis", "malaria"].every(k => {
+        const i = safe(s[k]?.interpretation);
+        return i !== REACT && i !== INIT && i !== GRAY;
+      });
+    }
+    // Re-reads every saved record with the current rules (display only, nothing is written back to the database)
+    function withDerived(record) {
+      const s = record.screening;
+      if (!s) return record;
+      const ns = { ...s };
+      const cutoff = num(s.cutoff);
+      EDIT_TESTS.forEach(([k]) => {
+        const t = s[k];
+        if (!t) return;
+        const v = k === "malaria"
+          ? interpretMalariaValues(num(s.malariaLowerLimit), num(s.malariaUpperLimit), num(t.od), num(t.repeat1), num(t.repeat2))
+          : interpretValues(k, cutoff, num(t.od), num(t.repeat1), num(t.repeat2));
+        ns[k] = v === "--" ? t : { ...t, interpretation: v };
+      });
+      const over = overallOf(EDIT_TESTS.map(([k]) => safe(ns[k]?.interpretation)));
+      if (over !== "--") ns.overallStatus = over;
+      return { ...record, screening: ns };
+    }
+    const testBadgeClass = (t) => t === REACT ? "reactive-badge" : t === INIT ? "initially-reactive-badge" : t === GRAY ? "grayzone-badge" : t === NON ? "nonreactive-badge" : "neutral-badge";
     const fullFromDraft = (d) => (d.usePrefix ? safe(d.serialPrefix).trim() : "") + safe(d.serialSuffix).trim();
     function ageFromISO(iso) {
       if (!iso) return "";
@@ -1916,6 +1996,7 @@ TTIUtil.initAllDates();
                 <span class="meta-pill">Female: ${yearCounts.female}</span>
                 <span class="meta-pill">Reactive: ${yearCounts.reactive}</span>
                 <span class="meta-pill">Initial: ${yearCounts.initial}</span>
+                <span class="meta-pill">Grayzone: ${yearCounts.gray}</span>
                 <span class="meta-pill">Non-Reactive: ${yearCounts.nonreactive}</span>
               </div>
             </div>
@@ -1938,6 +2019,7 @@ TTIUtil.initAllDates();
                         <span class="meta-pill">Female: ${monthCounts.female}</span>
                         <span class="meta-pill">Reactive: ${monthCounts.reactive}</span>
                         <span class="meta-pill">Initial: ${monthCounts.initial}</span>
+                        <span class="meta-pill">Grayzone: ${monthCounts.gray}</span>
                         <span class="meta-pill">Non-Reactive: ${monthCounts.nonreactive}</span>
                       </div>
                     </div>
@@ -1989,7 +2071,7 @@ TTIUtil.initAllDates();
       }
 
       onSnapshot(collection(db, "tti_records"), (snapshot) => {
-        allRecords = snapshot.docs.map((d) => ({
+        allRecords = snapshot.docs.map((d) => withDerived({
           id: d.id,
           ...d.data()
         }));
