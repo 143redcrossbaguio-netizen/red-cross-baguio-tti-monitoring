@@ -504,23 +504,34 @@
     const TEST_KEYS = ["hiv", "hbsag", "hcv", "syphilis", "malaria"];
     const num = (v) => parseFloat(v);
 
+    /* Each run (OD, Repeat 1, Repeat 2) is classed against the cutoff:
+         value >= cutoff            -> R  (reactive; a value equal to the cutoff counts as reactive)
+         value in the GRAYZONE range -> G  (below the cutoff)
+         anything lower              -> N  (non-reactive)
+       Then the three runs are combined:
+         2 or 3 runs reactive                       -> Reactive
+         exactly 1 run reactive (others N or G)     -> Initially Reactive (IR)
+           (OD reactive with no repeat entered yet  -> Reactive, as before)
+         no run reactive, at least one Grayzone     -> Grayzone (GZ)
+         everything non-reactive                    -> Non-Reactive */
+    function combineRuns(odC, c1, c2) {
+      const all = [odC, c1, c2];
+      const rc = all.filter(c => c === "R").length;
+      if (rc >= 2) return REACT;
+      if (rc === 1) return (odC === "R" && !c1 && !c2) ? REACT : INIT;
+      if (all.includes("G")) return GRAY;
+      return NON;
+    }
     function interpretValues(k, cutoff, od, r1, r2) {
       if (isNaN(cutoff) || isNaN(od)) return "--";
-      if (od <= cutoff) {
-        const gz = GRAYZONE[k];
-        return (gz && od >= gz.lo && od <= gz.hi) ? GRAY : NON;
-      }
-      const r1Neg = !isNaN(r1) && r1 <= cutoff;
-      const r2Neg = !isNaN(r2) && r2 <= cutoff;
-      return (r1Neg || r2Neg) ? INIT : REACT;
+      const gz = GRAYZONE[k];
+      const cls = (v) => isNaN(v) ? "" : v >= cutoff ? "R" : (gz && v >= gz.lo && v <= gz.hi) ? "G" : "N";
+      return combineRuns(cls(od), cls(r1), cls(r2));
     }
     function interpretMalariaValues(lo, hi, od, r1, r2) {
       if (isNaN(lo) || isNaN(hi) || isNaN(od)) return "--";
-      const inR = (v) => v >= lo && v <= hi;
-      if (inR(od)) return NON;
-      const r1Normal = !isNaN(r1) && inR(r1);
-      const r2Normal = !isNaN(r2) && inR(r2);
-      return (r1Normal || r2Normal) ? INIT : REACT;
+      const cls = (v) => isNaN(v) ? "" : (v >= lo && v <= hi) ? "N" : "R";   // outside the range = reactive
+      return combineRuns(cls(od), cls(r1), cls(r2));
     }
     function overallOf(list) {
       return list.includes(REACT) ? REACT : list.includes(INIT) ? INIT : list.includes(GRAY) ? GRAY : list.includes(NON) ? NON : "--";
@@ -652,26 +663,15 @@
       return `${monthNames[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
     }
 
+    // Reactive counts for the quarter / month tables follow the same rules as the interpretation
     function isReactiveRegular(testObj, cutoffValue) {
       if (!testObj) return false;
-      const od = parseFloat(testObj.od);
-      const r1 = parseFloat(testObj.repeat1);
-      const r2 = parseFloat(testObj.repeat2);
-      const cutoff = parseFloat(cutoffValue);
-      if ([od, r1, r2, cutoff].some(v => isNaN(v))) return false;
-      return od > cutoff && r1 > cutoff && r2 > cutoff;
+      return interpretValues("hiv", parseFloat(cutoffValue), parseFloat(testObj.od), parseFloat(testObj.repeat1), parseFloat(testObj.repeat2)) === REACT;
     }
 
     function isReactiveMalaria(testObj, llValue, ulValue) {
       if (!testObj) return false;
-      const od = parseFloat(testObj.od);
-      const r1 = parseFloat(testObj.repeat1);
-      const r2 = parseFloat(testObj.repeat2);
-      const ll = parseFloat(llValue);
-      const ul = parseFloat(ulValue);
-      if ([od, r1, r2, ll, ul].some(v => isNaN(v))) return false;
-      const outside = (v) => v < ll || v > ul;
-      return outside(od) && outside(r1) && outside(r2);
+      return interpretMalariaValues(parseFloat(llValue), parseFloat(ulValue), parseFloat(testObj.od), parseFloat(testObj.repeat1), parseFloat(testObj.repeat2)) === REACT;
     }
 
     function renderYearOptions() {
